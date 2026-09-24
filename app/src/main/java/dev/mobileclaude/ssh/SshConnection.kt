@@ -116,8 +116,16 @@ class SshConnection(val host: Host) {
     private fun runConnect() {
         try {
             val tn = app.tailnet
-            if (!tn.state.value.running) error("Tailscale bağlı değil")
-            localPort = tn.forward(host.address, host.port)
+            // Right after app start the embedded node needs a moment to come up.
+            val deadline = System.currentTimeMillis() + 20_000
+            while (!tn.state.value.running && System.currentTimeMillis() < deadline) {
+                if (!tn.state.value.enabled || tn.state.value.needsLogin) break
+                Thread.sleep(250)
+            }
+            if (!tn.state.value.running) error("Tailscale bağlı değil. Ana ekrandan aç ve giriş yap.")
+            // Prefer the peer's Tailscale IP; fall back to MagicDNS resolution.
+            val target = tn.resolve(host.address)
+            localPort = tn.forward(target, host.port)
 
             val jsch = JSch()
             val known = File(app.filesDir, "known_hosts").apply { if (!exists()) createNewFile() }

@@ -1,7 +1,13 @@
 name: Android APK
 
+# Every push builds a universal APK plus one per CPU architecture
+# (arm64-v8a, armeabi-v7a, x86_64, x86).
+#   - branch push -> "nightly" pre-release is updated
+#   - tag v*      -> a real GitHub release
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -15,45 +21,90 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION_NAME=0.1.0-nightly.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          fi
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
+      # The Go/Tailscale part takes minutes to build; reuse it until it changes.
+      - name: Cache embedded Tailscale
+        id: tsbridge-cache
+        uses: actions/cache@v4
+        with:
+          path: app/libs/tsbridge.aar
+          key: tsbridge-${{ hashFiles('tsbridge/**', 'scripts/build-tsbridge.sh') }}
+
       - uses: actions/setup-go@v5
+        if: steps.tsbridge-cache.outputs.cache-hit != 'true'
         with:
           go-version-file: tsbridge/go.mod
           cache-dependency-path: tsbridge/go.sum
 
       - name: Build embedded Tailscale (gomobile)
+        if: steps.tsbridge-cache.outputs.cache-hit != 'true'
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
         run: ./scripts/build-tsbridge.sh
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build APK
+      - name: Build APKs
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk MobileClaude.apk
+      - name: Collect APKs
+        run: |
+          mkdir -p dist
+          for f in app/build/outputs/apk/release/app-*-release.apk; do
+            abi=$(basename "$f" | sed -e 's/^app-//' -e 's/-release\.apk$//')
+            cp "$f" "dist/MobileClaude-${abi}.apk"
+          done
+          ls -la dist
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MobileClaude-apk
-          path: MobileClaude.apk
+          name: MobileClaude-${{ env.VERSION_NAME }}
+          path: dist/*.apk
 
-      # Phone-friendly download: always-current APK on the "nightly" release.
-      - name: Publish nightly release
-        if: github.event_name == 'push'
+      - name: Move nightly tag
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          git tag -f nightly
+          git push -f origin nightly
+
+      - name: Publish nightly
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly
-          name: Mobile Claude (nightly)
+          name: Mobile Claude nightly
           prerelease: true
-          target_commitish: ${{ github.sha }}
-          body: "Son derleme: ${{ github.sha }} (${{ github.ref_name }})"
-          files: MobileClaude.apk
+          body: |
+            Son derleme: `${{ env.VERSION_NAME }}` — ${{ github.sha }} (${{ github.ref_name }})
+
+            Hangisini indirmeli? Emin değilsen **MobileClaude-universal.apk**.
+            Çoğu telefon için daha küçük olan **MobileClaude-arm64-v8a.apk** yeterli.
+          files: dist/*.apk
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mobile Claude ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            Hangisini indirmeli? Emin değilsen **MobileClaude-universal.apk**.
+            Çoğu telefon için daha küçük olan **MobileClaude-arm64-v8a.apk** yeterli.
+          files: dist/*.apk

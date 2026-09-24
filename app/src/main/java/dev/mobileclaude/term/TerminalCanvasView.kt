@@ -41,6 +41,7 @@ class TerminalCanvasView(context: Context) : View(context) {
             field = value
             value?.onScreenUpdate = { onScreenChanged() }
             value?.onBell = { performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }
+            value?.emulator?.setCursorBlinkingEnabled(true)
             topRow = 0
             updateSize()
             invalidate()
@@ -124,7 +125,6 @@ class TerminalCanvasView(context: Context) : View(context) {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        emulator?.setCursorBlinkingEnabled(true)
         postDelayed(blink, 530)
     }
 
@@ -233,7 +233,8 @@ class TerminalCanvasView(context: Context) : View(context) {
 
     fun showKeyboard() {
         requestFocus()
-        context.getSystemService(InputMethodManager::class.java).showSoftInput(this, 0)
+        // Posted so it also works right after the view is attached.
+        post { context.getSystemService(InputMethodManager::class.java).showSoftInput(this, 0) }
     }
 
     // ---- keyboard ------------------------------------------------------------

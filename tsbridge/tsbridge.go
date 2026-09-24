@@ -73,6 +73,10 @@ func Start(dataDir, hostname string, p Platform) error {
 	os.Setenv("HOME", dataDir)
 	os.Setenv("XDG_CONFIG_HOME", dataDir)
 	os.Setenv("TS_LOGS_DIR", dir)
+	// os.TempDir on Android is /data/local/tmp, which apps can't write.
+	tmp := filepath.Join(dataDir, "tmp")
+	os.MkdirAll(tmp, 0o700)
+	os.Setenv("TMPDIR", tmp)
 
 	s := &tsnet.Server{
 		Dir:      dir,
@@ -279,5 +283,19 @@ func Stop() {
 	}
 	if s != nil {
 		s.Close()
+	}
+}
+
+// NetworkChanged is called by Kotlin when Android's default network changes
+// (Wi-Fi <-> mobile data, network lost/regained). Without it, netmon on
+// Android only re-checks every 10 minutes. ifname is "" when offline.
+func NetworkChanged(ifname, gateway string) {
+	setDefaultRoute(ifname, gateway)
+	s := current()
+	if s == nil || s.Sys() == nil {
+		return
+	}
+	if nm, ok := s.Sys().NetMon.GetOK(); ok {
+		nm.InjectEvent()
 	}
 }

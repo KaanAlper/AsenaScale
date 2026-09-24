@@ -1,6 +1,9 @@
 package dev.mobileclaude.tailnet
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
 import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -64,7 +67,37 @@ class Tailnet(private val context: Context) {
     }
 
     fun startIfEnabled() {
+        watchNetwork()
         if (_state.value.enabled) setEnabled(true)
+    }
+
+    /**
+     * Tells the embedded node about Wi-Fi <-> mobile data switches right away
+     * (like the official app does), so connections recover in a second
+     * instead of whenever Tailscale's slow Android poll notices.
+     */
+    private fun watchNetwork() {
+        val cm = context.getSystemService(ConnectivityManager::class.java)
+        cm.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+            override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {
+                val gateway = lp.routes.firstOrNull { it.isDefaultRoute && it.gateway is java.net.Inet4Address }
+                    ?.gateway?.hostAddress.orEmpty()
+                notifyNetwork(lp.interfaceName.orEmpty(), gateway)
+            }
+
+            override fun onLost(network: Network) = notifyNetwork("", "")
+        })
+    }
+
+    private var lastIface: String? = null
+
+    private fun notifyNetwork(iface: String, gateway: String) {
+        if (iface == lastIface) return
+        lastIface = iface
+        scope.launch {
+            runCatching { tsbridge.Tsbridge.networkChanged(iface, gateway) }
+            fastPollUntil = System.currentTimeMillis() + 15_000
+        }
     }
 
     fun setEnabled(on: Boolean) {
@@ -127,8 +160,20 @@ class Tailnet(private val context: Context) {
         )
     }
 
+    /** Maps a saved address (short name, FQDN or IP) to the peer's Tailscale IP. */
+    fun resolve(address: String): String {
+        val a = address.trim().trimEnd('.').lowercase()
+        val peer = _state.value.peers.firstOrNull {
+            a == it.shortName.lowercase() || a == it.dnsName.lowercase() || a == it.name.lowercase() || a in it.ips
+        }
+        return peer?.ipv4 ?: peer?.ips?.firstOrNull() ?: address
+    }
+
     /** Opens a 127.0.0.1 port that tunnels to [host]:[port] over the tailnet. */
-    fun forward(host: String, port: Int): Int = tsbridge.Tsbridge.forward("$host:$port").toInt()
+    fun forward(host: String, port: Int): Int {
+        val h = if (':' in host) "[$host]" else host
+        return tsbridge.Tsbridge.forward("$h:$port").toInt()
+    }
 
     fun closeForward(localPort: Int) = tsbridge.Tsbridge.closeForward(localPort.toLong())
 
