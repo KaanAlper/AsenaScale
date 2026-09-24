@@ -1,9 +1,11 @@
 package dev.mobileclaude.ui
 
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -63,5 +65,9 @@ val MonoSmall = TextStyle(fontFamily = Mono, fontSize = 12.sp)
 
 @Composable
 fun MobileClaudeTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = colors, typography = typography, content = content)
+    MaterialTheme(colorScheme = colors, typography = typography) {
+        // Without this, Text outside a Surface falls back to black, which
+        // disappears on the dark background.
+        CompositionLocalProvider(LocalContentColor provides colors.onBackground, content = content)
+    }
 }

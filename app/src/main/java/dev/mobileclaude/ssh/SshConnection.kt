@@ -52,6 +52,9 @@ class SshConnection(val host: Host) {
     private var shellOut: OutputStream? = null
     private var localPort = 0
 
+    /** "windows" or "posix", detected on first use by the screenshot helper. */
+    @Volatile var remoteOs: String? = null
+
     /** Called on the main thread whenever the screen changed. */
     var onScreenUpdate: (() -> Unit)? = null
     var onBell: (() -> Unit)? = null
@@ -264,7 +267,8 @@ class SshConnection(val host: Host) {
         return when {
             "Auth fail" in m || "Auth cancel" in m -> "Kimlik doğrulama başarısız. Kullanıcı adını ve anahtarı/şifreyi kontrol et."
             "timeout" in m.lowercase() -> "Zaman aşımı: bilgisayar açık ve Tailscale'e bağlı mı?"
-            "refused" in m.lowercase() -> "Bağlantı reddedildi: bilgisayarda SSH sunucusu çalışıyor mu?"
+            "refused" in m.lowercase() || "dial" in m.lowercase() ->
+                "Bağlantı reddedildi: PC'de SSH sunucusu çalışıyor mu? (Windows'ta: 🔑 → Windows kurulum komutu)"
             else -> m
         }
     }

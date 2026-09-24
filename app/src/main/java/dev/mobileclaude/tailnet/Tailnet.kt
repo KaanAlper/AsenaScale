@@ -30,6 +30,7 @@ data class Peer(
     /** Short MagicDNS name ("my-pc" out of "my-pc.tail1234.ts.net"). */
     val shortName: String get() = dnsName.substringBefore('.').ifEmpty { name }
     val ipv4: String? get() = ips.firstOrNull { '.' in it }
+    val isWindows: Boolean get() = os.equals("windows", ignoreCase = true)
 }
 
 data class TailnetState(
@@ -162,12 +163,18 @@ class Tailnet(private val context: Context) {
         )
     }
 
-    /** Maps a saved address (short name, FQDN or IP) to the peer's Tailscale IP. */
-    fun resolve(address: String): String {
+    /** The tailnet peer a saved address (short name, FQDN or IP) refers to. */
+    fun peerFor(address: String): Peer? {
         val a = address.trim().trimEnd('.').lowercase()
-        val peer = _state.value.peers.firstOrNull {
+        if (a.isEmpty()) return null
+        return _state.value.peers.firstOrNull {
             a == it.shortName.lowercase() || a == it.dnsName.lowercase() || a == it.name.lowercase() || a in it.ips
         }
+    }
+
+    /** Maps a saved address to the peer's Tailscale IP. */
+    fun resolve(address: String): String {
+        val peer = peerFor(address)
         return peer?.ipv4 ?: peer?.ips?.firstOrNull() ?: address
     }
 

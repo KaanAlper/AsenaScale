@@ -366,14 +366,24 @@ private fun KeyDialog(onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         title = { Text("SSH anahtarım") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Bu satırı bilgisayarındaki ~/.ssh/authorized_keys dosyasına ekle. " +
-                        "Tailscale SSH kullanıyorsan gerek yok.",
+                    "Windows PC: kurulum komutunu kopyala, PC'de Yönetici PowerShell'e yapıştır. " +
+                        "SSH'ı kurar ve bu anahtarı yetkilendirir.",
                     fontSize = 14.sp,
                     color = Mocha.subtext,
                 )
-                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { App.instance.copyToClipboard(Keys.windowsSetupScript(context)); onDismiss() },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Windows kurulum komutunu kopyala") }
+                Text(
+                    "Linux/macOS: aşağıdaki satırı ~/.ssh/authorized_keys dosyasına ekle " +
+                        "(Tailscale SSH kullanıyorsan gerek yok).",
+                    fontSize = 14.sp,
+                    color = Mocha.subtext,
+                )
                 SelectionContainer {
                     Text(
                         key,
@@ -390,7 +400,7 @@ private fun KeyDialog(onDismiss: () -> Unit) {
             TextButton(onClick = { App.instance.copyToClipboard(key); onDismiss() }) {
                 Icon(Icons.Outlined.ContentCopy, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Kopyala")
+                Text("Anahtarı kopyala")
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Kapat", color = Mocha.subtext) } },

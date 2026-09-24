@@ -21,14 +21,14 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
    Her push'ta güncellenen deneme sürümü: [nightly](../../releases/tag/nightly).
 2. Uygulamada Tailscale anahtarını aç → **Giriş yap** → tarayıcıda onayla.
    Telefon tailnet'inde `mobile-claude-<model>` adıyla görünür.
-3. **Cihazlar** listesinde PC'ne dokun → kullanıcı adını yaz → kaydet.
-4. Giriş yöntemi:
-   - **Anahtar** (varsayılan): ana ekrandaki 🔑 simgesinden anahtarı kopyala ve PC'de
-     `~/.ssh/authorized_keys` dosyasına ekle. PC'de `sshd` açık olmalı.
-   - **Tailscale SSH**: PC'de `sudo tailscale set --ssh` yeterli, anahtar/şifre gerekmez.
-   - **Şifre**.
-5. "Bağlanınca çalıştır" için `claude` ya da `tmux new -As claude claude` seç.
-   tmux ile bağlantı koparsa Claude PC'de çalışmaya devam eder, tekrar bağlanınca kaldığın yerden sürer.
+3. **Cihazlar** listesinde PC'ne dokun.
+4. PC'ye SSH erişimi:
+   - **Windows:** düzenleme ekranındaki (ya da ana ekrandaki 🔑) **"Windows kurulum komutunu kopyala"**
+     butonuna bas, komutu PC'de *Yönetici olarak açılan PowerShell*'e yapıştır. OpenSSH Sunucusunu
+     kurar, PowerShell'i kabuk yapar, telefonun anahtarını yetkilendirir ve kullanıcı adını yazar.
+     (Tailscale SSH Windows'ta sunucu olarak çalışmıyor, bu yüzden Windows'un kendi OpenSSH'ı kullanılıyor.)
+   - **Linux/macOS:** 🔑 anahtarını `~/.ssh/authorized_keys`'e ekle ya da `sudo tailscale set --ssh`.
+5. Kullanıcı adını gir, "Bağlanınca çalıştır" için `claude` seç (Linux'ta `tmux new -As claude claude` de olur).
 
 ## Kullanım ipuçları
 
@@ -45,17 +45,20 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 | Belirti | Çözüm |
 |---|---|
 | "Kimlik doğrulama başarısız" | 🔑 anahtarını PC'de `~/.ssh/authorized_keys`'e ekle ya da Tailscale SSH seç |
-| "Bağlantı reddedildi" | PC'de `sshd` çalışmıyor: `sudo systemctl enable --now sshd` |
+| "Bağlantı reddedildi" | PC'de SSH sunucusu çalışmıyor. Windows: kurulum komutunu çalıştır ya da `Start-Service sshd`; Linux: `sudo systemctl enable --now sshd` |
+| Windows'ta ekran görüntüsü "oturum açık değil" | PC'de kullanıcı oturumu açık olmalı (kilit ekranında görüntü alınamaz) |
 | "Zaman aşımı" | PC uykuda ya da Tailscale'i kapalı; `tailscale status` ile kontrol et |
 | Ekran görüntüsünde araç hatası | Aşağıdaki tablodaki aracı kur (ör. Hyprland için `grim`) |
 
 ## Ekran görüntüsü
 
-PC'ye bir şey kurmak gerekmez; uygulama açık SSH oturumu üzerinden küçük bir betik
-(`app/src/main/assets/mcshot.sh`) çalıştırır ve masaüstüne göre doğru aracı seçer:
+PC'ye bir şey kurmak gerekmez; uygulama açık SSH oturumu üzerinden küçük bir betik çalıştırır
+(Windows: `mcshot.ps1`, Linux: `mcshot.sh`). Windows'ta SSH oturumu masaüstünü göremediği için
+görüntü, senin oturumunda çalışan geçici bir zamanlanmış görevle alınır (ekranda pencere açılmaz).
 
 | Masaüstü | Gerekli araç | Pencere seçme |
 |---|---|---|
+| **Windows 10/11** | hiçbiri (PowerShell ile) | ✓ (arkada kalan pencereler dahil) |
 | Hyprland | `grim` | ✓ |
 | Sway | `grim`, `jq` | ✓ |
 | Diğer wlroots | `grim` | sadece tüm ekran |

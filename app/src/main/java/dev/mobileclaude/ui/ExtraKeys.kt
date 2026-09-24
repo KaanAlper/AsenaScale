@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.mobileclaude.term.TerminalCanvasView
@@ -102,13 +104,13 @@ fun ExtraKeys(term: TerminalCanvasView, modifier: Modifier = Modifier) {
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            symbolRow.forEach { k -> Key(k, false, Modifier.widthIn(min = 38.dp)) { press(k) } }
+            symbolRow.forEach { k -> Key(k, false, Modifier.widthIn(min = 38.dp), textPadding = 8.dp) { press(k) } }
         }
     }
 }
 
 @Composable
-private fun Key(k: XKey, active: Boolean, modifier: Modifier, onPress: () -> Unit) {
+private fun Key(k: XKey, active: Boolean, modifier: Modifier, textPadding: Dp = 2.dp, onPress: () -> Unit) {
     val view = LocalView.current
     var pressed by remember { mutableStateOf(false) }
     val press by rememberUpdatedState(onPress)
@@ -152,9 +154,12 @@ private fun Key(k: XKey, active: Boolean, modifier: Modifier, onPress: () -> Uni
         Text(
             k.label,
             fontFamily = Mono,
-            fontSize = if (k.label.length > 2) 12.sp else 15.sp,
+            fontSize = if (k.label.length > 2) 11.sp else 15.sp,
             color = if (active) Mocha.mauve else Mocha.text,
-            modifier = Modifier.padding(horizontal = 8.dp),
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.padding(horizontal = textPadding),
         )
     }
 }

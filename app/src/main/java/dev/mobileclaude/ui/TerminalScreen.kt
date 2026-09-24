@@ -175,8 +175,15 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                         textAlign = TextAlign.Center,
                     )
                     if (closed?.reason?.startsWith("Kimlik") == true && host.auth == AuthMode.KEY) {
-                        TextButton(onClick = { app.copyToClipboard(Keys.publicKey(context)) }) {
-                            Text("SSH anahtarını kopyala (authorized_keys için)", color = Mocha.mauve, fontSize = 13.sp)
+                        val windows = app.tailnet.peerFor(host.address)?.isWindows == true
+                        TextButton(onClick = {
+                            app.copyToClipboard(if (windows) Keys.windowsSetupScript(context) else Keys.publicKey(context))
+                        }) {
+                            Text(
+                                if (windows) "Windows kurulum komutunu kopyala" else "SSH anahtarını kopyala (authorized_keys için)",
+                                color = Mocha.mauve,
+                                fontSize = 13.sp,
+                            )
                         }
                     }
                     Button(onClick = { reconnect() }, shape = RoundedCornerShape(12.dp)) { Text("Yeniden bağlan") }

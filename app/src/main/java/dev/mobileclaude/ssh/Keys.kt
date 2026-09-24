@@ -21,6 +21,32 @@ object Keys {
         return File(context.filesDir, "$NAME.pub").readText().trim()
     }
 
+    /**
+     * One paste into an *administrator* PowerShell on the Windows PC: installs
+     * and starts OpenSSH Server, makes PowerShell the SSH shell, opens the
+     * firewall, and authorizes this phone's key. ASCII only, and SIDs instead
+     * of group names so it also works on non-English Windows.
+     */
+    fun windowsSetupScript(context: Context): String {
+        val key = publicKey(context)
+        return """
+            |# Mobile Claude: Windows kurulumu (Yonetici olarak acilan PowerShell'e yapistir)
+            |${'$'}ErrorActionPreference = 'Stop'
+            |if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-Null }
+            |Set-Service sshd -StartupType Automatic; Start-Service sshd
+            |New-ItemProperty -Path HKLM:\SOFTWARE\OpenSSH -Name DefaultShell -Value "${'$'}env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force | Out-Null
+            |if (-not (Get-NetFirewallRule -Name OpenSSH-Server-In-TCP -ErrorAction SilentlyContinue)) { New-NetFirewallRule -Name OpenSSH-Server-In-TCP -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null }
+            |${'$'}key = '$key'
+            |${'$'}admin = "${'$'}env:ProgramData\ssh\administrators_authorized_keys"
+            |if (-not (Test-Path ${'$'}admin) -or -not (Select-String -Path ${'$'}admin -SimpleMatch ${'$'}key -Quiet)) { Add-Content -Path ${'$'}admin -Value ${'$'}key }
+            |icacls ${'$'}admin /inheritance:r /grant '*S-1-5-32-544:F' /grant '*S-1-5-18:F' | Out-Null
+            |New-Item -ItemType Directory -Force "${'$'}env:USERPROFILE\.ssh" | Out-Null
+            |${'$'}user = "${'$'}env:USERPROFILE\.ssh\authorized_keys"
+            |if (-not (Test-Path ${'$'}user) -or -not (Select-String -Path ${'$'}user -SimpleMatch ${'$'}key -Quiet)) { Add-Content -Path ${'$'}user -Value ${'$'}key }
+            |Write-Host "Hazir. Uygulamada kullanici adi: ${'$'}env:USERNAME" -ForegroundColor Green
+        """.trimMargin()
+    }
+
     @Synchronized
     private fun generate(context: Context) {
         val priv = File(context.filesDir, NAME)
