@@ -73,7 +73,10 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
         return
     }
 
-    var conn by remember(hostId) { mutableStateOf(app.sessions.connect(host)) }
+    // The connection can be swapped under us (automatic reconnect); follow it.
+    val first = remember(hostId) { app.sessions.connect(host) }
+    val open by app.sessions.open.collectAsState()
+    val conn = open[hostId] ?: first
     val state by conn.state.collectAsState()
     val title by conn.title.collectAsState()
     val term = remember { TerminalCanvasView(context) }
@@ -88,10 +91,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     LaunchedEffect(state) { if (state is ConnState.Connected) term.showKeyboard() }
     DisposableEffect(Unit) { onDispose { term.connection = null } }
 
-    fun reconnect() {
-        app.sessions.disconnect(host.id)
-        conn = app.sessions.connect(app.hosts.get(host.id) ?: host)
-    }
+    fun reconnect() = app.sessions.reconnect(host.id)
 
     var selectText by remember { mutableStateOf<String?>(null) }
     term.onLongPress = { selectText = term.copyAllText() }
@@ -196,9 +196,14 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                         selectText = term.copyAllText()
                     })
                     DropdownMenuItem(text = { Text("Yeniden bağlan") }, onClick = { menu = false; reconnect() })
-                    DropdownMenuItem(text = { Text("Bağlantıyı kapat", color = Pal.red) }, onClick = {
+                    DropdownMenuItem(text = { Text("Ayrıl (PC'de çalışmaya devam etsin)") }, onClick = {
                         menu = false
                         app.sessions.disconnect(host.id)
+                        onBack()
+                    })
+                    DropdownMenuItem(text = { Text("Oturumu sonlandır", color = Pal.red) }, onClick = {
+                        menu = false
+                        app.sessions.end(host.id)
                         onBack()
                     })
                 }
@@ -219,7 +224,12 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.5.dp, color = Pal.mauve)
                     Spacer(Modifier.height(12.dp))
-                    Text("${host.address} bağlanıyor…", fontFamily = Mono, fontSize = 12.sp, color = Pal.overlay0)
+                    Text(
+                        if (conn.attempt > 0) "Bağlantı koptu, yeniden bağlanıyor…" else "${host.address} bağlanıyor…",
+                        fontFamily = Mono,
+                        fontSize = 12.sp,
+                        color = Pal.overlay0,
+                    )
                     hint?.let {
                         Spacer(Modifier.height(16.dp))
                         Text(

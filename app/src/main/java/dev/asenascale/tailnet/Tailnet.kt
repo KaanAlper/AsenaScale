@@ -104,6 +104,11 @@ class Tailnet(private val context: Context) {
         scope.launch {
             runCatching { tsbridge.Tsbridge.networkChanged(iface, gateway) }
             fastPollUntil = System.currentTimeMillis() + 15_000
+            // Give the tunnel a moment, then bring dropped terminals back.
+            if (iface.isNotEmpty()) {
+                kotlinx.coroutines.delay(1_500)
+                runCatching { dev.asenascale.App.instance.sessions.onNetworkAvailable() }
+            }
         }
     }
 

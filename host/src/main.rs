@@ -255,7 +255,7 @@ fn init_log() {
     let _ = b.try_init();
 }
 
-/// 32x32 ">_" in the app's colors, drawn in code so there's no asset file.
+/// 32x32 ">_" in one color, drawn in code so there's no asset file.
 fn icon() -> Icon {
     const N: usize = 32;
     let mut px = vec![0u8; N * N * 4];
@@ -266,7 +266,6 @@ fn icon() -> Icon {
     };
     let bg = [0x1e, 0x1e, 0x2e, 0xff];
     let mauve = [0xcb, 0xa6, 0xf7, 0xff];
-    let peach = [0xfa, 0xb3, 0x87, 0xff];
     // Rounded dark tile.
     for y in 0..N {
         for x in 0..N {
@@ -286,7 +285,7 @@ fn icon() -> Icon {
     // "_" underscore.
     for x in 17..25 {
         for y in 20..23 {
-            put(x, y, peach);
+            put(x, y, mauve);
         }
     }
     Icon::from_rgba(px, N as u32, N as u32).expect("valid icon")

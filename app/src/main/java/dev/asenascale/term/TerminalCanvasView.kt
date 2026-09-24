@@ -39,10 +39,10 @@ class TerminalCanvasView(context: Context) : View(context) {
 
     var connection: SshConnection? = null
         set(value) {
-            field?.onScreenUpdate = null
+            if (field?.term !== value?.term) field?.term?.onScreenUpdate = null
             field = value
-            value?.onScreenUpdate = { onScreenChanged() }
-            value?.onBell = { performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }
+            value?.term?.onScreenUpdate = { onScreenChanged() }
+            value?.term?.onBell = { performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) }
             value?.emulator?.setCursorBlinkingEnabled(true)
             topRow = 0
             updateSize()

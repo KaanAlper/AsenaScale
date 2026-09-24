@@ -11,13 +11,11 @@ import com.jcraft.jsch.Session
 import com.jcraft.jsch.UIKeyboardInteractive
 import com.jcraft.jsch.UserInfo
 import com.termux.terminal.TerminalEmulator
-import com.termux.terminal.TerminalOutput
-import com.termux.terminal.TerminalSessionClient
 import dev.asenascale.App
 import dev.asenascale.data.AuthMode
 import dev.asenascale.data.Host
+import dev.asenascale.term.Term
 import dev.asenascale.tailnet.HOST_APP_PORT
-import dev.asenascale.term.TermTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.ByteArrayOutputStream
@@ -39,15 +37,13 @@ sealed interface ConnState {
  * happen on a reader thread and are batched into one main-thread post per
  * burst; writes go through a single-thread executor so the UI never blocks.
  */
-class SshConnection(val host: Host) {
+class SshConnection(val host: Host, previous: SshConnection? = null, val attempt: Int = 0) {
     private val app = App.instance
     private val main = Handler(Looper.getMainLooper())
     private val writer = Executors.newSingleThreadExecutor()
 
     private val _state = MutableStateFlow<ConnState>(ConnState.Connecting)
     val state: StateFlow<ConnState> = _state
-    private val _title = MutableStateFlow(host.title)
-    val title: StateFlow<String> = _title
 
     private var session: Session? = null
     private var shell: ChannelShell? = null
@@ -65,9 +61,19 @@ class SshConnection(val host: Host) {
     /** "posix", "win-ps" or "win-cmd", detected on first use by the screenshot helper. */
     @Volatile var remoteOs: String? = null
 
-    /** Called on the main thread whenever the screen changed. */
-    var onScreenUpdate: (() -> Unit)? = null
-    var onBell: (() -> Unit)? = null
+    /** Screen and scrollback; handed over to the next connection on reconnect. */
+    val term: Term = previous?.term ?: Term(host.title)
+    val emulator: TerminalEmulator get() = term.emulator
+    val title: StateFlow<String> get() = term.title
+
+    /** Id of the terminal session on the PC app (kept across reconnects and app restarts). */
+    val sessionId: String = host.session.ifBlank { "p" + java.util.UUID.randomUUID().toString().replace("-", "").take(12) }
+
+    /** Set when the user leaves on purpose; no automatic reconnect then. */
+    @Volatile var userClosed = false
+    /** Reached the shell at least once (so a drop is worth reconnecting). */
+    @Volatile var everConnected = false
+        private set
 
     private val pending = ByteArrayOutputStream()
     private var drainPosted = false
@@ -79,47 +85,19 @@ class SshConnection(val host: Host) {
             drainPosted = false
         }
         emulator.append(bytes, bytes.size)
-        onScreenUpdate?.invoke()
-    }
-
-    private val output = object : TerminalOutput() {
-        override fun write(data: ByteArray, offset: Int, count: Int) = send(data.copyOfRange(offset, offset + count))
-        override fun titleChanged(oldTitle: String?, newTitle: String?) {
-            _title.value = newTitle?.takeIf { it.isNotBlank() } ?: host.title
-        }
-        override fun onCopyTextToClipboard(text: String?) {
-            if (text != null) app.copyToClipboard(text)
-        }
-        override fun onPasteTextFromClipboard() {
-            app.clipboardText()?.let { emulator.paste(it) }
-        }
-        override fun onBell() {
-            onBell?.invoke()
-        }
-        override fun onColorsChanged() {
-            onScreenUpdate?.invoke()
-        }
-    }
-
-    private val client = object : TerminalSessionClient {
-        override fun onTerminalCursorStateChange(state: Boolean) {}
-        override fun getTerminalCursorStyle(): Int = TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR
-        override fun logError(tag: String?, message: String?) {}
-        override fun logWarn(tag: String?, message: String?) {}
-        override fun logInfo(tag: String?, message: String?) {}
-        override fun logDebug(tag: String?, message: String?) {}
-        override fun logVerbose(tag: String?, message: String?) {}
-        override fun logStackTraceWithMessage(tag: String?, message: String?, e: Exception?) {}
-        override fun logStackTrace(tag: String?, e: Exception?) {}
-    }
-
-    val emulator: TerminalEmulator = run {
-        if (TermTheme.dark == null) TermTheme.set(true)
-        TerminalEmulator(output, 80, 24, 5000, client)
+        term.onScreenUpdate?.invoke()
     }
 
     private var cols = 80
     private var rows = 24
+
+    init {
+        term.sink = { send(it) }
+        isHostApp = previous?.isHostApp ?: false
+        if (host.session.isBlank()) {
+            App.instance.hosts.get(host.id)?.let { App.instance.hosts.save(it.copy(session = sessionId)) }
+        }
+    }
 
     fun connect() {
         _state.value = ConnState.Connecting
@@ -182,13 +160,20 @@ class SshConnection(val host: Host) {
             val ch = s.openChannel("shell") as ChannelShell
             ch.setPtyType("xterm-256color", cols, rows, 0, 0)
             ch.setEnv("COLORTERM", "truecolor")
+            if (isHostApp) {
+                // The PC app keeps the session alive between connections.
+                ch.setEnv("AS_SESSION", sessionId)
+                ch.setEnv("AS_CMD", host.startup.trim())
+            }
             val input = ch.inputStream
             shellOut = ch.outputStream
             ch.connect(15_000)
             shell = ch
             _state.value = ConnState.Connected
+            everConnected = true
 
-            if (host.startup.isNotBlank()) send((host.startup.trim() + "\r").toByteArray())
+            // The PC app starts the command itself (and only once per session).
+            if (!isHostApp && host.startup.isNotBlank()) send((host.startup.trim() + "\r").toByteArray())
             readLoop(input)
             close("Bağlantı kapandı")
         } catch (e: Exception) {
