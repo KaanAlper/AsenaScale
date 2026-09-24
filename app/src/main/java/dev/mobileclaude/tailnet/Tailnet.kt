@@ -53,6 +53,8 @@ data class TailnetState(
  */
 class Tailnet(private val context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    /** Start/stop/login/logout run one at a time, in the order they were asked for. */
+    private val ops = Dispatchers.IO.limitedParallelism(1)
     private val prefs = context.getSharedPreferences("tailnet", Context.MODE_PRIVATE)
     private val _state = MutableStateFlow(TailnetState(enabled = prefs.getBoolean("enabled", true)))
     val state: StateFlow<TailnetState> = _state
@@ -103,7 +105,7 @@ class Tailnet(private val context: Context) {
     fun setEnabled(on: Boolean) {
         prefs.edit().putBoolean("enabled", on).apply()
         _state.value = _state.value.copy(enabled = on, error = "")
-        scope.launch {
+        scope.launch(ops) {
             if (on) {
                 try {
                     val host = "mobile-claude-" + Build.MODEL.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
@@ -111,17 +113,17 @@ class Tailnet(private val context: Context) {
                 } catch (e: Exception) {
                     _state.value = _state.value.copy(error = e.message ?: e.toString())
                 }
-                startPolling()
+                if (_state.value.enabled) startPolling()
             } else {
                 poller?.cancel()
                 tsbridge.Tsbridge.stop()
-                _state.value = TailnetState(enabled = false)
+                if (!_state.value.enabled) _state.value = TailnetState(enabled = false)
             }
         }
     }
 
     /** Asks the backend for a fresh login URL; it appears in [state] shortly after. */
-    fun login() = scope.launch {
+    fun login() = scope.launch(ops) {
         runCatching { tsbridge.Tsbridge.login() }.onFailure {
             _state.value = _state.value.copy(error = it.message ?: it.toString())
         }
@@ -129,7 +131,7 @@ class Tailnet(private val context: Context) {
         refresh()
     }
 
-    fun logout() = scope.launch {
+    fun logout() = scope.launch(ops) {
         runCatching { tsbridge.Tsbridge.logout() }
         refresh()
     }
