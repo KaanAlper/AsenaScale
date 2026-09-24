@@ -22,6 +22,7 @@ import (
 	"time"
 
 	_ "golang.org/x/mobile/bind"
+	"tailscale.com/envknob"
 	"tailscale.com/net/netmon"
 	"tailscale.com/tsnet"
 )
@@ -77,6 +78,8 @@ func Start(dataDir, hostname string, p Platform) error {
 	tmp := filepath.Join(dataDir, "tmp")
 	os.MkdirAll(tmp, 0o700)
 	os.Setenv("TMPDIR", tmp)
+	// Don't stream debug logs to Tailscale's servers: saves battery and data.
+	envknob.SetNoLogsNoSupport()
 
 	s := &tsnet.Server{
 		Dir:      dir,
