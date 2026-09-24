@@ -32,6 +32,8 @@ pub struct State {
     prompt: tokio::sync::Mutex<()>,
     /// Called whenever sessions or devices change.
     pub on_change: Arc<dyn Fn() + Send + Sync>,
+    /// Tailnet IPs of the phones connected right now (one entry per connection).
+    pub connected: Mutex<Vec<String>>,
 }
 
 impl State {
@@ -41,6 +43,7 @@ impl State {
             sessions: Arc::new(Sessions::default()),
             prompt: tokio::sync::Mutex::new(()),
             on_change,
+            connected: Mutex::new(Vec::new()),
         })
     }
 }
@@ -54,7 +57,7 @@ impl russh::server::Server for Server {
     type Handler = Conn;
 
     fn new_client(&mut self, peer: Option<SocketAddr>) -> Conn {
-        Conn { state: self.state.clone(), peer, channels: HashMap::new() }
+        Conn { state: self.state.clone(), peer, channels: HashMap::new(), tailnet_ip: None }
     }
 
     fn handle_session_error(&mut self, error: anyhow::Error) {
@@ -77,9 +80,19 @@ pub struct Conn {
     state: Arc<State>,
     peer: Option<SocketAddr>,
     channels: HashMap<ChannelId, Chan>,
+    /// Tailnet IP, once authenticated (listed in the tray while connected).
+    tailnet_ip: Option<String>,
 }
 
 impl Conn {
+    fn mark_connected(&mut self, ip: &str) {
+        if self.tailnet_ip.is_none() {
+            self.tailnet_ip = Some(ip.to_string());
+            self.state.connected.lock().unwrap().push(ip.to_string());
+            (self.state.on_change)();
+        }
+    }
+
     /// The tailnet device on the other end. Connections reach the server on
     /// 127.0.0.1 through the embedded Tailscale node; anything else (a local
     /// process) has no tailnet identity and is refused.
@@ -98,6 +111,14 @@ impl Conn {
 
 impl Drop for Conn {
     fn drop(&mut self) {
+        if let Some(ip) = self.tailnet_ip.take() {
+            let mut c = self.state.connected.lock().unwrap();
+            if let Some(i) = c.iter().position(|x| *x == ip) {
+                c.remove(i);
+            }
+            drop(c);
+            (self.state.on_change)();
+        }
         // Detach only: the sessions keep running for the next connection.
         for (_, ch) in self.channels.drain() {
             if let Chan::Shell { session, client } = ch {
@@ -129,14 +150,18 @@ impl russh::server::Handler for Conn {
             return Ok(Auth::reject());
         };
         if self.state.devices.lock().unwrap().is_allowed(key) {
+            self.mark_connected(&peer.ip);
             return Ok(Auth::Accept);
         }
         // Unknown phone: ask the person at the PC.
-        let _one_at_a_time = self.state.prompt.lock().await;
+        let state = self.state.clone();
+        let _one_at_a_time = state.prompt.lock().await;
         if self.state.devices.lock().unwrap().is_allowed(key) {
+            self.mark_connected(&peer.ip);
             return Ok(Auth::Accept); // approved while we waited
         }
         let fp = key.fingerprint(HashAlg::Sha256).to_string();
+        let ip = peer.ip.clone();
         let yes = tokio::task::spawn_blocking(move || {
             let name = peer.label();
             let ok = approve::ask(&name, &fp);
@@ -147,6 +172,7 @@ impl russh::server::Handler for Conn {
             self.state.devices.lock().unwrap().allow(key, &yes.1);
             (self.state.on_change)();
             log::info!("approved {}", yes.1);
+            self.mark_connected(&ip);
             Ok(Auth::Accept)
         } else {
             log::info!("denied {}", yes.1);

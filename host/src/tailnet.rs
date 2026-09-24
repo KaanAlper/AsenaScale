@@ -60,6 +60,29 @@ pub struct Node {
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
+pub struct PeerStatus {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default, rename = "dnsName")]
+    pub dns_name: String,
+    #[serde(default)]
+    pub os: String,
+    #[serde(default)]
+    pub ips: Option<Vec<String>>,
+    #[serde(default)]
+    pub online: bool,
+}
+
+impl PeerStatus {
+    pub fn ipv4(&self) -> String {
+        self.ips.as_ref().and_then(|v| v.iter().find(|ip| ip.contains('.')).cloned()).unwrap_or_default()
+    }
+    pub fn short_name(&self) -> String {
+        self.dns_name.split('.').next().filter(|s| !s.is_empty()).unwrap_or(&self.name).to_string()
+    }
+}
+
+#[derive(Deserialize, Default, Debug, Clone)]
 pub struct Status {
     #[serde(default)]
     pub state: String,
@@ -67,6 +90,8 @@ pub struct Status {
     pub auth_url: String,
     #[serde(rename = "self")]
     pub me: Option<Node>,
+    #[serde(default)]
+    pub peers: Option<Vec<PeerStatus>>,
 }
 
 impl Status {

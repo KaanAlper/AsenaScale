@@ -19,7 +19,7 @@ use std::time::Duration;
 
 use tao::event::{Event, StartCause};
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
-use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem};
+use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tray_icon::{Icon, TrayIconBuilder};
 
 /// The phone app looks for this port on the PC.
@@ -72,6 +72,7 @@ fn main() {
     let address = MenuItem::new("Tailscale başlatılıyor…", false, None);
     let login = MenuItem::new("Tailscale'e giriş yap", false, None);
     let devices = MenuItem::new("", false, None);
+    let peers_menu = Submenu::new("Cihazlar", true);
     let reset = MenuItem::new("İzinli telefonları sıfırla", true, None);
     let close_all = MenuItem::new("Tüm oturumları kapat", true, None);
     let fix_firewall = MenuItem::new("Güvenlik duvarı iznini onar", cfg!(windows), None);
@@ -83,6 +84,7 @@ fn main() {
         &status,
         &address,
         &login,
+        &peers_menu,
         &devices,
         &PredefinedMenuItem::separator(),
         &close_all,
@@ -95,8 +97,8 @@ fn main() {
     ]);
 
     let refresh = {
-        let (status, address, login, devices, state, ts) =
-            (status.clone(), address.clone(), login.clone(), devices.clone(), state.clone(), ts.clone());
+        let (status, address, login, devices, state, ts, peers_menu) =
+            (status.clone(), address.clone(), login.clone(), devices.clone(), state.clone(), ts.clone(), peers_menu.clone());
         move |tray: Option<&tray_icon::TrayIcon>| {
             let live = state.sessions.list();
             let attached: usize = live.iter().map(|s| s.attached()).sum();
@@ -117,6 +119,21 @@ fn main() {
             };
             address.set_text(line);
             login.set_enabled(st.needs_login());
+
+            // Tailnet devices with their IPv4; phones connected now are marked.
+            while peers_menu.remove_at(0).is_some() {}
+            let connected = state.connected.lock().unwrap().clone();
+            let mut peers = st.peers.clone().unwrap_or_default();
+            peers.sort_by_key(|p| (!p.online, p.short_name()));
+            if peers.is_empty() {
+                let _ = peers_menu.append(&MenuItem::new("Henüz cihaz yok", false, None));
+            }
+            for p in peers.iter().take(30) {
+                let ip = p.ipv4();
+                let mark = if connected.contains(&ip) { "  ·  bağlı" } else if p.online { "" } else { "  ·  çevrimdışı" };
+                let text = format!("{}   {}   {}{}", p.short_name(), ip, p.os, mark);
+                let _ = peers_menu.append(&MenuItem::new(text, false, None));
+            }
             let d = state.devices.lock().unwrap().len();
             devices.set_text(format!("İzinli telefon: {d}"));
             if let Some(t) = tray {

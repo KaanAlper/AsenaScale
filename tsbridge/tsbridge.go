@@ -120,6 +120,12 @@ type peerJSON struct {
 	OS      string   `json:"os"`
 	IPs     []string `json:"ips"`
 	Online  bool     `json:"online"`
+	// Link details, for the devices view.
+	LastSeen string `json:"lastSeen,omitempty"` // RFC 3339; empty while online
+	Direct   string `json:"direct,omitempty"`   // ip:port when connected directly
+	Relay    string `json:"relay,omitempty"`    // DERP region code when relayed
+	RxBytes  int64  `json:"rx,omitempty"`
+	TxBytes  int64  `json:"tx,omitempty"`
 }
 
 type statusJSON struct {
@@ -180,6 +186,13 @@ func Status() string {
 			DNSName: strings.TrimSuffix(ps.DNSName, "."),
 			OS:      ps.OS,
 			Online:  ps.Online,
+			Direct:  ps.CurAddr,
+			Relay:   ps.Relay,
+			RxBytes: ps.RxBytes,
+			TxBytes: ps.TxBytes,
+		}
+		if !ps.Online && !ps.LastSeen.IsZero() {
+			p.LastSeen = ps.LastSeen.UTC().Format(time.RFC3339)
 		}
 		for _, ip := range ps.TailscaleIPs {
 			p.IPs = append(p.IPs, ip.String())

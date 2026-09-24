@@ -26,10 +26,19 @@ data class Peer(
     val os: String,
     val ips: List<String>,
     val online: Boolean,
+    /** RFC 3339, when offline. */
+    val lastSeen: String = "",
+    /** ip:port when the link is direct. */
+    val direct: String = "",
+    /** DERP relay region when it isn't. */
+    val relay: String = "",
+    val rxBytes: Long = 0,
+    val txBytes: Long = 0,
 ) {
     /** Short MagicDNS name ("my-pc" out of "my-pc.tail1234.ts.net"). */
     val shortName: String get() = dnsName.substringBefore('.').ifEmpty { name }
     val ipv4: String? get() = ips.firstOrNull { '.' in it }
+    val ipv6: String? get() = ips.firstOrNull { ':' in it }
     val isWindows: Boolean get() = os.equals("windows", ignoreCase = true)
 }
 
@@ -227,6 +236,11 @@ class Tailnet(private val context: Context) {
         os = optString("os"),
         ips = optJSONArray("ips")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
         online = optBoolean("online"),
+        lastSeen = optString("lastSeen"),
+        direct = optString("direct"),
+        relay = optString("relay"),
+        rxBytes = optLong("rx"),
+        txBytes = optLong("tx"),
     )
 
     private fun JSONArray?.toPeers(): List<Peer> =

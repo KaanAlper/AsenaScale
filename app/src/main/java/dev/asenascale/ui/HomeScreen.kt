@@ -78,6 +78,7 @@ fun HomeScreen(
     val open by app.sessions.open.collectAsState()
     var showKey by remember { mutableStateOf(false) }
     var launcherFor by remember { mutableStateOf<Host?>(null) }
+    var deviceFor by remember { mutableStateOf<Peer?>(null) }
     val onOpenHost: (Host) -> Unit = { launcherFor = it }
 
     // PCs running AsenaScale show up by themselves: while this screen is
@@ -141,16 +142,27 @@ fun HomeScreen(
             item { SectionHeader("Cihazlar") }
             if (ts.peers.isEmpty()) item { Hint("Tailnet'te başka cihaz yok.") }
             items(ts.peers, key = { "peer:" + it.dnsName + it.name }) { peer ->
-                PeerRow(peer, saved = hosts.any { peer.matches(it.address) }) {
-                    val existing = hosts.firstOrNull { peer.matches(it.address) }
-                    if (existing != null) onOpenHost(existing) else onNewHost(peer.shortName)
-                }
+                PeerRow(peer, saved = hosts.any { peer.matches(it.address) }) { deviceFor = peer }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
 
     if (showKey) KeyDialog(onDismiss = { showKey = false })
+    deviceFor?.let { d ->
+        // Keep the sheet's numbers live while it's open.
+        val peer = ts.peers.firstOrNull { it.dnsName == d.dnsName } ?: d
+        val existing = hosts.firstOrNull { peer.matches(it.address) }
+        DeviceSheet(
+            peer = peer,
+            saved = existing != null,
+            onAction = {
+                deviceFor = null
+                if (existing != null) launcherFor = existing else onNewHost(peer.shortName)
+            },
+            onDismiss = { deviceFor = null },
+        )
+    }
     launcherFor?.let { host ->
         LauncherSheet(
             host = host,
