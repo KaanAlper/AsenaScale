@@ -28,6 +28,9 @@ object AsIcons {
             }
         }.build()
 
+    /** The AsenaScale mark: an "A" drawn like a prompt, with a floating cursor. */
+    val Logo = icon("logo", "M5.5 20L12 5.5L18.5 20", "M10.7 16.3H13.3", width = 2.2f)
+
     val Back = icon("back", "M15 5l-7 7 7 7")
     val Chevron = icon("chevron", "M9 5l7 7-7 7")
     val Plus = icon("plus", "M12 5v14", "M5 12h14")

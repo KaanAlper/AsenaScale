@@ -66,6 +66,12 @@ fn main() {
             println!("cargo:rustc-link-lib=resolv");
         }
     }
+    // Windows: app icon, version info and manifest (DPI awareness, no admin).
+    if os == "windows" {
+        embed_resource::compile("asenascale.rc", embed_resource::NONE).manifest_required().unwrap();
+    }
+
     println!("cargo:rerun-if-changed=../tsbridge");
+    println!("cargo:rerun-if-changed=asenascale.rc");
     println!("cargo:rerun-if-env-changed=GO");
 }

@@ -255,38 +255,9 @@ fn init_log() {
     let _ = b.try_init();
 }
 
-/// 32x32 ">_" in one color, drawn in code so there's no asset file.
+/// The AsenaScale mark, 32 px.
 fn icon() -> Icon {
-    const N: usize = 32;
-    let mut px = vec![0u8; N * N * 4];
-    let mut put = |x: usize, y: usize, c: [u8; 4]| {
-        if x < N && y < N {
-            px[(y * N + x) * 4..(y * N + x) * 4 + 4].copy_from_slice(&c);
-        }
-    };
-    let bg = [0x1e, 0x1e, 0x2e, 0xff];
-    let mauve = [0xcb, 0xa6, 0xf7, 0xff];
-    // Rounded dark tile.
-    for y in 0..N {
-        for x in 0..N {
-            let (dx, dy) = ((x as i32 - 15).abs().max(9) - 9, (y as i32 - 15).abs().max(9) - 9);
-            if dx * dx + dy * dy <= 49 {
-                put(x, y, bg);
-            }
-        }
-    }
-    // ">" chevron, 3px thick.
-    for i in 0..7 {
-        for t in 0..3 {
-            put(8 + i + t, 9 + i, mauve);
-            put(8 + i + t, 22 - i, mauve);
-        }
-    }
-    // "_" underscore.
-    for x in 17..25 {
-        for y in 20..23 {
-            put(x, y, mauve);
-        }
-    }
-    Icon::from_rgba(px, N as u32, N as u32).expect("valid icon")
+    let img = xcap::image::load_from_memory(include_bytes!("../tray.png")).expect("tray icon").into_rgba8();
+    let (w, h) = img.dimensions();
+    Icon::from_rgba(img.into_raw(), w, h).expect("valid icon")
 }

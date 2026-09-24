@@ -25,6 +25,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.v.outputs.number }}
+    steps:
+      - id: v
+        env:
+          RELEASE_INPUT: ${{ github.event.inputs.release }}
+        run: |
+          if [[ -n "$RELEASE_INPUT" ]]; then n="${RELEASE_INPUT#v}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"
+          else n="0.3.${GITHUB_RUN_NUMBER}"; fi
+          # NSIS wants a plain dotted number.
+          echo "number=$(echo "$n" | grep -oE '^[0-9]+(\.[0-9]+){0,2}')" >> "$GITHUB_OUTPUT"
+
   apk:
     runs-on: ubuntu-latest
     env:
@@ -47,7 +62,7 @@ jobs:
             echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
             echo "RELEASE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
           else
-            echo "VERSION_NAME=0.1.0-nightly.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+            echo "VERSION_NAME=0.3.0-nightly.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
           fi
           . "$GITHUB_ENV"
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
@@ -106,6 +121,7 @@ jobs:
           path: dist/*.apk
 
   host:
+    needs: version
     # Both built on Linux: the embedded Tailscale (Go) is linked in as a
     # static library, which needs a GNU toolchain (mingw-w64 for Windows).
     strategy:
@@ -113,10 +129,8 @@ jobs:
         include:
           - target: x86_64-pc-windows-gnu
             file: asenascale.exe
-            out: AsenaScale-windows-x64.exe
           - target: x86_64-unknown-linux-gnu
             file: asenascale
-            out: AsenaScale-linux-x64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -141,9 +155,9 @@ jobs:
         run: |
           sudo apt-get update -q
           if [ "${{ matrix.target }}" = x86_64-pc-windows-gnu ]; then
-            sudo apt-get install -y -q gcc-mingw-w64-x86-64
+            sudo apt-get install -y -q gcc-mingw-w64-x86-64 nsis
           else
-            sudo apt-get install -y -q libgtk-3-dev libxdo-dev libayatana-appindicator3-dev \
+            sudo apt-get install -y -q libgtk-3-dev libayatana-appindicator3-dev \
               libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev libegl-dev
           fi
 
@@ -156,10 +170,21 @@ jobs:
         working-directory: host
         run: cargo build --release --locked --target ${{ matrix.target }}
 
-      - name: Collect
+      - name: Package
         run: |
           mkdir -p dist
-          cp "host/target/${{ matrix.target }}/release/${{ matrix.file }}" "dist/${{ matrix.out }}"
+          bin="host/target/${{ matrix.target }}/release/${{ matrix.file }}"
+          version="${{ needs.version.outputs.number }}"
+          if [ "${{ matrix.target }}" = x86_64-pc-windows-gnu ]; then
+            # Installer (31 languages, per-user, no admin) + portable exe.
+            makensis -V2 -DVERSION="$version" -DEXE="$PWD/$bin" -DOUT="$PWD/dist/AsenaScale-Setup.exe" host/installer/installer.nsi
+            cp "$bin" dist/AsenaScale-windows-x64-portable.exe
+          else
+            # One AppImage for every distro (Debian, Ubuntu, Arch, Fedora...).
+            host/packaging/build-appimage.sh "$bin" dist/AsenaScale-x86_64.AppImage
+            cp assets/asenascale.png dist/asenascale.png
+          fi
+          ls -la dist
 
       - uses: actions/upload-artifact@v4
         with:
@@ -200,7 +225,8 @@ jobs:
             Son derleme: `${{ env.VERSION_NAME }}` — ${{ github.sha }} (${{ github.ref_name }})
 
             **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
-            **PC:** Windows için **AsenaScale-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
+            **PC (Windows):** **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) ya da taşınabilir **AsenaScale-windows-x64-portable.exe**.
+            **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
           files: dist/*
 
       - name: Publish release
@@ -213,5 +239,6 @@ jobs:
           generate_release_notes: true
           body: |
             **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
-            **PC:** Windows için **AsenaScale-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
+            **PC (Windows):** **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) ya da taşınabilir **AsenaScale-windows-x64-portable.exe**.
+            **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
           files: dist/*

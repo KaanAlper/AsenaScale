@@ -16,40 +16,29 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 
 ## Kurulum
 
-1. APK: [Releases](../../releases) → en yeni sürüm → **`AsenaScale-Mobile-arm64-v8a.apk`**
-   (çoğu telefon) ya da emin değilsen `AsenaScale-Mobile-universal.apk`.
-   Her push'ta güncellenen deneme sürümü: [nightly](../../releases/tag/nightly).
-2. Uygulamada Tailscale anahtarını aç → **Giriş yap** → tarayıcıda onayla.
-   Telefon tailnet'inde `asenascale-<model>` adıyla görünür.
-3. **Cihazlar** listesinde PC'ne dokun.
-4. PC'ye erişim:
-   - **Önerilen — AsenaScale (Windows/Linux):** Releases'tan `AsenaScale-windows-x64.exe`'yi indirip
-     çalıştır. **Tailscale içinde gömülü**, PC'ye ayrıca Tailscale kurmana gerek yok: ilk açılışta
-     tarayıcıda bir kez giriş yap (telefondakiyle aynı hesap). Sistem tepsisine yerleşir ve oturum
-     açınca kendiliğinden başlar. Telefon onu kendisi bulur; ilk bağlantıda PC'de çıkan
-     "bağlanmak istiyor, izin veriyor musun?" penceresinde *Evet*'e bas.
-   - **Alternatif — Windows OpenSSH:** 🔑 → "Windows kurulum komutunu kopyala" → Yönetici PowerShell.
-   - **Linux/macOS SSH:** 🔑 anahtarını `~/.ssh/authorized_keys`'e ekle ya da `sudo tailscale set --ssh`.
-5. "Bağlanınca çalıştır" için `claude` seç (Linux'ta `tmux new -As claude claude` de olur).
+### Telefon (Android)
+[Releases](../../releases) → en yeni sürüm → **`AsenaScale-Mobile-arm64-v8a.apk`** (çoğu telefon),
+emin değilsen `AsenaScale-Mobile-universal.apk`. Tailscale anahtarını aç → **Giriş yap**.
 
-## AsenaScale (PC uygulaması)
+### PC — Windows
+**`AsenaScale-Setup.exe`**'yi indirip çalıştır. Yönetici izni istemez, Windows'un diline göre
+Türkçe/İngilizce dahil 31 dilde açılır, oturum açınca başlar. (Kurulum istemezsen:
+`AsenaScale-windows-x64-portable.exe`.)
 
-Rust ile yazılmış küçük (~4 MB) bir tepsi uygulaması (`host/`):
+### PC — Linux (Debian, Ubuntu, Arch, Fedora, openSUSE)
+Tek satır; gerekli kütüphaneleri kurar, menüye ikonuyla ekler, oturum açınca başlatır:
 
-- **Tailscale gömülü:** Tailscale'in açık kaynak Go kodu (`tsnet`) statik kütüphane olarak derlenip
-  içine bağlanıyor. PC tailnet'te `asenascale-<pc-adı>` olarak görünüyor; ayrı Tailscale kurulumu gerekmiyor.
-- Kendi SSH sunucusu sadece bu gömülü düğümden erişilebilir (dışarıdan port açmaz).
-- Tanımadığı bir telefon bağlanınca PC'de onay penceresi açıyor. Pencerede telefonun Tailscale
-  cihaz adı görünüyor. Onaylanan telefonlar hatırlanıyor; tepsi menüsünden sıfırlanabiliyor.
-- Terminal gerçek bir ConPTY (Windows'ta PowerShell 7 varsa o, yoksa Windows PowerShell).
-- Senin oturumunda çalıştığı için ekran/pencere görüntüsünü doğrudan alıyor (hızlı, arkadaki pencereler dahil).
-- Telefondan gönderilen dosyalar `İndirilenler\AsenaScale\` klasörüne kaydediliyor.
+```sh
+curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh
+```
 
-## Dosya ve fotoğraf gönderme
+Kaldırmak için: `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh -s -- --uninstall`
+(ya da elle: `AsenaScale-x86_64.AppImage`).
 
-Terminalde **📎** → *Fotoğraf / video* ya da *Dosya*. Dosya PC'de `İndirilenler/AsenaScale/`
-klasörüne gider ve **PC'deki yolu terminale yazılır**; Claude'a "bu resme bak" demen yeterli.
-PC uygulamasıyla ya da düz SSH sunucusuyla (SFTP) çalışır.
+### İlk bağlantı
+PC uygulaması ilk açılışta tarayıcıda Tailscale girişini açar (telefondakiyle **aynı hesap**).
+PC, telefonun ana ekranında kendiliğinden belirir. Dokun, bir araç seç (Claude Code, Codex,
+Gemini, Grok, kabuk), ilk seferde PC'de çıkan izin penceresinde *Evet*'e bas. Bu kadar.
 
 ## Kullanım ipuçları
 

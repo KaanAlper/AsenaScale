@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=AsenaScale
+GenericName=Phone terminal bridge
+Comment=Use this computer's terminal from your phone over Tailscale
+Comment[tr]=Bu bilgisayarın terminalini telefondan Tailscale üzerinden kullan
+Exec=asenascale
+Icon=asenascale
+Terminal=false
+Categories=Network;RemoteAccess;
+StartupNotify=false

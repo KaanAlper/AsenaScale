@@ -15,8 +15,10 @@ pub fn first_run() -> bool {
     true
 }
 
+/// What to launch at sign-in. Inside an AppImage the running binary lives
+/// on a temporary mount, so use the AppImage file itself.
 fn exe() -> Option<PathBuf> {
-    std::env::current_exe().ok()
+    std::env::var_os("APPIMAGE").map(PathBuf::from).or_else(|| std::env::current_exe().ok())
 }
 
 #[cfg(windows)]

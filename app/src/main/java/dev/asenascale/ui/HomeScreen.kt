@@ -102,7 +102,7 @@ fun HomeScreen(
                 Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(">_", fontFamily = Mono, color = Pal.mauve, fontSize = 22.sp)
+                Icon(AsIcons.Logo, null, tint = Pal.mauve, modifier = Modifier.size(26.dp))
                 Spacer(Modifier.width(10.dp))
                 Text("AsenaScale", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 IconButton(onClick = { showKey = true }) {
