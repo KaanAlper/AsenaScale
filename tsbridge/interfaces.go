@@ -29,13 +29,11 @@ type ifaceJSON struct {
 // getInterfaces asks Kotlin for the interface list (java.net.NetworkInterface
 // still works on Android 11+, unlike netlink from Go).
 func getInterfaces() ([]netmon.Interface, error) {
-	mu.Lock()
-	p := platform
-	mu.Unlock()
+	p := platform.Load()
 	if p == nil {
 		return nil, nil
 	}
-	raw := strings.TrimSpace(p.InterfacesJSON())
+	raw := strings.TrimSpace((*p).InterfacesJSON())
 	if raw == "" {
 		return nil, nil
 	}

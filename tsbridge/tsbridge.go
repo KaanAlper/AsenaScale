@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	_ "golang.org/x/mobile/bind"
@@ -37,19 +38,21 @@ type Platform interface {
 }
 
 var (
-	mu       sync.Mutex
+	// startMu serializes Start/Stop. It is held while tsnet boots, so
+	// nothing tsnet calls back into (getInterfaces, logf) may take it.
+	startMu sync.Mutex
+
+	mu       sync.Mutex // guards srv and forwards; never held across tsnet calls
 	srv      *tsnet.Server
-	platform Platform
 	forwards = map[int]net.Listener{}
+
+	platform atomic.Pointer[Platform]
 )
 
 func logf(format string, args ...any) {
 	line := fmt.Sprintf(format, args...)
-	mu.Lock()
-	p := platform
-	mu.Unlock()
-	if p != nil {
-		p.Log(line)
+	if p := platform.Load(); p != nil {
+		(*p).Log(line)
 	} else {
 		log.Print(line)
 	}
@@ -58,12 +61,12 @@ func logf(format string, args ...any) {
 // Start boots the embedded Tailscale node. dataDir must be a private,
 // writable directory. It returns immediately; poll Status for progress.
 func Start(dataDir, hostname string, p Platform) error {
-	mu.Lock()
-	defer mu.Unlock()
-	if srv != nil {
+	startMu.Lock()
+	defer startMu.Unlock()
+	if current() != nil {
 		return nil
 	}
-	platform = p
+	platform.Store(&p)
 	netmon.RegisterInterfaceGetter(getInterfaces)
 
 	dir := filepath.Join(dataDir, "tailscale")
@@ -90,7 +93,9 @@ func Start(dataDir, hostname string, p Platform) error {
 	if err := s.Start(); err != nil {
 		return err
 	}
+	mu.Lock()
 	srv = s
+	mu.Unlock()
 	return nil
 }
 
@@ -275,6 +280,8 @@ func mustJSON(v any) string {
 // Stop disconnects from the tailnet and shuts the embedded node down. The
 // login is kept on disk, so a later Start reconnects without a new login.
 func Stop() {
+	startMu.Lock()
+	defer startMu.Unlock()
 	mu.Lock()
 	s := srv
 	srv = nil
