@@ -64,6 +64,8 @@ class Tailnet(private val context: Context) {
     private val _state = MutableStateFlow(TailnetState(enabled = prefs.getBoolean("enabled", true)))
     val state: StateFlow<TailnetState> = _state
     private var poller: Job? = null
+    /** Set by the activity; status is polled rarely while the app isn't visible. */
+    @Volatile var foreground = true
     @Volatile private var fastPollUntil = 0L
 
     private val platform = object : tsbridge.Platform {
@@ -154,10 +156,19 @@ class Tailnet(private val context: Context) {
             while (isActive) {
                 refresh()
                 val fast = !_state.value.running || System.currentTimeMillis() < fastPollUntil
-                delay(if (fast) 1_000 else 4_000)
+                delay(
+                    when {
+                        !foreground -> 60_000
+                        fast -> 1_000
+                        else -> 5_000
+                    },
+                )
             }
         }
     }
+
+    /** Refresh off the main thread (the status call can take a moment). */
+    fun refreshSoon() = scope.launch { refresh() }
 
     fun refresh() {
         if (!_state.value.enabled) return

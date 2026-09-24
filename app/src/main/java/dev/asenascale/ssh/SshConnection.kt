@@ -161,8 +161,13 @@ class SshConnection(
             )
             if (host.auth == AuthMode.PASSWORD) s.setPassword(host.password.toByteArray())
             s.userInfo = PasswordInfo(host.password)
-            s.setServerAliveInterval(15_000)
-            s.setServerAliveCountMax(4)
+            // Compressed traffic: terminal text shrinks several times over.
+            s.setConfig("compression.s2c", "zlib@openssh.com,zlib,none")
+            s.setConfig("compression.c2s", "zlib@openssh.com,zlib,none")
+            s.setConfig("compression_level", "6")
+            // Few keepalives: drops are cheap now (the PC keeps the session).
+            s.setServerAliveInterval(30_000)
+            s.setServerAliveCountMax(3)
             s.timeout = 0
             // The first time, the PC app waits for someone to click "Yes" on the PC.
             if (isHostApp) _hint.value = "PC'de çıkan izin penceresinde \"Evet\"e bas (ilk bağlantıda bir kez)."

@@ -92,7 +92,7 @@ class TerminalCanvasView(context: Context) : View(context) {
             topRow = (topRow - emu.scrollCounter).coerceAtLeast(-emu.screen.activeTranscriptRows)
         }
         emu.clearScrollCounter()
-        blinkOn = true
+        activity()
         invalidate()
     }
 
@@ -125,19 +125,35 @@ class TerminalCanvasView(context: Context) : View(context) {
         canvas.restore()
     }
 
-    // Soft cursor blink, kitty style. Stops while idle in the background.
+    // Soft cursor blink, kitty style: stops (cursor stays solid) 15 s after
+    // the last keystroke or output, so an idle terminal draws nothing.
     private var blinkOn = true
+    private var lastActivity = 0L
     private val blink = object : Runnable {
         override fun run() {
+            if (android.os.SystemClock.uptimeMillis() - lastActivity > 15_000) {
+                if (!blinkOn) { blinkOn = true; invalidate() }
+                return
+            }
             blinkOn = !blinkOn
             invalidate()
             postDelayed(this, 530)
         }
     }
 
+    private fun activity() {
+        val idle = android.os.SystemClock.uptimeMillis() - lastActivity > 15_000
+        lastActivity = android.os.SystemClock.uptimeMillis()
+        blinkOn = true
+        if (idle && isAttachedToWindow) {
+            removeCallbacks(blink)
+            postDelayed(blink, 530)
+        }
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        postDelayed(blink, 530)
+        activity()
     }
 
     override fun onDetachedFromWindow() {
@@ -360,6 +376,7 @@ class TerminalCanvasView(context: Context) : View(context) {
     }
 
     private fun consumeModifiers() {
+        activity()
         if (ctrlDown || altDown) {
             ctrlDown = false
             altDown = false

@@ -10,15 +10,14 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import android.os.PowerManager
 
 /**
- * Foreground service that exists only while a terminal session is open, so
- * Android doesn't kill the SSH connection when you switch apps or lock the
- * screen.
+ * Foreground service that exists only while a terminal is open, so Android
+ * is less eager to kill the app when you switch away. It deliberately holds
+ * no wake lock: the phone may sleep, the terminal keeps running on the PC,
+ * and the app reconnects when you come back.
  */
 class KeepAliveService : Service() {
-    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -34,18 +33,7 @@ class KeepAliveService : Service() {
         } else {
             startForeground(1, n)
         }
-        if (wakeLock == null) {
-            wakeLock = getSystemService(PowerManager::class.java)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "asenascale:ssh")
-                .apply { setReferenceCounted(false); acquire() }
-        }
         return START_NOT_STICKY
-    }
-
-    override fun onDestroy() {
-        wakeLock?.release()
-        wakeLock = null
-        super.onDestroy()
     }
 
     private fun notification(count: Int): Notification {

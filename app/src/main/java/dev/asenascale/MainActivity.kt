@@ -24,6 +24,17 @@ import dev.asenascale.ui.AsenaScaleTheme
 import dev.asenascale.ui.TerminalScreen
 
 class MainActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        App.instance.tailnet.foreground = true
+        App.instance.tailnet.refreshSoon()
+    }
+
+    override fun onStop() {
+        App.instance.tailnet.foreground = false
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Status/navigation bar icons follow the phone's light/dark mode.
         enableEdgeToEdge(
