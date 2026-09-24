@@ -80,8 +80,19 @@ pub struct Conn {
 }
 
 impl Conn {
-    fn peer_ok(&self) -> bool {
-        self.peer.map(|p| approve::is_tailnet(p.ip())).unwrap_or(false)
+    /// The tailnet device on the other end. Connections reach the server on
+    /// 127.0.0.1 through the embedded Tailscale node; anything else (a local
+    /// process) has no tailnet identity and is refused.
+    fn tailnet_peer(&self) -> Option<crate::tailnet::Peer> {
+        let port = self.peer?.port();
+        if let Some(p) = crate::tailnet::peer(port) {
+            return Some(p);
+        }
+        // Local end-to-end tests only (debug builds).
+        if cfg!(debug_assertions) && std::env::var_os("AS_TEST_LOCAL").is_some() {
+            return Some(crate::tailnet::Peer { ip: "127.0.0.1".into(), name: "test".into(), user: String::new() });
+        }
+        None
     }
 }
 
@@ -109,14 +120,14 @@ impl russh::server::Handler for Conn {
     }
 
     async fn auth_publickey_offered(&mut self, _user: &str, _key: &PublicKey) -> Result<Auth, Self::Error> {
-        Ok(if self.peer_ok() { Auth::Accept } else { Auth::reject() })
+        Ok(if self.tailnet_peer().is_some() { Auth::Accept } else { Auth::reject() })
     }
 
     /// Called once the client proved it holds the key.
     async fn auth_publickey(&mut self, _user: &str, key: &PublicKey) -> Result<Auth, Self::Error> {
-        if !self.peer_ok() {
+        let Some(peer) = self.tailnet_peer() else {
             return Ok(Auth::reject());
-        }
+        };
         if self.state.devices.lock().unwrap().is_allowed(key) {
             return Ok(Auth::Accept);
         }
@@ -125,10 +136,9 @@ impl russh::server::Handler for Conn {
         if self.state.devices.lock().unwrap().is_allowed(key) {
             return Ok(Auth::Accept); // approved while we waited
         }
-        let ip = self.peer.unwrap().ip();
         let fp = key.fingerprint(HashAlg::Sha256).to_string();
         let yes = tokio::task::spawn_blocking(move || {
-            let name = approve::device_name(ip);
+            let name = peer.label();
             let ok = approve::ask(&name, &fp);
             (ok, name)
         })

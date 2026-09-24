@@ -23,11 +23,11 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
    Telefon tailnet'inde `asenascale-<model>` adıyla görünür.
 3. **Cihazlar** listesinde PC'ne dokun.
 4. PC'ye erişim:
-   - **Önerilen — AsenaScale (Windows/Linux):** Releases'tan `AsenaScale-windows-x64.exe`'yi
-     indirip çalıştır. Sistem tepsisine yerleşir, oturum açınca kendiliğinden başlar. Kurulum komutu
-     ya da yönetici izni gerekmez. Telefon onu kendisi bulur; ilk bağlantıda PC'de çıkan
-     **"bağlanmak istiyor — izin veriyor musun?"** penceresinde *Evet*'e basman yeterli.
-     (Windows ilk açılışta güvenlik duvarı izni sorarsa ikisine de izin ver.)
+   - **Önerilen — AsenaScale (Windows/Linux):** Releases'tan `AsenaScale-windows-x64.exe`'yi indirip
+     çalıştır. **Tailscale içinde gömülü**, PC'ye ayrıca Tailscale kurmana gerek yok: ilk açılışta
+     tarayıcıda bir kez giriş yap (telefondakiyle aynı hesap). Sistem tepsisine yerleşir ve oturum
+     açınca kendiliğinden başlar. Telefon onu kendisi bulur; ilk bağlantıda PC'de çıkan
+     "bağlanmak istiyor, izin veriyor musun?" penceresinde *Evet*'e bas.
    - **Alternatif — Windows OpenSSH:** 🔑 → "Windows kurulum komutunu kopyala" → Yönetici PowerShell.
    - **Linux/macOS SSH:** 🔑 anahtarını `~/.ssh/authorized_keys`'e ekle ya da `sudo tailscale set --ssh`.
 5. "Bağlanınca çalıştır" için `claude` seç (Linux'ta `tmux new -As claude claude` de olur).
@@ -36,7 +36,9 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 
 Rust ile yazılmış küçük (~4 MB) bir tepsi uygulaması (`host/`):
 
-- Kendi SSH sunucusu var (port 2222) ve **sadece Tailscale ağından** (100.x) bağlantı kabul ediyor.
+- **Tailscale gömülü:** Tailscale'in açık kaynak Go kodu (`tsnet`) statik kütüphane olarak derlenip
+  içine bağlanıyor. PC tailnet'te `asenascale-<pc-adı>` olarak görünüyor; ayrı Tailscale kurulumu gerekmiyor.
+- Kendi SSH sunucusu sadece bu gömülü düğümden erişilebilir (dışarıdan port açmaz).
 - Tanımadığı bir telefon bağlanınca PC'de onay penceresi açıyor. Pencerede telefonun Tailscale
   cihaz adı görünüyor. Onaylanan telefonlar hatırlanıyor; tepsi menüsünden sıfırlanabiliyor.
 - Terminal gerçek bir ConPTY (Windows'ta PowerShell 7 varsa o, yoksa Windows PowerShell).

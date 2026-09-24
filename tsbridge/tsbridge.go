@@ -63,26 +63,39 @@ func logf(format string, args ...any) {
 // Start boots the embedded Tailscale node. dataDir must be a private,
 // writable directory. It returns immediately; poll Status for progress.
 func Start(dataDir, hostname string, p Platform) error {
+	platform.Store(&p)
+	netmon.RegisterInterfaceGetter(getInterfaces)
+	return start(dataDir, hostname, true)
+}
+
+// StartDesktop boots the node on Windows/Linux/macOS, where the OS lists
+// network interfaces itself and the process environment must stay as is
+// (the host app starts shells that inherit it).
+func StartDesktop(dataDir, hostname string) error {
+	return start(dataDir, hostname, false)
+}
+
+func start(dataDir, hostname string, mobile bool) error {
 	startMu.Lock()
 	defer startMu.Unlock()
 	if current() != nil {
 		return nil
 	}
-	platform.Store(&p)
-	netmon.RegisterInterfaceGetter(getInterfaces)
 
 	dir := filepath.Join(dataDir, "tailscale")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
-	// tsnet looks for a home/config directory in a few places.
-	os.Setenv("HOME", dataDir)
-	os.Setenv("XDG_CONFIG_HOME", dataDir)
+	if mobile {
+		// tsnet looks for a home/config directory in a few places.
+		os.Setenv("HOME", dataDir)
+		os.Setenv("XDG_CONFIG_HOME", dataDir)
+		// os.TempDir on Android is /data/local/tmp, which apps can't write.
+		tmp := filepath.Join(dataDir, "tmp")
+		os.MkdirAll(tmp, 0o700)
+		os.Setenv("TMPDIR", tmp)
+	}
 	os.Setenv("TS_LOGS_DIR", dir)
-	// os.TempDir on Android is /data/local/tmp, which apps can't write.
-	tmp := filepath.Join(dataDir, "tmp")
-	os.MkdirAll(tmp, 0o700)
-	os.Setenv("TMPDIR", tmp)
 	// Don't stream debug logs to Tailscale's servers: saves battery and data.
 	envknob.SetNoLogsNoSupport()
 
