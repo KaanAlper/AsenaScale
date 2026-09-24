@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -51,7 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.mobileclaude.App
+import dev.mobileclaude.data.AuthMode
 import dev.mobileclaude.ssh.ConnState
+import dev.mobileclaude.ssh.Keys
 import dev.mobileclaude.term.TerminalCanvasView
 import dev.mobileclaude.term.TermTheme
 
@@ -171,6 +174,11 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                         color = Mocha.subtext,
                         textAlign = TextAlign.Center,
                     )
+                    if (closed?.reason?.startsWith("Kimlik") == true && host.auth == AuthMode.KEY) {
+                        TextButton(onClick = { app.copyToClipboard(Keys.publicKey(context)) }) {
+                            Text("SSH anahtarını kopyala (authorized_keys için)", color = Mocha.mauve, fontSize = 13.sp)
+                        }
+                    }
                     Button(onClick = { reconnect() }, shape = RoundedCornerShape(12.dp)) { Text("Yeniden bağlan") }
                 }
             }
