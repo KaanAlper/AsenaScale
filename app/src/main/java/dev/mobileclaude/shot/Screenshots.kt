@@ -27,9 +27,13 @@ object Screenshots {
     private fun script(context: Context, name: String) =
         scripts.getOrPut(name) { context.assets.open(name).use { it.readBytes() } }
 
-    /** Reads the whole script from stdin; works whether sshd's shell is cmd or PowerShell. */
-    private const val WINDOWS_CMD =
-        "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"iex ([Console]::In.ReadToEnd())\""
+    /** Runs the script piped on stdin. */
+    private const val RUN_STDIN = "iex ([Console]::In.ReadToEnd())"
+
+    /** sshd's shell is PowerShell (our setup script's default): run in it directly. From cmd: start PowerShell. */
+    private fun windowsCmd(os: String) =
+        if (os == "win-ps") RUN_STDIN
+        else "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"$RUN_STDIN\""
 
     private fun checkId(s: String): String {
         require(Regex("[A-Za-z0-9_.:,x-]*").matches(s)) { "geçersiz hedef: $s" }
@@ -44,19 +48,25 @@ object Screenshots {
         return header.toByteArray() + script(context, "mcshot.ps1")
     }
 
-    /** "windows" or "posix"; asked once per connection. */
+    /** "posix", "win-ps" (Windows, PowerShell shell) or "win-cmd"; asked once per connection. */
     private fun os(conn: SshConnection): String = conn.remoteOs ?: run {
         val r = runCatching { conn.exec("uname -s", timeoutMs = 10_000) }.getOrNull()
         val name = r?.stdout?.toString(Charsets.UTF_8)?.trim().orEmpty()
         val posix = r != null && r.exitCode == 0 && name.isNotEmpty() &&
             listOf("MINGW", "MSYS", "CYGWIN").none { name.uppercase().startsWith(it) }
-        (if (posix) "posix" else "windows").also { conn.remoteOs = it }
+        val os = when {
+            posix -> "posix"
+            // cmd expands %OS% to Windows_NT; PowerShell prints it literally.
+            conn.exec("echo %OS%", timeoutMs = 10_000).stdout.toString(Charsets.UTF_8).contains("Windows_NT") -> "win-cmd"
+            else -> "win-ps"
+        }
+        os.also { conn.remoteOs = it }
     }
 
     fun list(context: Context, conn: SshConnection): ShotList {
-        val windows = os(conn) == "windows"
-        val r = if (windows) {
-            conn.exec(WINDOWS_CMD, windowsScript(context, "list", "", ""), timeoutMs = 45_000)
+        val os = os(conn)
+        val r = if (os != "posix") {
+            conn.exec(windowsCmd(os), windowsScript(context, "list", "", ""), timeoutMs = 45_000)
         } else {
             conn.exec("sh -s list", script(context, "mcshot.sh"))
         }
@@ -83,8 +93,9 @@ object Screenshots {
 
     /** Captures [target] and returns the PNG, cached in the app's cache dir. */
     fun take(context: Context, conn: SshConnection, target: ShotTarget): File {
-        val png = if (os(conn) == "windows") {
-            val r = conn.exec(WINDOWS_CMD, windowsScript(context, "shot", target.kind, target.id), timeoutMs = 60_000)
+        val os = os(conn)
+        val png = if (os != "posix") {
+            val r = conn.exec(windowsCmd(os), windowsScript(context, "shot", target.kind, target.id), timeoutMs = 60_000)
             val text = r.stdout.toString(Charsets.US_ASCII).trim()
             runCatching { Base64.decode(text, Base64.DEFAULT) }.getOrNull()
                 ?.takeIf { isPng(it) } ?: error(friendly(r.stderr, "Ekran görüntüsü alınamadı"))

@@ -52,7 +52,7 @@ class SshConnection(val host: Host) {
     private var shellOut: OutputStream? = null
     private var localPort = 0
 
-    /** "windows" or "posix", detected on first use by the screenshot helper. */
+    /** "posix", "win-ps" or "win-cmd", detected on first use by the screenshot helper. */
     @Volatile var remoteOs: String? = null
 
     /** Called on the main thread whenever the screen changed. */
