@@ -28,7 +28,8 @@ embed-resource = "3"
 windows-sys = { version = "0.60", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell"] }
 
 [target.'cfg(not(windows))'.dependencies]
-rfd = "0.17"
+# GTK dialogs (GTK is already there for the tray) instead of the D-Bus portal stack.
+rfd = { version = "0.17", default-features = false, features = ["gtk3"] }
 
 [profile.release]
 opt-level = 3

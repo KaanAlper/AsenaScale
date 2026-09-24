@@ -50,6 +50,9 @@ fn main() {
 
     if autostart::first_run() {
         autostart::set(true);
+        // Once: allow direct (peer-to-peer) Tailscale traffic through the
+        // firewall; the tray can repair it later.
+        std::thread::spawn(firewall::ensure);
     }
 
     // The embedded Tailscale node, and a slow watcher for the tray.
@@ -60,8 +63,6 @@ fn main() {
             let _ = changed.send_event(UserEvent::Changed);
         }));
     }
-    // Off the UI thread: netsh can take a moment.
-    std::thread::spawn(firewall::ensure);
 
     let menu_proxy = proxy.clone();
     MenuEvent::set_event_handler(Some(move |e| {
@@ -261,6 +262,11 @@ fn preferred() -> russh::Preferred {
 
 fn init_log() {
     let _ = std::fs::create_dir_all(store::dir());
+    // Keep the log small: start over once it passes 1 MB.
+    let path = store::dir().join("host.log");
+    if std::fs::metadata(&path).map(|m| m.len() > 1 << 20).unwrap_or(false) {
+        let _ = std::fs::remove_file(&path);
+    }
     let file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)

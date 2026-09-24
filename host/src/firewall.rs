@@ -1,7 +1,8 @@
-//! Windows Firewall: the Tailscale adapter usually counts as a *public*
-//! network, and Windows' own "allow access?" prompt only ticks *private* by
-//! default, which would leave the phone blocked. So the app adds one rule for
-//! itself on every profile, with a single UAC prompt, the first time.
+//! Windows Firewall: the embedded Tailscale node talks WireGuard over UDP.
+//! Blocked, it still works through Tailscale's relays, just slower. Windows'
+//! own "allow access?" prompt only ticks *private* networks by default, so
+//! on first run the app adds one allow rule for itself on every profile,
+//! with a single UAC prompt; the tray can repair it.
 
 #[cfg(windows)]
 mod imp {
