@@ -36,7 +36,7 @@ jobs:
         run: |
           if [[ -n "$RELEASE_INPUT" ]]; then n="${RELEASE_INPUT#v}"
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"
-          else n="0.3.${GITHUB_RUN_NUMBER}"; fi
+          else n="0.4.${GITHUB_RUN_NUMBER}"; fi
           # NSIS wants a plain dotted number.
           echo "number=$(echo "$n" | grep -oE '^[0-9]+(\.[0-9]+){0,2}')" >> "$GITHUB_OUTPUT"
 

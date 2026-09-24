@@ -41,7 +41,7 @@ class ScreenView(context: Context) : View(context) {
     private var zoom = 1f
     private var panX = 0f
     private var panY = 0f
-    private val matrix = Matrix()
+    private val xform = Matrix()
     private val inverse = Matrix()
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -79,9 +79,9 @@ class ScreenView(context: Context) : View(context) {
         // Keep the picture on screen: centered when smaller, edges clamped when larger.
         panX = if (w <= width) 0f else panX.coerceIn(-(w - width) / 2, (w - width) / 2)
         panY = if (h <= height) 0f else panY.coerceIn(-(h - height) / 2, (h - height) / 2)
-        matrix.setScale(s, s)
-        matrix.postTranslate((width - w) / 2 + panX, (height - h) / 2 + panY)
-        matrix.invert(inverse)
+        xform.setScale(s, s)
+        xform.postTranslate((width - w) / 2 + panX, (height - h) / 2 + panY)
+        xform.invert(inverse)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -90,7 +90,7 @@ class ScreenView(context: Context) : View(context) {
         synchronized(c.lock) {
             val b = c.bitmap ?: return
             layoutMatrix(b.width, b.height)
-            canvas.drawBitmap(b, matrix, paint)
+            canvas.drawBitmap(b, xform, paint)
         }
         // A short ring where the click landed.
         val age = SystemClock.uptimeMillis() - tapAt
