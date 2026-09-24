@@ -141,5 +141,11 @@
   "cancelled": "취소됨",
   "cancel": "취소",
   "downloading": "%1$s 다운로드 중",
-  "n_files": "파일 %1$d개"
+  "n_files": "파일 %1$d개",
+  "screen_share": "화면 공유",
+  "screen_hint": "탭: 클릭 · 길게 누르기: 오른쪽 클릭 · 드래그: 스크롤 · 두 손가락: 확대",
+  "quality_low": "절약",
+  "quality_high": "선명",
+  "fit": "화면에 맞추기",
+  "keyboard": "키보드"
 }

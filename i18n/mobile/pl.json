@@ -141,5 +141,11 @@
   "cancelled": "Anulowano",
   "cancel": "Anuluj",
   "downloading": "Pobieranie %1$s",
-  "n_files": "Pliki: %1$d"
+  "n_files": "Pliki: %1$d",
+  "screen_share": "Udostępnianie ekranu",
+  "screen_hint": "Dotknij: klik · Przytrzymaj: prawy klik · Przeciągnij: przewijanie · Dwa palce: powiększenie",
+  "quality_low": "Oszczędny",
+  "quality_high": "Ostry",
+  "fit": "Dopasuj do ekranu",
+  "keyboard": "Klawiatura"
 }

@@ -141,5 +141,11 @@
   "cancelled": "Đã hủy",
   "cancel": "Hủy",
   "downloading": "Đang tải %1$s",
-  "n_files": "%1$d tệp"
+  "n_files": "%1$d tệp",
+  "screen_share": "Chia sẻ màn hình",
+  "screen_hint": "Chạm: nhấp · Nhấn giữ: nhấp phải · Kéo: cuộn · Hai ngón: thu phóng",
+  "quality_low": "Tiết kiệm",
+  "quality_high": "Nét",
+  "fit": "Vừa màn hình",
+  "keyboard": "Bàn phím"
 }

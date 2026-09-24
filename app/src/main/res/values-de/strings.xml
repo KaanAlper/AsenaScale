@@ -144,4 +144,10 @@
     <string name="cancel">Abbrechen</string>
     <string name="downloading">Lade %1$s herunter</string>
     <string name="n_files">%1$d Dateien</string>
+    <string name="screen_share">Bildschirmfreigabe</string>
+    <string name="screen_hint">Tippen: Klick · Lang drücken: Rechtsklick · Ziehen: Scrollen · Zwei Finger: Zoom</string>
+    <string name="quality_low">Sparsam</string>
+    <string name="quality_high">Scharf</string>
+    <string name="fit">An Bildschirm anpassen</string>
+    <string name="keyboard">Tastatur</string>
 </resources>

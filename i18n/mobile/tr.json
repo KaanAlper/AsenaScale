@@ -141,5 +141,11 @@
   "cancelled": "İptal edildi",
   "cancel": "İptal",
   "downloading": "İndiriliyor: %1$s",
-  "n_files": "%1$d dosya"
+  "n_files": "%1$d dosya",
+  "screen_share": "Ekran paylaşımı",
+  "screen_hint": "Dokun: tıkla · Basılı tut: sağ tık · Sürükle: kaydır · İki parmak: yakınlaştır",
+  "quality_low": "Tasarruf",
+  "quality_high": "Net",
+  "fit": "Ekrana sığdır",
+  "keyboard": "Klavye"
 }

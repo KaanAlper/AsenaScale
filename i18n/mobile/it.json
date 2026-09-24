@@ -141,5 +141,11 @@
   "cancelled": "Annullato",
   "cancel": "Annulla",
   "downloading": "Download di %1$s",
-  "n_files": "%1$d file"
+  "n_files": "%1$d file",
+  "screen_share": "Condivisione schermo",
+  "screen_hint": "Tocca: clic · Tieni premuto: clic destro · Trascina: scorri · Due dita: zoom",
+  "quality_low": "Risparmio",
+  "quality_high": "Nitido",
+  "fit": "Adatta allo schermo",
+  "keyboard": "Tastiera"
 }

@@ -144,4 +144,10 @@
     <string name="cancel">रद्द करें</string>
     <string name="downloading">%1$s डाउनलोड हो रहा है</string>
     <string name="n_files">%1$d फ़ाइलें</string>
+    <string name="screen_share">स्क्रीन शेयर</string>
+    <string name="screen_hint">टैप: क्लिक · देर तक दबाएँ: राइट क्लिक · खींचें: स्क्रॉल · दो उँगलियाँ: ज़ूम</string>
+    <string name="quality_low">बचत</string>
+    <string name="quality_high">साफ़</string>
+    <string name="fit">स्क्रीन में फ़िट करें</string>
+    <string name="keyboard">कीबोर्ड</string>
 </resources>

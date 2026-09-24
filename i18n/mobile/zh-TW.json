@@ -141,5 +141,11 @@
   "cancelled": "已取消",
   "cancel": "取消",
   "downloading": "正在下載 %1$s",
-  "n_files": "%1$d 個檔案"
+  "n_files": "%1$d 個檔案",
+  "screen_share": "螢幕分享",
+  "screen_hint": "點按：按一下 · 長按：右鍵 · 拖曳：捲動 · 雙指：縮放",
+  "quality_low": "省流量",
+  "quality_high": "清晰",
+  "fit": "符合螢幕",
+  "keyboard": "鍵盤"
 }

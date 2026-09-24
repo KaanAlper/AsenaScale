@@ -144,4 +144,10 @@
     <string name="cancel">Batal</string>
     <string name="downloading">Mengunduh %1$s</string>
     <string name="n_files">%1$d berkas</string>
+    <string name="screen_share">Berbagi layar</string>
+    <string name="screen_hint">Ketuk: klik · Tekan lama: klik kanan · Seret: gulir · Dua jari: zoom</string>
+    <string name="quality_low">Hemat</string>
+    <string name="quality_high">Tajam</string>
+    <string name="fit">Sesuaikan layar</string>
+    <string name="keyboard">Keyboard</string>
 </resources>

@@ -144,4 +144,10 @@
     <string name="cancel">Anuluj</string>
     <string name="downloading">Pobieranie %1$s</string>
     <string name="n_files">Pliki: %1$d</string>
+    <string name="screen_share">Udostępnianie ekranu</string>
+    <string name="screen_hint">Dotknij: klik · Przytrzymaj: prawy klik · Przeciągnij: przewijanie · Dwa palce: powiększenie</string>
+    <string name="quality_low">Oszczędny</string>
+    <string name="quality_high">Ostry</string>
+    <string name="fit">Dopasuj do ekranu</string>
+    <string name="keyboard">Klawiatura</string>
 </resources>

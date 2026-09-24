@@ -141,5 +141,11 @@
   "cancelled": "キャンセルしました",
   "cancel": "キャンセル",
   "downloading": "%1$s をダウンロード中",
-  "n_files": "%1$d 個のファイル"
+  "n_files": "%1$d 個のファイル",
+  "screen_share": "画面共有",
+  "screen_hint": "タップ: クリック · 長押し: 右クリック · ドラッグ: スクロール · 2 本指: ズーム",
+  "quality_low": "節約",
+  "quality_high": "高画質",
+  "fit": "画面に合わせる",
+  "keyboard": "キーボード"
 }

@@ -141,5 +141,11 @@
   "cancelled": "Geannuleerd",
   "cancel": "Annuleren",
   "downloading": "%1$s downloaden",
-  "n_files": "%1$d bestanden"
+  "n_files": "%1$d bestanden",
+  "screen_share": "Scherm delen",
+  "screen_hint": "Tik: klik · Lang drukken: rechtsklik · Slepen: scrollen · Twee vingers: zoomen",
+  "quality_low": "Zuinig",
+  "quality_high": "Scherp",
+  "fit": "Aan scherm aanpassen",
+  "keyboard": "Toetsenbord"
 }

@@ -93,6 +93,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
     val term = remember { TerminalCanvasView(context) }
     var menu by remember { mutableStateOf(false) }
     var shots by remember { mutableStateOf(false) }
+    var screen by remember { mutableStateOf(false) }
 
     val dark = LocalPalette.current.dark
     LaunchedEffect(conn, dark) {
@@ -172,6 +173,11 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+            if (conn.isHostApp) {
+                IconButton(onClick = { screen = true }, enabled = state == ConnState.Connected) {
+                    Icon(AsIcons.Screen, stringResource(R.string.screen_share), tint = Pal.subtext)
+                }
+            }
             IconButton(onClick = { shots = true }, enabled = state == ConnState.Connected) {
                 Icon(AsIcons.Camera, stringResource(R.string.screenshot), tint = Pal.subtext)
             }
@@ -355,6 +361,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
     }
 
     if (shots) ScreenshotSheet(conn, onDismiss = { shots = false })
+    if (screen) ScreenShare(host, onDismiss = { screen = false; term.showKeyboard() })
     files?.let { pick -> FilesSheet(conn, pick = pick, onInsertPath = { insertPath(it) }, onDismiss = { files = null }) }
     selectText?.let { SelectTextDialog(it, onDismiss = { selectText = null }) }
     if (launcher) {

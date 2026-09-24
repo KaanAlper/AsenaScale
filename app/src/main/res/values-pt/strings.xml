@@ -144,4 +144,10 @@
     <string name="cancel">Cancelar</string>
     <string name="downloading">Baixando %1$s</string>
     <string name="n_files">%1$d arquivos</string>
+    <string name="screen_share">Compartilhar tela</string>
+    <string name="screen_hint">Tocar: clique · Pressionar: clique direito · Arrastar: rolar · Dois dedos: zoom</string>
+    <string name="quality_low">Economia</string>
+    <string name="quality_high">Nítido</string>
+    <string name="fit">Ajustar à tela</string>
+    <string name="keyboard">Teclado</string>
 </resources>

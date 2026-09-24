@@ -144,4 +144,10 @@
     <string name="cancel">Отмена</string>
     <string name="downloading">Загрузка %1$s</string>
     <string name="n_files">Файлов: %1$d</string>
+    <string name="screen_share">Демонстрация экрана</string>
+    <string name="screen_hint">Нажатие: клик · Удержание: правый клик · Перетаскивание: прокрутка · Два пальца: масштаб</string>
+    <string name="quality_low">Экономия</string>
+    <string name="quality_high">Чётко</string>
+    <string name="fit">Вписать в экран</string>
+    <string name="keyboard">Клавиатура</string>
 </resources>

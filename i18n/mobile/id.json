@@ -141,5 +141,11 @@
   "cancelled": "Dibatalkan",
   "cancel": "Batal",
   "downloading": "Mengunduh %1$s",
-  "n_files": "%1$d berkas"
+  "n_files": "%1$d berkas",
+  "screen_share": "Berbagi layar",
+  "screen_hint": "Ketuk: klik · Tekan lama: klik kanan · Seret: gulir · Dua jari: zoom",
+  "quality_low": "Hemat",
+  "quality_high": "Tajam",
+  "fit": "Sesuaikan layar",
+  "keyboard": "Keyboard"
 }

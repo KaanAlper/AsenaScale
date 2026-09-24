@@ -144,4 +144,10 @@
     <string name="cancel">取消</string>
     <string name="downloading">正在下載 %1$s</string>
     <string name="n_files">%1$d 個檔案</string>
+    <string name="screen_share">螢幕分享</string>
+    <string name="screen_hint">點按：按一下 · 長按：右鍵 · 拖曳：捲動 · 雙指：縮放</string>
+    <string name="quality_low">省流量</string>
+    <string name="quality_high">清晰</string>
+    <string name="fit">符合螢幕</string>
+    <string name="keyboard">鍵盤</string>
 </resources>

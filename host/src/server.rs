@@ -73,6 +73,8 @@ enum Chan {
     Exec { stdin: Option<ChildStdin> },
     /// `mc put NAME` / `mc write PATH OFFSET`: bytes arrive as channel data until EOF.
     Upload { target: Target, data: Vec<u8>, handle: Handle },
+    /// `mc screen`: phone input lines go to the streaming thread.
+    Screen { input: std::sync::mpsc::Sender<Vec<u8>> },
     Busy,
 }
 
@@ -283,6 +285,20 @@ impl russh::server::Handler for Conn {
             self.channels.insert(channel, Chan::Upload { target: Target::Put(name), data: Vec::new(), handle });
             return Ok(());
         }
+        if cmd == "mc screen" || cmd.starts_with("mc screen ") {
+            let monitor = cmd.split_whitespace().nth(2).and_then(|m| m.parse().ok()).unwrap_or(0);
+            let (tx, rx) = std::sync::mpsc::channel();
+            let rt = tokio::runtime::Handle::current();
+            let h = handle.clone();
+            std::thread::Builder::new()
+                .name("screen".into())
+                .spawn(move || {
+                    crate::screen::run(h.clone(), channel, rt.clone(), monitor, rx);
+                    rt.block_on(finish(&h, channel, Vec::new(), String::new(), 0));
+                })?;
+            self.channels.insert(channel, Chan::Screen { input: tx });
+            return Ok(());
+        }
         if let Some(rest) = cmd.strip_prefix("mc write ") {
             let mut it = rest.split_whitespace();
             let target = match (it.next().map(crate::files::decode_path), it.next().and_then(|o| o.parse().ok())) {
@@ -331,6 +347,9 @@ impl russh::server::Handler for Conn {
             Some(Chan::Exec { stdin: Some(stdin) }) => {
                 stdin.write_all(data).await?;
             }
+            Some(Chan::Screen { input }) => {
+                let _ = input.send(data.to_vec());
+            }
             Some(Chan::Upload { data: buf, target, .. }) => {
                 let max = match target {
                     Target::Put(_) => crate::files::MAX_BYTES,
@@ -349,6 +368,9 @@ impl russh::server::Handler for Conn {
     async fn channel_eof(&mut self, channel: ChannelId, _session: &mut RusshSession) -> Result<(), Self::Error> {
         match self.channels.get_mut(&channel) {
             Some(Chan::Exec { stdin }) => *stdin = None, // closes the child's stdin
+            Some(Chan::Screen { .. }) => {
+                self.channels.insert(channel, Chan::Busy); // drops the sender: the stream stops
+            }
             Some(Chan::Upload { .. }) => {
                 if let Some(Chan::Upload { target, data, handle }) = self.channels.insert(channel, Chan::Busy) {
                     tokio::spawn(async move {
@@ -387,7 +409,8 @@ impl russh::server::Handler for Conn {
     }
 
     async fn channel_close(&mut self, channel: ChannelId, _session: &mut RusshSession) -> Result<(), Self::Error> {
-        if let Some(Chan::Shell { session, client }) = self.channels.remove(&channel) {
+        let chan = self.channels.remove(&channel);
+        if let Some(Chan::Shell { session, client }) = chan {
             session.detach(client);
             (self.state.on_change)();
         }

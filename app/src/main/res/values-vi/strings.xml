@@ -144,4 +144,10 @@
     <string name="cancel">Hủy</string>
     <string name="downloading">Đang tải %1$s</string>
     <string name="n_files">%1$d tệp</string>
+    <string name="screen_share">Chia sẻ màn hình</string>
+    <string name="screen_hint">Chạm: nhấp · Nhấn giữ: nhấp phải · Kéo: cuộn · Hai ngón: thu phóng</string>
+    <string name="quality_low">Tiết kiệm</string>
+    <string name="quality_high">Nét</string>
+    <string name="fit">Vừa màn hình</string>
+    <string name="keyboard">Bàn phím</string>
 </resources>

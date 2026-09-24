@@ -144,4 +144,10 @@
     <string name="cancel">لغو</string>
     <string name="downloading">در حال دانلود %1$s</string>
     <string name="n_files">%1$d فایل</string>
+    <string name="screen_share">اشتراک صفحه</string>
+    <string name="screen_hint">ضربه: کلیک · نگه داشتن: کلیک راست · کشیدن: پیمایش · دو انگشت: بزرگ‌نمایی</string>
+    <string name="quality_low">کم‌مصرف</string>
+    <string name="quality_high">واضح</string>
+    <string name="fit">اندازهٔ صفحه</string>
+    <string name="keyboard">صفحه‌کلید</string>
 </resources>

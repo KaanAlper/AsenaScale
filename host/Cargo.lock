@@ -154,7 +154,9 @@ dependencies = [
  "anyhow",
  "dirs 6.0.0",
  "embed-resource",
+ "enigo",
  "env_logger",
+ "image",
  "log",
  "portable-pty",
  "rand",
@@ -1170,6 +1172,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
+name = "enigo"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71c6c56e50f7acae2906a0dcbb34529ca647e40421119ad5d12e7f8ba6e50010"
+dependencies = [
+ "core-foundation",
+ "core-graphics",
+ "foreign-types-shared",
+ "libc",
+ "log",
+ "nom 8.0.0",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "windows 0.61.3",
+ "x11rb",
+ "xkbcommon",
+ "xkeysym",
+]
+
+[[package]]
 name = "enum_dispatch"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1598,6 +1621,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gethostname"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bd49230192a3797a9a4d6abe9b3eed6f7fa4c8a8a4947977c6f80025f92cbd8"
+dependencies = [
+ "rustix 1.1.5",
+ "windows-link 0.2.1",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2016,6 +2049,8 @@ dependencies = [
  "moxcms",
  "num-traits",
  "png",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -5234,6 +5269,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "x11rb"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9993aa5be5a26815fe2c3eacfc1fde061fc1a1f094bf1ad2a18bf9c495dd7414"
+dependencies = [
+ "gethostname",
+ "rustix 1.1.5",
+ "x11rb-protocol",
+]
+
+[[package]]
+name = "x11rb-protocol"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea6fc2961e4ef194dcbfe56bb845534d0dc8098940c7e5c012a258bfec6701bd"
+
+[[package]]
 name = "xcap"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5274,6 +5326,23 @@ dependencies = [
  "libc",
  "quick-xml",
 ]
+
+[[package]]
+name = "xkbcommon"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7a974f48060a14e95705c01f24ad9c3345022f4d97441b8a36beb7ed5c4a02d"
+dependencies = [
+ "libc",
+ "memmap2",
+ "xkeysym",
+]
+
+[[package]]
+name = "xkeysym"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9cc00251562a284751c9973bace760d86c0276c471b4be569fe6b068ee97a56"
 
 [[package]]
 name = "xml-rs"
@@ -5445,6 +5514,21 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[package]]
+name = "zune-core"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b"
+
+[[package]]
+name = "zune-jpeg"
+version = "0.5.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
+dependencies = [
+ "zune-core",
+]
 
 [[package]]
 name = "zvariant"

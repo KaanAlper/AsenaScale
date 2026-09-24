@@ -13,6 +13,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import com.jcraft.jsch.ChannelExec
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
 import dev.asenascale.App
@@ -103,6 +104,24 @@ class Transfers(private val context: Context) {
 
     fun clearFinished() {
         _list.value = _list.value.filter { it.status.value == Status.Running }
+    }
+
+    /**
+     * Opens a long-lived exec channel on the host's transfer link (screen
+     * sharing). Call the returned function when done with it.
+     */
+    fun openChannel(host: Host, command: String): Pair<ChannelExec, () -> Unit> {
+        val link = link(host)
+        try {
+            val ch = link.channel(1, command)
+            return ch to {
+                runCatching { ch.disconnect() }
+                release(host.id)
+            }
+        } catch (e: Exception) {
+            release(host.id)
+            throw e
+        }
     }
 
     fun active(hostId: String) = _list.value.count { it.hostId == hostId && it.status.value == Status.Running }
@@ -301,6 +320,9 @@ class Transfers(private val context: Context) {
 
         fun exec(worker: Int, command: String, stdin: ByteArray? = null, timeoutMs: Long = 30_000) =
             execOn(session(worker % CONNECTIONS), command, stdin, timeoutMs)
+
+        fun channel(slot: Int, command: String): ChannelExec =
+            (session(slot % CONNECTIONS).openChannel("exec") as ChannelExec).apply { setCommand(command) }
 
         private fun session(slot: Int): Session = synchronized(sessions) {
             sessions[slot]?.takeIf { it.isConnected }?.let { return it }

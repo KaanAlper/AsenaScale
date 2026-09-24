@@ -141,5 +141,11 @@
   "cancelled": "Cancelled",
   "cancel": "Cancel",
   "downloading": "Downloading %1$s",
-  "n_files": "%1$d files"
+  "n_files": "%1$d files",
+  "screen_share": "Screen share",
+  "screen_hint": "Tap: click · Long press: right click · Drag: scroll · Two fingers: zoom",
+  "quality_low": "Saver",
+  "quality_high": "Sharp",
+  "fit": "Fit to screen",
+  "keyboard": "Keyboard"
 }

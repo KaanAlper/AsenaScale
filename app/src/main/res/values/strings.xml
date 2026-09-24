@@ -145,4 +145,10 @@
     <string name="cancel">Cancel</string>
     <string name="downloading">Downloading %1$s</string>
     <string name="n_files">%1$d files</string>
+    <string name="screen_share">Screen share</string>
+    <string name="screen_hint">Tap: click · Long press: right click · Drag: scroll · Two fingers: zoom</string>
+    <string name="quality_low">Saver</string>
+    <string name="quality_high">Sharp</string>
+    <string name="fit">Fit to screen</string>
+    <string name="keyboard">Keyboard</string>
 </resources>

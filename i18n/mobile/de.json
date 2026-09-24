@@ -141,5 +141,11 @@
   "cancelled": "Abgebrochen",
   "cancel": "Abbrechen",
   "downloading": "Lade %1$s herunter",
-  "n_files": "%1$d Dateien"
+  "n_files": "%1$d Dateien",
+  "screen_share": "Bildschirmfreigabe",
+  "screen_hint": "Tippen: Klick · Lang drücken: Rechtsklick · Ziehen: Scrollen · Zwei Finger: Zoom",
+  "quality_low": "Sparsam",
+  "quality_high": "Scharf",
+  "fit": "An Bildschirm anpassen",
+  "keyboard": "Tastatur"
 }

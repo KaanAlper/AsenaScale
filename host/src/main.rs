@@ -9,6 +9,7 @@ mod autostart;
 mod firewall;
 mod files;
 mod i18n;
+mod screen;
 mod server;
 mod session;
 mod shot;

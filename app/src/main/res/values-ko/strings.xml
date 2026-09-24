@@ -144,4 +144,10 @@
     <string name="cancel">취소</string>
     <string name="downloading">%1$s 다운로드 중</string>
     <string name="n_files">파일 %1$d개</string>
+    <string name="screen_share">화면 공유</string>
+    <string name="screen_hint">탭: 클릭 · 길게 누르기: 오른쪽 클릭 · 드래그: 스크롤 · 두 손가락: 확대</string>
+    <string name="quality_low">절약</string>
+    <string name="quality_high">선명</string>
+    <string name="fit">화면에 맞추기</string>
+    <string name="keyboard">키보드</string>
 </resources>
