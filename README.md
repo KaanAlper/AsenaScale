@@ -57,6 +57,18 @@ dil *Ayarlar → Uygulamalar → AsenaScale Mobile → Dil*'den seçilebilir.
 - **Ağ değişimi:** Wi-Fi ↔ mobil veri geçişinde SSH kopmaz; tünel yeni ağa kendiliğinden geçer.
 - **Arka plan:** terminal açıkken bildirimdeki "terminal açık" oturumu canlı tutar.
   Terminalden çıkınca oturum kapanmaz; ana ekranda "açık" etiketiyle görünür.
+- **Dosya ekleme (ataş):** *Telefondan* (fotoğraf/video, dosya) PC'ye gönderir, ya da
+  *PC'den* dosya seçtirir; iki durumda da dosyanın PC'deki yolu terminale yazılır, Claude'a
+  "şu resme bak" demek için hazır.
+- **Dosyalar (⋮ → Dosyalar):** PC'nin dosyalarında gez; dosyayı telefona indir, yolunu
+  terminale yaz ya da kopyala, açık klasöre telefondan yükle. Aktarımlar IDM gibi parçalı ve
+  paralel (2 MB parçalar, 4 işçi, 2 bağlantı), kesilirse parça yeniden denenir; hız ve ilerleme
+  görünür. İnenler telefonda *İndirilenler/AsenaScale*'e düşer.
+- **Ekran paylaşımı (ekran simgesi):** PC ekranını canlı gör ve kullan. Dokun = tıkla, çift
+  dokun = çift tık, basılı tut = sağ tık, sürükle = kaydır, iki parmak = yakınlaştır. Klavye
+  düğmesi telefon klavyesini ve esc/tab/oklar/ctrl+c… satırını açar; birden çok monitörde
+  1/2 ile seç. Sadece değişen bölgeler gider: sabit ekran veri harcamaz, *Tasarruf*/*Net*
+  arasında geçilebilir.
 
 ## Sorun giderme
 
