@@ -70,10 +70,10 @@ class KeepAliveService : Service() {
 
         fun update(context: Context, openSessions: Int) {
             val i = Intent(context, KeepAliveService::class.java).putExtra("count", openSessions)
-            if (openSessions > 0) {
-                context.startForegroundService(i)
-            } else {
-                context.stopService(i)
+            // Starting a foreground service from the background can be refused
+            // on newer Android; the running one simply keeps its old count.
+            runCatching {
+                if (openSessions > 0) context.startForegroundService(i) else context.stopService(i)
             }
         }
     }
