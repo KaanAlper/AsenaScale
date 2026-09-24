@@ -17,6 +17,7 @@ serde_json = "1"
 dirs = "6"
 rand = { version = "0.10", features = ["thread_rng"] }
 anyhow = "1"
+vt100 = "0.16"
 log = "0.4"
 env_logger = "0.11"
 

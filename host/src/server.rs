@@ -7,19 +7,18 @@
 //!   runs in the platform shell.
 
 use std::collections::HashMap;
-use std::io::{Read, Write};
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize};
+use portable_pty::PtySize;
 use russh::keys::{HashAlg, PublicKey};
-use russh::server::{Auth, ChannelOpenHandle, Handle, Msg, Session};
+use russh::server::{Auth, ChannelOpenHandle, Handle, Msg, Session as RusshSession};
 use russh::{Channel, ChannelId, Pty};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::ChildStdin;
 
 use crate::approve;
+use crate::session::{Session, Sessions};
 use crate::store::Devices;
 
 pub const SERVER_ID: &str = concat!("SSH-2.0-AsenaScale_", env!("CARGO_PKG_VERSION"));
@@ -27,19 +26,19 @@ pub const SERVER_ID: &str = concat!("SSH-2.0-AsenaScale_", env!("CARGO_PKG_VERSI
 /// Shared between connections and the tray.
 pub struct State {
     pub devices: Mutex<Devices>,
-    /// Open terminal sessions, shown in the tray.
-    pub sessions: AtomicUsize,
+    /// Terminal sessions; they outlive connections.
+    pub sessions: Arc<Sessions>,
     /// Only one approval dialog at a time.
     prompt: tokio::sync::Mutex<()>,
-    /// Called whenever `sessions` or `devices` change.
-    pub on_change: Box<dyn Fn() + Send + Sync>,
+    /// Called whenever sessions or devices change.
+    pub on_change: Arc<dyn Fn() + Send + Sync>,
 }
 
 impl State {
-    pub fn new(on_change: Box<dyn Fn() + Send + Sync>) -> Arc<State> {
+    pub fn new(on_change: Arc<dyn Fn() + Send + Sync>) -> Arc<State> {
         Arc::new(State {
             devices: Mutex::new(Devices::load()),
-            sessions: AtomicUsize::new(0),
+            sessions: Arc::new(Sessions::default()),
             prompt: tokio::sync::Mutex::new(()),
             on_change,
         })
@@ -64,9 +63,10 @@ impl russh::server::Server for Server {
 }
 
 enum Chan {
-    /// Opened; waiting for pty/shell/exec requests.
-    New { pty: Option<PtySize> },
-    Shell { writer: Box<dyn Write + Send>, master: Box<dyn MasterPty + Send>, killer: Box<dyn ChildKiller + Send + Sync> },
+    /// Opened; waiting for pty/env/shell/exec requests.
+    New { pty: Option<PtySize>, env: HashMap<String, String> },
+    /// Attached to a persistent terminal session.
+    Shell { session: Arc<Session>, client: u64 },
     Exec { stdin: Option<ChildStdin> },
     /// `mc put NAME`: file bytes arrive as channel data until EOF.
     Upload { name: String, data: Vec<u8>, handle: Handle },
@@ -98,10 +98,10 @@ impl Conn {
 
 impl Drop for Conn {
     fn drop(&mut self) {
+        // Detach only: the sessions keep running for the next connection.
         for (_, ch) in self.channels.drain() {
-            if let Chan::Shell { mut killer, .. } = ch {
-                let _ = killer.kill();
-                self.state.sessions.fetch_sub(1, Ordering::SeqCst);
+            if let Chan::Shell { session, client } = ch {
+                session.detach(client);
                 (self.state.on_change)();
             }
         }
@@ -158,9 +158,9 @@ impl russh::server::Handler for Conn {
         &mut self,
         channel: Channel<Msg>,
         reply: ChannelOpenHandle,
-        _session: &mut Session,
+        _session: &mut RusshSession,
     ) -> Result<(), Self::Error> {
-        self.channels.insert(channel.id(), Chan::New { pty: None });
+        self.channels.insert(channel.id(), Chan::New { pty: None, env: HashMap::new() });
         reply.accept().await;
         Ok(())
     }
@@ -175,9 +175,9 @@ impl russh::server::Handler for Conn {
         pix_w: u32,
         pix_h: u32,
         _modes: &[(Pty, u32)],
-        session: &mut Session,
+        session: &mut RusshSession,
     ) -> Result<(), Self::Error> {
-        if let Some(Chan::New { pty }) = self.channels.get_mut(&channel) {
+        if let Some(Chan::New { pty, .. }) = self.channels.get_mut(&channel) {
             *pty = Some(size(cols, rows, pix_w, pix_h));
             session.channel_success(channel)?;
         } else {
@@ -189,28 +189,47 @@ impl russh::server::Handler for Conn {
     async fn env_request(
         &mut self,
         channel: ChannelId,
-        _name: &str,
-        _value: &str,
-        session: &mut Session,
+        name: &str,
+        value: &str,
+        session: &mut RusshSession,
     ) -> Result<(), Self::Error> {
+        // AS_SESSION: which terminal to attach to; AS_CMD: what a new one runs.
+        if let Some(Chan::New { env, .. }) = self.channels.get_mut(&channel) {
+            if name.starts_with("AS_") && env.len() < 16 && value.len() < 4096 {
+                env.insert(name.to_string(), value.to_string());
+            }
+        }
         session.channel_success(channel)?;
         Ok(())
     }
 
-    async fn shell_request(&mut self, channel: ChannelId, session: &mut Session) -> Result<(), Self::Error> {
-        let pty = match self.channels.get(&channel) {
-            Some(Chan::New { pty }) => pty.unwrap_or_else(|| size(80, 24, 0, 0)),
+    async fn shell_request(&mut self, channel: ChannelId, session: &mut RusshSession) -> Result<(), Self::Error> {
+        let (pty, env) = match self.channels.get(&channel) {
+            Some(Chan::New { pty, env }) => (pty.unwrap_or_else(|| size(80, 24, 0, 0)), env.clone()),
             _ => {
                 session.channel_failure(channel)?;
                 return Ok(());
             }
         };
-        match spawn_shell(pty, channel, session.handle()) {
-            Ok(ch) => {
-                self.channels.insert(channel, ch);
-                self.state.sessions.fetch_add(1, Ordering::SeqCst);
-                (self.state.on_change)();
+        // Reattach to the phone's session if it's still running, else start it.
+        let id = env
+            .get("AS_SESSION")
+            .filter(|id| crate::session::valid_id(id))
+            .cloned()
+            .unwrap_or_else(|| format!("s{}", rand::random::<u32>()));
+        let term = match self.state.sessions.get(&id) {
+            Some(t) => Ok(t),
+            None => {
+                let cmd = env.get("AS_CMD").cloned().unwrap_or_default();
+                self.state.sessions.create(&id, &cmd, pty, self.state.on_change.clone())
+            }
+        };
+        match term {
+            Ok(term) => {
                 session.channel_success(channel)?;
+                let client = term.attach(session.handle(), channel, pty).await;
+                self.channels.insert(channel, Chan::Shell { session: term, client });
+                (self.state.on_change)();
             }
             Err(e) => {
                 log::error!("shell: {e:#}");
@@ -220,7 +239,7 @@ impl russh::server::Handler for Conn {
         Ok(())
     }
 
-    async fn exec_request(&mut self, channel: ChannelId, data: &[u8], session: &mut Session) -> Result<(), Self::Error> {
+    async fn exec_request(&mut self, channel: ChannelId, data: &[u8], session: &mut RusshSession) -> Result<(), Self::Error> {
         let cmd = String::from_utf8_lossy(data).trim().to_string();
         let handle = session.handle();
         session.channel_success(channel)?;
@@ -236,8 +255,9 @@ impl russh::server::Handler for Conn {
             // Built-in commands: answered here, no shell involved.
             self.channels.insert(channel, Chan::Busy);
             let args: Vec<String> = rest.split_whitespace().map(str::to_string).collect();
+            let sessions = self.state.sessions.clone();
             tokio::spawn(async move {
-                let result = tokio::task::spawn_blocking(move || builtin(&args)).await;
+                let result = tokio::task::spawn_blocking(move || builtin(&args, &sessions)).await;
                 let (out, err, code) = match result {
                     Ok(Ok(bytes)) => (bytes, String::new(), 0),
                     Ok(Err(e)) => (Vec::new(), format!("{e:#}"), 2),
@@ -260,12 +280,9 @@ impl russh::server::Handler for Conn {
         Ok(())
     }
 
-    async fn data(&mut self, channel: ChannelId, data: &[u8], _session: &mut Session) -> Result<(), Self::Error> {
+    async fn data(&mut self, channel: ChannelId, data: &[u8], _session: &mut RusshSession) -> Result<(), Self::Error> {
         match self.channels.get_mut(&channel) {
-            Some(Chan::Shell { writer, .. }) => {
-                writer.write_all(data)?;
-                writer.flush()?;
-            }
+            Some(Chan::Shell { session, .. }) => session.write(data),
             Some(Chan::Exec { stdin: Some(stdin) }) => {
                 stdin.write_all(data).await?;
             }
@@ -280,7 +297,7 @@ impl russh::server::Handler for Conn {
         Ok(())
     }
 
-    async fn channel_eof(&mut self, channel: ChannelId, _session: &mut Session) -> Result<(), Self::Error> {
+    async fn channel_eof(&mut self, channel: ChannelId, _session: &mut RusshSession) -> Result<(), Self::Error> {
         match self.channels.get_mut(&channel) {
             Some(Chan::Exec { stdin }) => *stdin = None, // closes the child's stdin
             Some(Chan::Upload { .. }) => {
@@ -308,18 +325,17 @@ impl russh::server::Handler for Conn {
         rows: u32,
         pix_w: u32,
         pix_h: u32,
-        _session: &mut Session,
+        _session: &mut RusshSession,
     ) -> Result<(), Self::Error> {
-        if let Some(Chan::Shell { master, .. }) = self.channels.get(&channel) {
-            let _ = master.resize(size(cols, rows, pix_w, pix_h));
+        if let Some(Chan::Shell { session, .. }) = self.channels.get(&channel) {
+            session.resize(size(cols, rows, pix_w, pix_h));
         }
         Ok(())
     }
 
-    async fn channel_close(&mut self, channel: ChannelId, _session: &mut Session) -> Result<(), Self::Error> {
-        if let Some(Chan::Shell { mut killer, .. }) = self.channels.remove(&channel) {
-            let _ = killer.kill();
-            self.state.sessions.fetch_sub(1, Ordering::SeqCst);
+    async fn channel_close(&mut self, channel: ChannelId, _session: &mut RusshSession) -> Result<(), Self::Error> {
+        if let Some(Chan::Shell { session, client }) = self.channels.remove(&channel) {
+            session.detach(client);
             (self.state.on_change)();
         }
         Ok(())
@@ -350,8 +366,29 @@ async fn finish(handle: &Handle, channel: ChannelId, out: Vec<u8>, err: String, 
     let _ = handle.close(channel).await;
 }
 
-fn builtin(args: &[String]) -> anyhow::Result<Vec<u8>> {
+fn builtin(args: &[String], sessions: &Sessions) -> anyhow::Result<Vec<u8>> {
     match args.first().map(String::as_str) {
+        // "session<TAB>id<TAB>attached<TAB>created<TAB>command<TAB>title"
+        Some("sessions") => Ok(sessions
+            .list()
+            .iter()
+            .map(|s| {
+                format!(
+                    "session\t{}\t{}\t{}\t{}\t{}\n",
+                    s.id,
+                    s.attached(),
+                    s.created,
+                    s.command.replace(['\t', '\n'], " "),
+                    s.title().replace(['\t', '\n'], " ")
+                )
+            })
+            .collect::<String>()
+            .into_bytes()),
+        Some("kill") => {
+            let id = args.get(1).map(String::as_str).unwrap_or("");
+            sessions.get(id).ok_or_else(|| anyhow::anyhow!("no such session"))?.kill();
+            Ok(Vec::new())
+        }
         Some("list") => crate::shot::list(),
         Some("shot") => {
             let kind = args.get(1).map(String::as_str).unwrap_or("screen");
@@ -361,73 +398,6 @@ fn builtin(args: &[String]) -> anyhow::Result<Vec<u8>> {
         Some("version") => Ok(format!("{SERVER_ID}\n").into_bytes()),
         _ => anyhow::bail!("bilinmeyen komut"),
     }
-}
-
-/// The interactive shell: PowerShell 7 if installed, else Windows
-/// PowerShell; the login shell elsewhere.
-fn shell_command() -> CommandBuilder {
-    #[cfg(windows)]
-    let mut cmd = {
-        let pwsh = which("pwsh.exe");
-        let mut c = CommandBuilder::new(pwsh.unwrap_or_else(|| "powershell.exe".into()));
-        c.arg("-NoLogo");
-        c
-    };
-    #[cfg(not(windows))]
-    let mut cmd = {
-        let sh = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into());
-        let mut c = CommandBuilder::new(sh);
-        c.arg("-l");
-        c
-    };
-    cmd.env("TERM", "xterm-256color");
-    cmd.env("COLORTERM", "truecolor");
-    if let Some(home) = dirs::home_dir() {
-        cmd.cwd(home);
-    }
-    cmd
-}
-
-#[cfg(windows)]
-fn which(exe: &str) -> Option<String> {
-    std::env::var_os("PATH").and_then(|paths| {
-        std::env::split_paths(&paths)
-            .map(|p| p.join(exe))
-            .find(|p| p.is_file())
-            .map(|p| p.to_string_lossy().into_owned())
-    })
-}
-
-fn spawn_shell(size: PtySize, channel: ChannelId, handle: Handle) -> anyhow::Result<Chan> {
-    let pair = native_pty_system().openpty(size)?;
-    let mut child = pair.slave.spawn_command(shell_command())?;
-    drop(pair.slave);
-    let killer = child.clone_killer();
-    let mut reader = pair.master.try_clone_reader()?;
-    let writer = pair.master.take_writer()?;
-    let rt = tokio::runtime::Handle::current();
-
-    // Terminal output -> phone. Blocking reads, so a plain thread.
-    std::thread::spawn(move || {
-        let mut buf = [0u8; 16 * 1024];
-        loop {
-            match reader.read(&mut buf) {
-                Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    if rt.block_on(handle.data(channel, buf[..n].to_vec())).is_err() {
-                        break;
-                    }
-                }
-            }
-        }
-        let code = child.wait().map(|s| s.exit_code()).unwrap_or(1);
-        rt.block_on(async {
-            let _ = handle.exit_status_request(channel, code).await;
-            let _ = handle.eof(channel).await;
-            let _ = handle.close(channel).await;
-        });
-    });
-    Ok(Chan::Shell { writer, master: pair.master, killer })
 }
 
 /// Non-interactive command with piped stdio, like `ssh host cmd`.

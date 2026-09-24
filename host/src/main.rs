@@ -9,11 +9,11 @@ mod autostart;
 mod firewall;
 mod files;
 mod server;
+mod session;
 mod shot;
 mod store;
 mod tailnet;
 
-use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -36,7 +36,7 @@ fn main() {
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
     let proxy = event_loop.create_proxy();
     let changed = proxy.clone();
-    let state = server::State::new(Box::new(move || {
+    let state = server::State::new(Arc::new(move || {
         let _ = changed.send_event(UserEvent::Changed);
     }));
 
@@ -73,6 +73,7 @@ fn main() {
     let login = MenuItem::new("Tailscale'e giriş yap", false, None);
     let devices = MenuItem::new("", false, None);
     let reset = MenuItem::new("İzinli telefonları sıfırla", true, None);
+    let close_all = MenuItem::new("Tüm oturumları kapat", true, None);
     let fix_firewall = MenuItem::new("Güvenlik duvarı iznini onar", cfg!(windows), None);
     let autorun = CheckMenuItem::new("Oturum açınca başlat", true, autostart::is_enabled(), None);
     let logout = MenuItem::new("Tailscale hesabından çık", true, None);
@@ -84,6 +85,7 @@ fn main() {
         &login,
         &devices,
         &PredefinedMenuItem::separator(),
+        &close_all,
         &reset,
         &fix_firewall,
         &autorun,
@@ -96,8 +98,13 @@ fn main() {
         let (status, address, login, devices, state, ts) =
             (status.clone(), address.clone(), login.clone(), devices.clone(), state.clone(), ts.clone());
         move |tray: Option<&tray_icon::TrayIcon>| {
-            let n = state.sessions.load(Ordering::SeqCst);
-            let text = if n == 0 { "Hazır — telefon bekleniyor".to_string() } else { format!("{n} terminal bağlı") };
+            let live = state.sessions.list();
+            let attached: usize = live.iter().map(|s| s.attached()).sum();
+            let text = match (live.len(), attached) {
+                (0, _) => "Hazır, telefon bekleniyor".to_string(),
+                (n, 0) => format!("{n} oturum açık (telefon bağlı değil)"),
+                (n, a) => format!("{n} oturum açık, {a} telefon bağlı"),
+            };
             status.set_text(&text);
             let st = ts.lock().unwrap().clone();
             let line = if st.running() {
@@ -140,6 +147,8 @@ fn main() {
                 } else if e.id == reset.id() {
                     state.devices.lock().unwrap().clear();
                     refresh(tray.as_ref());
+                } else if e.id == close_all.id() {
+                    state.sessions.kill_all();
                 } else if e.id == login.id() {
                     let url = ts.lock().unwrap().auth_url.clone();
                     if url.is_empty() {
