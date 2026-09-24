@@ -129,7 +129,7 @@ class SshConnection(val host: Host) {
             // Prefer the peer's Tailscale IP; fall back to MagicDNS resolution.
             val target = tn.resolve(host.address)
             // Knock first: tells "no SSH server" apart from "firewall / asleep".
-            tn.probe(target, host.port)?.let { error(probeMessage(it)) }
+            tn.probe(target, host.port)?.let { error(probeMessage(it, target)) }
             localPort = tn.forward(target, host.port)
 
             val jsch = JSch()
@@ -264,9 +264,23 @@ class SshConnection(val host: Host) {
         main.post { app.sessions.onClosed(this) }
     }
 
-    private fun probeMessage(err: String): String {
+    private fun probeMessage(err: String, target: String): String {
         val e = err.lowercase()
         val windows = app.tailnet.peerFor(host.address)?.isWindows == true
+        if ("timeout" in e || "deadline" in e) {
+            // Windows' firewall silently drops connections to closed ports, so
+            // "no answer" can also mean no SSH server. A Tailscale-level ping
+            // (answered by tailscaled, not the OS) tells tunnel from PC.
+            val ms = app.tailnet.ping(target)
+            return when {
+                ms < 0 -> "Tailscale üzerinden PC'ye ulaşılamıyor. PC'de Tailscale açık ve bağlı mı? PC uykuda olabilir."
+                windows -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama ${host.port}. port yanıt vermiyor: Windows'ta " +
+                    "SSH sunucusu kurulu değil ya da Güvenlik Duvarı engelliyor. Kurulum komutunu PC'de " +
+                    "Yönetici PowerShell'de çalıştır."
+                else -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama ${host.port}. port yanıt vermiyor: " +
+                    "SSH sunucusu kapalı ya da güvenlik duvarı engelliyor."
+            }
+        }
         return when {
             "refused" in e -> if (windows) {
                 "PC'ye ulaşıldı ama ${host.port}. portta SSH sunucusu yok. Windows kurulum komutunu " +

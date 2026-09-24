@@ -14,6 +14,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"sort"
@@ -25,6 +26,7 @@ import (
 	_ "golang.org/x/mobile/bind"
 	"tailscale.com/envknob"
 	"tailscale.com/net/netmon"
+	"tailscale.com/tailcfg"
 	"tailscale.com/tsnet"
 )
 
@@ -326,4 +328,30 @@ func Probe(target string) string {
 	}
 	c.Close()
 	return ""
+}
+
+// Ping sends a Tailscale-level ping (TSMP: answered by the peer's tailscaled,
+// not its OS) to a peer IP. It returns the round trip in milliseconds, or -1.
+// Used to tell "the tunnel can't reach the PC" apart from "the PC's firewall
+// or SSH server doesn't answer".
+func Ping(ip string) int {
+	s := current()
+	if s == nil {
+		return -1
+	}
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return -1
+	}
+	lc, err := s.LocalClient()
+	if err != nil {
+		return -1
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	res, err := lc.Ping(ctx, addr, tailcfg.PingTSMP)
+	if err != nil || res.Err != "" {
+		return -1
+	}
+	return int(res.LatencySeconds*1000 + 0.5)
 }

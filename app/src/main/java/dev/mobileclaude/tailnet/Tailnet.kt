@@ -184,6 +184,9 @@ class Tailnet(private val context: Context) {
         return tsbridge.Tsbridge.probe("$h:$port").ifEmpty { null }
     }
 
+    /** Tailscale-level round trip to a peer IP in ms, or -1 if it doesn't answer. */
+    fun ping(ip: String): Int = runCatching { tsbridge.Tsbridge.ping(ip).toInt() }.getOrDefault(-1)
+
     /** Opens a 127.0.0.1 port that tunnels to [host]:[port] over the tailnet. */
     fun forward(host: String, port: Int): Int {
         val h = if (':' in host) "[$host]" else host
