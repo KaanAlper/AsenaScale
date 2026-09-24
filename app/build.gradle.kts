@@ -60,6 +60,9 @@ android {
 
     packaging {
         jniLibs { useLegacyPackaging = false }
+        resources {
+            excludes += listOf("META-INF/versions/9/OSGI-INF/MANIFEST.MF", "META-INF/{AL2.0,LGPL2.1}")
+        }
     }
 }
 

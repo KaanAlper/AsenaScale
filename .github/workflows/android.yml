@@ -40,9 +40,9 @@ jobs:
           java-version: 17
 
       # The Go/Tailscale part takes minutes to build; reuse it until it changes.
-      - name: Cache embedded Tailscale
+      - name: Restore embedded Tailscale
         id: tsbridge-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: app/libs/tsbridge.aar
           key: tsbridge-${{ hashFiles('tsbridge/**', 'scripts/build-tsbridge.sh') }}
@@ -58,6 +58,14 @@ jobs:
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
         run: ./scripts/build-tsbridge.sh
+
+      # Saved right away, so a later Gradle failure doesn't throw it away.
+      - name: Save embedded Tailscale
+        if: steps.tsbridge-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: app/libs/tsbridge.aar
+          key: ${{ steps.tsbridge-cache.outputs.cache-primary-key }}
 
       - uses: gradle/actions/setup-gradle@v4
 

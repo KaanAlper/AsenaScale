@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.text.InputType
+import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
 import android.view.KeyCharacterMap
@@ -54,10 +55,12 @@ class TerminalCanvasView(context: Context) : View(context) {
     var onModifiersConsumed: (() -> Unit)? = null
     var onLongPress: (() -> Unit)? = null
 
+    private fun sp(v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, resources.displayMetrics)
+
     private val typeface: Typeface =
         ResourcesCompat.getFont(context, R.font.jetbrains_mono) ?: Typeface.MONOSPACE
     private val prefs = context.getSharedPreferences("ui", Context.MODE_PRIVATE)
-    private var textSizePx = prefs.getFloat("fontPx", 13.5f * resources.displayMetrics.scaledDensity)
+    private var textSizePx = prefs.getFloat("fontPx", sp(13.5f))
     private var renderer = TerminalRenderer(textSizePx.roundToInt(), typeface)
     private val padding = (6 * resources.displayMetrics.density).roundToInt()
 
@@ -207,8 +210,8 @@ class TerminalCanvasView(context: Context) : View(context) {
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val min = 8f * resources.displayMetrics.scaledDensity
-            val maxSize = 28f * resources.displayMetrics.scaledDensity
+            val min = sp(8f)
+            val maxSize = sp(28f)
             val next = (textSizePx * detector.scaleFactor).coerceIn(min, maxSize)
             if (abs(next - textSizePx) >= 1f) {
                 textSizePx = next

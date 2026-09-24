@@ -143,7 +143,7 @@ class SshConnection(val host: Host) {
                     AuthMode.PASSWORD -> "keyboard-interactive,password"
                 },
             )
-            if (host.auth == AuthMode.PASSWORD) s.setPassword(host.password)
+            if (host.auth == AuthMode.PASSWORD) s.setPassword(host.password.toByteArray())
             s.userInfo = PasswordInfo(host.password)
             s.setServerAliveInterval(15_000)
             s.setServerAliveCountMax(4)
