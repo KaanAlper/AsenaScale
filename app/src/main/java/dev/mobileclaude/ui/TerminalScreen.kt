@@ -1,5 +1,19 @@
 package dev.mobileclaude.ui
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.outlined.AttachFile
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import dev.mobileclaude.files.Uploads
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -87,6 +101,32 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     var selectText by remember { mutableStateOf<String?>(null) }
     term.onLongPress = { selectText = term.copyAllText() }
 
+    // Files and photos from the phone go to the PC; their PC path is typed
+    // into the terminal, ready for Claude ("bu resme bak: C:\...").
+    val scope = rememberCoroutineScope()
+    var uploading by remember { mutableStateOf<String?>(null) }
+    var attachMenu by remember { mutableStateOf(false) }
+    fun upload(uris: List<Uri>) {
+        if (uris.isEmpty() || uploading != null) return
+        scope.launch {
+            val paths = mutableListOf<String>()
+            for ((i, uri) in uris.withIndex()) {
+                uploading = if (uris.size > 1) "Gönderiliyor ${i + 1}/${uris.size}…" else "Gönderiliyor…"
+                runCatching { withContext(Dispatchers.IO) { Uploads.send(context, conn, uri) } }
+                    .onSuccess { paths += it }
+                    .onFailure { Toast.makeText(context, "Gönderilemedi: ${it.message}", Toast.LENGTH_LONG).show() }
+            }
+            uploading = null
+            if (paths.isNotEmpty()) {
+                conn.sendText(paths.joinToString(" ") { Uploads.quoted(it) } + " ")
+                term.showKeyboard()
+            }
+        }
+    }
+    val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { upload(it) }
+    val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { upload(it) }
+    val hint by conn.hint.collectAsState()
+
     Column(
         Modifier
             .fillMaxSize()
@@ -122,6 +162,30 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
             IconButton(onClick = { shots = true }, enabled = state == ConnState.Connected) {
                 Icon(Icons.Outlined.PhotoCamera, "Ekran görüntüsü", tint = Mocha.subtext)
             }
+            Box {
+                IconButton(onClick = { attachMenu = true }, enabled = state == ConnState.Connected && uploading == null) {
+                    Icon(Icons.Outlined.AttachFile, "PC'ye gönder", tint = Mocha.subtext)
+                }
+                DropdownMenu(
+                    expanded = attachMenu,
+                    onDismissRequest = { attachMenu = false },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Fotoğraf / video") },
+                        leadingIcon = { Icon(Icons.Outlined.Image, null) },
+                        onClick = {
+                            attachMenu = false
+                            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Dosya") },
+                        leadingIcon = { Icon(Icons.Outlined.Description, null) },
+                        onClick = { attachMenu = false; pickFiles.launch("*/*") },
+                    )
+                }
+            }
             IconButton(onClick = { app.clipboardText()?.let { term.paste(it) } }) {
                 Icon(Icons.Outlined.ContentPaste, "Yapıştır", tint = Mocha.subtext)
             }
@@ -146,6 +210,13 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
             }
         }
 
+        uploading?.let {
+            Column(Modifier.fillMaxWidth()) {
+                LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp), color = Mocha.mauve, trackColor = Mocha.surface0)
+                Text(it, fontSize = 12.sp, color = Mocha.subtext, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            }
+        }
+
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView(factory = { term }, modifier = Modifier.fillMaxSize())
 
@@ -154,6 +225,19 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                     CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.5.dp, color = Mocha.mauve)
                     Spacer(Modifier.height(12.dp))
                     Text("${host.address} bağlanıyor…", fontFamily = Mono, fontSize = 12.sp, color = Mocha.overlay0)
+                    hint?.let {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            it,
+                            fontSize = 14.sp,
+                            color = Mocha.text,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .padding(horizontal = 32.dp)
+                                .background(Mocha.mantle, RoundedCornerShape(14.dp))
+                                .padding(14.dp),
+                        )
+                    }
                 }
             }
 

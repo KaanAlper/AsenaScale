@@ -64,8 +64,10 @@ object Screenshots {
     }
 
     fun list(context: Context, conn: SshConnection): ShotList {
-        val os = os(conn)
-        val r = if (os != "posix") {
+        val os = if (conn.isHostApp) "host" else os(conn)
+        val r = if (os == "host") {
+            conn.exec("mc list", timeoutMs = 20_000) // the PC app answers this itself
+        } else if (os != "posix") {
             conn.exec(windowsCmd(os), windowsScript(context, "list", "", ""), timeoutMs = 45_000)
         } else {
             conn.exec("sh -s list", script(context, "mcshot.sh"))
@@ -93,8 +95,11 @@ object Screenshots {
 
     /** Captures [target] and returns the PNG, cached in the app's cache dir. */
     fun take(context: Context, conn: SshConnection, target: ShotTarget): File {
-        val os = os(conn)
-        val png = if (os != "posix") {
+        val os = if (conn.isHostApp) "host" else os(conn)
+        val png = if (os == "host") {
+            val r = conn.exec("mc shot ${checkId(target.kind)} ${checkId(target.id)}", timeoutMs = 30_000)
+            r.stdout.takeIf { isPng(it) } ?: error(friendly(r.stderr, "Ekran görüntüsü alınamadı"))
+        } else if (os != "posix") {
             val r = conn.exec(windowsCmd(os), windowsScript(context, "shot", target.kind, target.id), timeoutMs = 60_000)
             val text = r.stdout.toString(Charsets.US_ASCII).trim()
             runCatching { Base64.decode(text, Base64.DEFAULT) }.getOrNull()

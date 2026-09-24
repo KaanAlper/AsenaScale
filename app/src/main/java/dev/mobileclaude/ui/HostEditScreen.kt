@@ -34,6 +34,11 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import dev.mobileclaude.tailnet.HOST_APP_PORT
+import androidx.compose.material3.TextButton
 import dev.mobileclaude.ssh.Keys
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
@@ -69,7 +74,16 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
     var password by remember { mutableStateOf(base.password) }
     var startup by remember { mutableStateOf(base.startup) }
 
-    val valid = address.isNotBlank() && user.isNotBlank() && port.toIntOrNull() in 1..65535
+    // Is the Mobile Claude Host PC app running there? Then nothing else is needed.
+    var hostApp by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(address, ts.running) {
+        hostApp = null
+        if (address.isBlank() || !ts.running) return@LaunchedEffect
+        delay(400) // typing
+        hostApp = withContext(Dispatchers.IO) { app.tailnet.isHostApp(app.tailnet.resolve(address)) }
+    }
+    val viaHostApp = hostApp == true
+    val valid = address.isNotBlank() && (viaHostApp || user.isNotBlank()) && port.toIntOrNull() in 1..65535
     // Tailscale SSH only exists as a server on Linux/macOS; Windows uses OpenSSH Server.
     val isWindows = ts.peers.isNotEmpty() && app.tailnet.peerFor(address)?.isWindows == true
     LaunchedEffect(isWindows) { if (isWindows && auth == AuthMode.TAILSCALE) auth = AuthMode.KEY }
@@ -109,50 +123,62 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Field("Kullanıcı", user, { user = it.trim() }, Modifier.weight(1f), mono = true,
-                    placeholder = if (isWindows) "Windows kullanıcı adın" else "")
-                Field("Port", port, { port = it.filter(Char::isDigit).take(5) }, Modifier.width(96.dp), mono = true, keyboard = KeyboardType.Number)
-            }
-
-            Text("Giriş", fontSize = 13.sp, color = Mocha.subtext)
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                val options = listOfNotNull(
-                    AuthMode.KEY to "Anahtar",
-                    (AuthMode.TAILSCALE to "Tailscale SSH").takeUnless { isWindows },
-                    AuthMode.PASSWORD to "Şifre",
-                )
-                options.forEachIndexed { i, (mode, label) ->
-                    SegmentedButton(
-                        selected = auth == mode,
-                        onClick = { auth = mode },
-                        shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                        colors = SegmentedButtonDefaults.colors(
-                            activeContainerColor = Mocha.mauve.copy(alpha = 0.16f),
-                            activeContentColor = Mocha.mauve,
-                            inactiveContainerColor = MaterialTheme.colorScheme.background,
-                            activeBorderColor = Mocha.surface1,
-                            inactiveBorderColor = Mocha.surface1,
-                        ),
-                        icon = {},
-                    ) { Text(label, fontSize = 13.sp) }
-                }
-            }
-            if (isWindows) {
-                WindowsSetupCard { app.copyToClipboard(Keys.windowsSetupScript(context)) }
+            if (viaHostApp) {
+                HostAppFoundCard()
             } else {
+                if (isWindows) {
+                    WindowsSetupCard(
+                        onCopyLink = { app.copyToClipboard(HOST_APP_DOWNLOAD) },
+                        onCopyScript = { app.copyToClipboard(Keys.windowsSetupScript(context)) },
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Field(
+                        "Kullanıcı", user, { user = it.trim() }, Modifier.weight(1f), mono = true,
+                        placeholder = if (isWindows) "Windows kullanıcı adın" else "",
+                    )
+                    Field(
+                        "Port", port, { port = it.filter(Char::isDigit).take(5) }, Modifier.width(96.dp),
+                        mono = true, keyboard = KeyboardType.Number,
+                    )
+                }
+
+                Text("Giriş", fontSize = 13.sp, color = Mocha.subtext)
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    val options = listOfNotNull(
+                        AuthMode.KEY to "Anahtar",
+                        (AuthMode.TAILSCALE to "Tailscale SSH").takeUnless { isWindows },
+                        AuthMode.PASSWORD to "Şifre",
+                    )
+                    options.forEachIndexed { i, (mode, label) ->
+                        SegmentedButton(
+                            selected = auth == mode,
+                            onClick = { auth = mode },
+                            shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = Mocha.mauve.copy(alpha = 0.16f),
+                                activeContentColor = Mocha.mauve,
+                                inactiveContainerColor = MaterialTheme.colorScheme.background,
+                                activeBorderColor = Mocha.surface1,
+                                inactiveBorderColor = Mocha.surface1,
+                            ),
+                            icon = {},
+                        ) { Text(label, fontSize = 13.sp) }
+                    }
+                }
                 Text(
                     when (auth) {
-                        AuthMode.KEY -> "Uygulamanın anahtarını (ana ekrandaki 🔑) bilgisayardaki ~/.ssh/authorized_keys dosyasına ekle."
+                        AuthMode.KEY -> if (isWindows) "OpenSSH kurulum komutu bu telefonun anahtarını da ekler."
+                        else "Uygulamanın anahtarını (ana ekrandaki 🔑) bilgisayardaki ~/.ssh/authorized_keys dosyasına ekle."
                         AuthMode.TAILSCALE -> "Bilgisayarda `sudo tailscale set --ssh` açıksa şifresiz bağlanır."
                         AuthMode.PASSWORD -> "Şifre bu telefonda uygulamanın özel alanında saklanır."
                     },
                     fontSize = 12.sp,
                     color = Mocha.overlay0,
                 )
-            }
-            if (auth == AuthMode.PASSWORD) {
-                Field("Şifre", password, { password = it }, password = true)
+                if (auth == AuthMode.PASSWORD) {
+                    Field("Şifre", password, { password = it }, password = true)
+                }
             }
 
             Field("Bağlanınca çalıştır", startup, { startup = it }, placeholder = "boş = sadece kabuk", mono = true)
@@ -178,9 +204,9 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                     base.copy(
                         name = name.trim(),
                         address = address.trim().trimEnd('.'),
-                        user = user,
-                        port = port.toIntOrNull() ?: 22,
-                        auth = auth,
+                        user = if (viaHostApp) user.ifBlank { "pc" } else user,
+                        port = if (viaHostApp) HOST_APP_PORT else port.toIntOrNull() ?: 22,
+                        auth = if (viaHostApp) AuthMode.KEY else auth,
                         password = if (auth == AuthMode.PASSWORD) password else "",
                         startup = startup.trim(),
                     ),
@@ -245,9 +271,31 @@ private fun Field(
     )
 }
 
+/** Where the PC app is downloaded from. */
+const val HOST_APP_DOWNLOAD = "https://github.com/KaanAlper/Mobile-Claude/releases/latest"
+
 @Composable
-private fun WindowsSetupCard(onCopy: () -> Unit) {
-    var copied by remember { mutableStateOf(false) }
+private fun HostAppFoundCard() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Mocha.green.copy(alpha = 0.10f))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("✓ PC'de Mobile Claude Host bulundu", fontWeight = FontWeight.Medium, color = Mocha.green)
+        Text(
+            "Kurulum gerekmiyor. İlk bağlantıda PC'de bir izin penceresi çıkar, \"Evet\"e basman yeterli.",
+            fontSize = 13.sp,
+            color = Mocha.subtext,
+        )
+    }
+}
+
+@Composable
+private fun WindowsSetupCard(onCopyLink: () -> Unit, onCopyScript: () -> Unit) {
+    var copied by remember { mutableStateOf("") }
     Column(
         Modifier
             .fillMaxWidth()
@@ -256,25 +304,26 @@ private fun WindowsSetupCard(onCopy: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("Windows kurulumu (bir kez)", fontWeight = FontWeight.Medium)
+        Text("Windows'a bağlanmak için", fontWeight = FontWeight.Medium)
         Text(
-            "1. Aşağıdaki komutu kopyala ve bilgisayarına gönder.\n" +
-                "2. PC'de Başlat → \"PowerShell\" → Yönetici olarak çalıştır → yapıştır.\n" +
-                "3. En sonda yazan kullanıcı adını buraya gir.",
+            "Önerilen: PC'ye Mobile Claude Host'u kur. Bağlantıyı PC'de aç, " +
+                "MobileClaudeHost-windows-x64.exe dosyasını indirip çalıştır. Sistem tepsisine yerleşir; " +
+                "komut ya da yönetici izni gerekmez. Kurunca bu ekran onu kendiliğinden bulur.",
             fontSize = 13.sp,
             color = Mocha.subtext,
             lineHeight = 19.sp,
         )
-        Text(
-            "OpenSSH Sunucusunu kurar, PowerShell'i kabuk yapar ve bu telefonun anahtarını yetkilendirir. " +
-                "(Tailscale SSH, Windows'ta sunucu olarak çalışmıyor.)",
-            fontSize = 12.sp,
-            color = Mocha.overlay0,
-        )
         Button(
-            onClick = { onCopy(); copied = true },
+            onClick = { onCopyLink(); copied = "link" },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (copied) "Kopyalandı ✓" else "Kurulum komutunu kopyala") }
+        ) { Text(if (copied == "link") "Bağlantı kopyalandı ✓" else "İndirme bağlantısını kopyala") }
+        TextButton(onClick = { onCopyScript(); copied = "script" }, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                if (copied == "script") "Komut kopyalandı ✓" else "Alternatif: Windows OpenSSH kurulum komutu",
+                fontSize = 13.sp,
+                color = Mocha.overlay0,
+            )
+        }
     }
 }

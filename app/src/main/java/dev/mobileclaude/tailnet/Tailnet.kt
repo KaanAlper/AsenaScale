@@ -47,6 +47,10 @@ data class TailnetState(
     val needsLogin get() = backend == "NeedsLogin" || backend == "NeedsMachineAuth"
 }
 
+/** Port and SSH identification of the Mobile Claude Host PC app. */
+const val HOST_APP_PORT = 2222
+const val HOST_APP_ID = "MobileClaudeHost"
+
 /**
  * Embedded Tailscale node (Go tsnet via gomobile). All tailnet traffic stays
  * inside the app process: no VpnService, and it works next to the official
@@ -182,6 +186,12 @@ class Tailnet(private val context: Context) {
     fun probe(host: String, port: Int): String? {
         val h = if (':' in host) "[$host]" else host
         return tsbridge.Tsbridge.probe("$h:$port").ifEmpty { null }
+    }
+
+    /** True if the Mobile Claude Host PC app answers on [ip]. */
+    fun isHostApp(ip: String): Boolean {
+        val h = if (':' in ip) "[$ip]" else ip
+        return runCatching { tsbridge.Tsbridge.banner("$h:$HOST_APP_PORT") }.getOrDefault("").contains(HOST_APP_ID)
     }
 
     /** Tailscale-level round trip to a peer IP in ms, or -1 if it doesn't answer. */

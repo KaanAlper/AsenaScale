@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.jcraft.jsch.ChannelExec
+import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.ChannelShell
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
@@ -15,6 +16,7 @@ import com.termux.terminal.TerminalSessionClient
 import dev.mobileclaude.App
 import dev.mobileclaude.data.AuthMode
 import dev.mobileclaude.data.Host
+import dev.mobileclaude.tailnet.HOST_APP_PORT
 import dev.mobileclaude.term.TermTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,6 +53,14 @@ class SshConnection(val host: Host) {
     private var shell: ChannelShell? = null
     private var shellOut: OutputStream? = null
     private var localPort = 0
+
+    /** Connected to the Mobile Claude Host PC app (not a plain SSH server). */
+    @Volatile var isHostApp = false
+        private set
+
+    private val _hint = MutableStateFlow<String?>(null)
+    /** Something the user should do on the PC while connecting, if any. */
+    val hint: StateFlow<String?> = _hint
 
     /** "posix", "win-ps" or "win-cmd", detected on first use by the screenshot helper. */
     @Volatile var remoteOs: String? = null
@@ -128,24 +138,34 @@ class SshConnection(val host: Host) {
             if (!tn.state.value.running) error("Tailscale bağlı değil. Ana ekrandan aç ve giriş yap.")
             // Prefer the peer's Tailscale IP; fall back to MagicDNS resolution.
             val target = tn.resolve(host.address)
+            // The PC app, when running, beats a plain SSH server: no setup,
+            // direct screenshots, file drop. Only on the default ports so a
+            // deliberately chosen port is left alone.
+            var port = host.port
+            if ((port == 22 || port == HOST_APP_PORT) && tn.isHostApp(target)) {
+                port = HOST_APP_PORT
+                isHostApp = true
+                if (host.port != port) app.hosts.save(host.copy(port = port))
+            }
             // Knock first: tells "no SSH server" apart from "firewall / asleep".
-            tn.probe(target, host.port)?.let { error(probeMessage(it, target)) }
-            localPort = tn.forward(target, host.port)
+            tn.probe(target, port)?.let { error(probeMessage(it, target, port)) }
+            localPort = tn.forward(target, port)
 
             val jsch = JSch()
             val known = File(app.filesDir, "known_hosts").apply { if (!exists()) createNewFile() }
             jsch.setKnownHosts(known.absolutePath)
             jsch.addIdentity(Keys.privateKeyFile(app).absolutePath)
 
-            val s = jsch.getSession(host.user, "127.0.0.1", localPort)
+            val s = jsch.getSession(host.user.ifBlank { "pc" }, "127.0.0.1", localPort)
             s.setHostKeyAlias(host.address)
             s.setConfig("StrictHostKeyChecking", "no") // tailnet peers are WireGuard-authenticated already
             s.setConfig(
                 "PreferredAuthentications",
-                when (host.auth) {
-                    AuthMode.TAILSCALE -> "publickey,keyboard-interactive,password"
-                    AuthMode.KEY -> "publickey"
-                    AuthMode.PASSWORD -> "keyboard-interactive,password"
+                when {
+                    isHostApp -> "publickey" // the PC app approves this phone's key
+                    host.auth == AuthMode.TAILSCALE -> "publickey,keyboard-interactive,password"
+                    host.auth == AuthMode.KEY -> "publickey"
+                    else -> "keyboard-interactive,password"
                 },
             )
             if (host.auth == AuthMode.PASSWORD) s.setPassword(host.password.toByteArray())
@@ -153,7 +173,10 @@ class SshConnection(val host: Host) {
             s.setServerAliveInterval(15_000)
             s.setServerAliveCountMax(4)
             s.timeout = 0
-            s.connect(20_000)
+            // The first time, the PC app waits for someone to click "Yes" on the PC.
+            if (isHostApp) _hint.value = "PC'de çıkan izin penceresinde \"Evet\"e bas (ilk bağlantıda bir kez)."
+            s.connect(if (isHostApp) 120_000 else 20_000)
+            _hint.value = null
             session = s
 
             val ch = s.openChannel("shell") as ChannelShell
@@ -253,8 +276,37 @@ class SshConnection(val host: Host) {
         return ExecResult(ch.exitStatus, out.toByteArray(), err.toString(Charsets.UTF_8.name()))
     }
 
+    /**
+     * Copies a file to the PC's Downloads/Mobile Claude folder over SFTP (for
+     * plain SSH servers; the PC app has its own `mc put`). Returns the PC path.
+     */
+    fun sftpPut(name: String, bytes: ByteArray): String {
+        val s = session ?: error("Bağlı değil")
+        val ch = s.openChannel("sftp") as ChannelSftp
+        ch.connect(10_000)
+        try {
+            val home = ch.home.trimEnd('/')
+            runCatching { ch.mkdir("$home/Downloads") }
+            val dir = "$home/Downloads/Mobile Claude"
+            runCatching { ch.mkdir(dir) }
+            val dot = name.lastIndexOf('.').takeIf { it > 0 } ?: name.length
+            var remote = "$dir/$name"
+            var n = 1
+            while (runCatching { ch.stat(remote) }.isSuccess) {
+                remote = "$dir/${name.substring(0, dot)} ($n)${name.substring(dot)}"
+                n++
+            }
+            ch.put(bytes.inputStream(), remote)
+            // Windows OpenSSH reports paths like /C:/Users/...
+            return if (Regex("^/[A-Za-z]:/").containsMatchIn(remote)) remote.drop(1).replace('/', '\\') else remote
+        } finally {
+            ch.disconnect()
+        }
+    }
+
     fun close(reason: String? = null) {
         if (_state.value is ConnState.Closed) return
+        _hint.value = null
         _state.value = ConnState.Closed(reason)
         runCatching { shell?.disconnect() }
         runCatching { session?.disconnect() }
@@ -264,7 +316,7 @@ class SshConnection(val host: Host) {
         main.post { app.sessions.onClosed(this) }
     }
 
-    private fun probeMessage(err: String, target: String): String {
+    private fun probeMessage(err: String, target: String, port: Int): String {
         val e = err.lowercase()
         val windows = app.tailnet.peerFor(host.address)?.isWindows == true
         if ("timeout" in e || "deadline" in e) {
@@ -274,19 +326,19 @@ class SshConnection(val host: Host) {
             val ms = app.tailnet.ping(target)
             return when {
                 ms < 0 -> "Tailscale üzerinden PC'ye ulaşılamıyor. PC'de Tailscale açık ve bağlı mı? PC uykuda olabilir."
-                windows -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama ${host.port}. port yanıt vermiyor: Windows'ta " +
+                windows -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama $port. port yanıt vermiyor: Windows'ta " +
                     "SSH sunucusu kurulu değil ya da Güvenlik Duvarı engelliyor. Kurulum komutunu PC'de " +
                     "Yönetici PowerShell'de çalıştır."
-                else -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama ${host.port}. port yanıt vermiyor: " +
+                else -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama $port. port yanıt vermiyor: " +
                     "SSH sunucusu kapalı ya da güvenlik duvarı engelliyor."
             }
         }
         return when {
             "refused" in e -> if (windows) {
-                "PC'ye ulaşıldı ama ${host.port}. portta SSH sunucusu yok. Windows kurulum komutunu " +
+                "PC'ye ulaşıldı ama $port. portta SSH sunucusu yok. Windows kurulum komutunu " +
                     "(🔑 → Windows kurulum komutu) Yönetici PowerShell'de çalıştırdın mı?"
             } else {
-                "PC'ye ulaşıldı ama ${host.port}. portta SSH sunucusu yok: sudo systemctl enable --now sshd"
+                "PC'ye ulaşıldı ama $port. portta SSH sunucusu yok: sudo systemctl enable --now sshd"
             }
             "timeout" in e || "deadline" in e -> if (windows) {
                 "PC'den yanıt yok. Windows Güvenlik Duvarı SSH'ı engelliyor olabilir: kurulum komutunu tekrar " +
@@ -302,6 +354,8 @@ class SshConnection(val host: Host) {
     private fun friendly(e: Exception): String {
         val m = e.message ?: e.toString()
         return when {
+            ("Auth fail" in m || "Auth cancel" in m) && isHostApp ->
+                "PC'de izin verilmedi. Tekrar bağlan ve PC'de çıkan pencerede \"Evet\"e bas."
             "Auth fail" in m || "Auth cancel" in m -> "Kimlik doğrulama başarısız. Kullanıcı adını ve anahtarı/şifreyi kontrol et."
             "timeout" in m.lowercase() -> "Zaman aşımı: bilgisayar açık ve Tailscale'e bağlı mı?"
             "refused" in m.lowercase() || "dial" in m.lowercase() ->

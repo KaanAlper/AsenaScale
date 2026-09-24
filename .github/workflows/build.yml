@@ -1,10 +1,10 @@
-name: Android APK
+name: Build
 
-# Every push builds a universal APK plus one per CPU architecture
-# (arm64-v8a, armeabi-v7a, x86_64, x86).
+# Every push builds the phone app (universal APK plus one per CPU
+# architecture) and the PC app (Mobile Claude Host for Windows and Linux).
 #   - branch push -> "nightly" pre-release is updated
 #   - tag v*      -> a real GitHub release
-#   - Actions -> "Android APK" -> Run workflow with "release" = 0.2.0 -> release v0.2.0
+#   - Actions -> "Build" -> Run workflow with "release" = 0.2.0 -> release v0.2.0
 on:
   push:
     branches: ["**"]
@@ -25,14 +25,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  apk:
     runs-on: ubuntu-latest
     env:
       VERSION_CODE: ${{ github.run_number }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Version
+        id: version
         env:
           RELEASE_INPUT: ${{ github.event.inputs.release }}
         run: |
@@ -45,6 +49,9 @@ jobs:
           else
             echo "VERSION_NAME=0.1.0-nightly.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
           fi
+          . "$GITHUB_ENV"
+          echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${RELEASE_TAG:-}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -95,8 +102,73 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MobileClaude-${{ env.VERSION_NAME }}
+          name: apk
           path: dist/*.apk
+
+  host:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            file: mobile-claude-host.exe
+            out: MobileClaudeHost-windows-x64.exe
+          - os: ubuntu-latest
+            file: mobile-claude-host
+            out: MobileClaudeHost-linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Caches ~/.cargo and host/target: rebuilds take seconds once warm.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: host
+          key: ${{ matrix.os }}
+
+      - name: Linux libraries (tray, dialogs, screen capture)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libgtk-3-dev libxdo-dev libayatana-appindicator3-dev \
+            libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev libegl-dev
+
+      - name: Test
+        working-directory: host
+        run: cargo test --locked
+
+      - name: Build
+        working-directory: host
+        run: cargo build --release --locked
+
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "host/target/release/${{ matrix.file }}" "dist/${{ matrix.out }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host-${{ runner.os }}
+          path: dist/*
+
+  publish:
+    needs: [apk, host]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      VERSION_NAME: ${{ needs.apk.outputs.version }}
+      RELEASE_TAG: ${{ needs.apk.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - run: ls -la dist
 
       - name: Move nightly tag
         if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
@@ -114,9 +186,9 @@ jobs:
           body: |
             Son derleme: `${{ env.VERSION_NAME }}` — ${{ github.sha }} (${{ github.ref_name }})
 
-            Hangisini indirmeli? Emin değilsen **MobileClaude-universal.apk**.
-            Çoğu telefon için daha küçük olan **MobileClaude-arm64-v8a.apk** yeterli.
-          files: dist/*.apk
+            **Telefon:** çoğu telefon için **MobileClaude-arm64-v8a.apk**, emin değilsen **MobileClaude-universal.apk**.
+            **PC:** Windows için **MobileClaudeHost-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
+          files: dist/*
 
       - name: Publish release
         if: env.RELEASE_TAG != ''
@@ -127,6 +199,6 @@ jobs:
           name: Mobile Claude ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           body: |
-            Hangisini indirmeli? Emin değilsen **MobileClaude-universal.apk**.
-            Çoğu telefon için daha küçük olan **MobileClaude-arm64-v8a.apk** yeterli.
-          files: dist/*.apk
+            **Telefon:** çoğu telefon için **MobileClaude-arm64-v8a.apk**, emin değilsen **MobileClaude-universal.apk**.
+            **PC:** Windows için **MobileClaudeHost-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
+          files: dist/*

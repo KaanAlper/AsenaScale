@@ -355,3 +355,29 @@ func Ping(ip string) int {
 	}
 	return int(res.LatencySeconds*1000 + 0.5)
 }
+
+// Banner connects to target over the tailnet and returns the first line
+// the server sends (an SSH server's identification, e.g.
+// "SSH-2.0-MobileClaudeHost_0.1.0"), or "" if nothing answers. The app uses
+// it to recognize the PC companion app.
+func Banner(target string) string {
+	s := current()
+	if s == nil {
+		return ""
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+	c, err := s.Dial(ctx, "tcp", target)
+	if err != nil {
+		return ""
+	}
+	defer c.Close()
+	c.SetReadDeadline(time.Now().Add(4 * time.Second))
+	buf := make([]byte, 128)
+	n, _ := io.ReadAtLeast(c, buf, 1)
+	line := string(buf[:n])
+	if i := strings.IndexAny(line, "\r\n"); i >= 0 {
+		line = line[:i]
+	}
+	return line
+}

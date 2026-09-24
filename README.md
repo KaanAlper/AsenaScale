@@ -22,13 +22,32 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 2. Uygulamada Tailscale anahtarını aç → **Giriş yap** → tarayıcıda onayla.
    Telefon tailnet'inde `mobile-claude-<model>` adıyla görünür.
 3. **Cihazlar** listesinde PC'ne dokun.
-4. PC'ye SSH erişimi:
-   - **Windows:** düzenleme ekranındaki (ya da ana ekrandaki 🔑) **"Windows kurulum komutunu kopyala"**
-     butonuna bas, komutu PC'de *Yönetici olarak açılan PowerShell*'e yapıştır. OpenSSH Sunucusunu
-     kurar, PowerShell'i kabuk yapar, telefonun anahtarını yetkilendirir ve kullanıcı adını yazar.
-     (Tailscale SSH Windows'ta sunucu olarak çalışmıyor, bu yüzden Windows'un kendi OpenSSH'ı kullanılıyor.)
-   - **Linux/macOS:** 🔑 anahtarını `~/.ssh/authorized_keys`'e ekle ya da `sudo tailscale set --ssh`.
-5. Kullanıcı adını gir, "Bağlanınca çalıştır" için `claude` seç (Linux'ta `tmux new -As claude claude` de olur).
+4. PC'ye erişim:
+   - **Önerilen — Mobile Claude Host (Windows/Linux):** Releases'tan `MobileClaudeHost-windows-x64.exe`'yi
+     indirip çalıştır. Sistem tepsisine yerleşir, oturum açınca kendiliğinden başlar. Kurulum komutu
+     ya da yönetici izni gerekmez. Telefon onu kendisi bulur; ilk bağlantıda PC'de çıkan
+     **"bağlanmak istiyor — izin veriyor musun?"** penceresinde *Evet*'e basman yeterli.
+     (Windows ilk açılışta güvenlik duvarı izni sorarsa ikisine de izin ver.)
+   - **Alternatif — Windows OpenSSH:** 🔑 → "Windows kurulum komutunu kopyala" → Yönetici PowerShell.
+   - **Linux/macOS SSH:** 🔑 anahtarını `~/.ssh/authorized_keys`'e ekle ya da `sudo tailscale set --ssh`.
+5. "Bağlanınca çalıştır" için `claude` seç (Linux'ta `tmux new -As claude claude` de olur).
+
+## Mobile Claude Host (PC uygulaması)
+
+Rust ile yazılmış küçük (~4 MB) bir tepsi uygulaması (`host/`):
+
+- Kendi SSH sunucusu var (port 2222) ve **sadece Tailscale ağından** (100.x) bağlantı kabul ediyor.
+- Tanımadığı bir telefon bağlanınca PC'de onay penceresi açıyor. Pencerede telefonun Tailscale
+  cihaz adı görünüyor. Onaylanan telefonlar hatırlanıyor; tepsi menüsünden sıfırlanabiliyor.
+- Terminal gerçek bir ConPTY (Windows'ta PowerShell 7 varsa o, yoksa Windows PowerShell).
+- Senin oturumunda çalıştığı için ekran/pencere görüntüsünü doğrudan alıyor (hızlı, arkadaki pencereler dahil).
+- Telefondan gönderilen dosyalar `İndirilenler\Mobile Claude\` klasörüne kaydediliyor.
+
+## Dosya ve fotoğraf gönderme
+
+Terminalde **📎** → *Fotoğraf / video* ya da *Dosya*. Dosya PC'de `İndirilenler/Mobile Claude/`
+klasörüne gider ve **PC'deki yolu terminale yazılır**; Claude'a "bu resme bak" demen yeterli.
+PC uygulamasıyla ya da düz SSH sunucusuyla (SFTP) çalışır.
 
 ## Kullanım ipuçları
 
@@ -70,6 +89,7 @@ görüntü, senin oturumunda çalışan geçici bir zamanlanmış görevle alın
 
 ```
 tsbridge/        Go: gömülü Tailscale (tsnet) + 127.0.0.1 → tailnet TCP yönlendirme
+host/            Rust: Mobile Claude Host PC tepsi uygulaması (SSH sunucusu, izin, ekran görüntüsü)
 terminal/        Termux terminal emülatörü (Apache-2.0, bkz. terminal/NOTICE)
 app/             Kotlin + Jetpack Compose arayüzü, SSH (JSch), terminal görünümü
 ```
@@ -89,6 +109,6 @@ sh app/src/main/assets/mcshot.sh list  # PC'de: ekran görüntüsü hedeflerini 
 ```
 
 Her push'ta GitHub Actions universal + ABI'ye özel APK'ları (arm64-v8a, armeabi-v7a,
-x86_64, x86) derler ve `nightly` sürümüne yükler. Yeni sürüm çıkarmak için: Actions → **Android APK** →
+x86_64, x86) derler ve `nightly` sürümüne yükler. Yeni sürüm çıkarmak için: Actions → **Build** →
 **Run workflow** → `release` alanına `0.2.0` yaz (ya da `v0.2.0` etiketi push et). APK repodaki
 sabit `app/debug.keystore` ile imzalanır, böylece yeni sürüm eskisinin üzerine kurulur.
