@@ -25,7 +25,7 @@ mod imp {
     use std::process::Command;
 
     const KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
-    const NAME: &str = "MobileClaudeHost";
+    const NAME: &str = "AsenaScale";
 
     fn reg(args: &[&str]) -> bool {
         Command::new("reg.exe")
@@ -57,7 +57,7 @@ mod imp {
     use std::path::PathBuf;
 
     fn file() -> Option<PathBuf> {
-        dirs::config_dir().map(|d| d.join("autostart").join("mobile-claude-host.desktop"))
+        dirs::config_dir().map(|d| d.join("autostart").join("asenascale.desktop"))
     }
 
     pub fn is_enabled() -> bool {
@@ -72,7 +72,7 @@ mod imp {
             let _ = std::fs::write(
                 &f,
                 format!(
-                    "[Desktop Entry]\nType=Application\nName=Mobile Claude Host\nExec=\"{}\"\nX-GNOME-Autostart-enabled=true\n",
+                    "[Desktop Entry]\nType=Application\nName=AsenaScale\nExec=\"{}\"\nX-GNOME-Autostart-enabled=true\n",
                     exe.display()
                 ),
             );

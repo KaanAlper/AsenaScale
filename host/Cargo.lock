@@ -142,6 +142,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "asenascale"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dirs 6.0.0",
+ "env_logger",
+ "log",
+ "portable-pty",
+ "rand",
+ "rfd",
+ "russh",
+ "serde",
+ "serde_json",
+ "tao",
+ "tokio",
+ "tray-icon",
+ "windows-sys 0.60.2",
+ "xcap",
+]
+
+[[package]]
 name = "async-broadcast"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2413,27 +2434,6 @@ dependencies = [
  "pkcs8",
  "rand_core",
  "sha3 0.11.0",
-]
-
-[[package]]
-name = "mobile-claude-host"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dirs 6.0.0",
- "env_logger",
- "log",
- "portable-pty",
- "rand",
- "rfd",
- "russh",
- "serde",
- "serde_json",
- "tao",
- "tokio",
- "tray-icon",
- "windows-sys 0.60.2",
- "xcap",
 ]
 
 [[package]]

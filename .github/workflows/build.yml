@@ -1,7 +1,7 @@
 name: Build
 
 # Every push builds the phone app (universal APK plus one per CPU
-# architecture) and the PC app (Mobile Claude Host for Windows and Linux).
+# architecture) and the PC app (AsenaScale for Windows and Linux).
 #   - branch push -> "nightly" pre-release is updated
 #   - tag v*      -> a real GitHub release
 #   - Actions -> "Build" -> Run workflow with "release" = 0.2.0 -> release v0.2.0
@@ -96,7 +96,7 @@ jobs:
           mkdir -p dist
           for f in app/build/outputs/apk/release/app-*-release.apk; do
             abi=$(basename "$f" | sed -e 's/^app-//' -e 's/-release\.apk$//')
-            cp "$f" "dist/MobileClaude-${abi}.apk"
+            cp "$f" "dist/AsenaScale-Mobile-${abi}.apk"
           done
           ls -la dist
 
@@ -110,11 +110,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            file: mobile-claude-host.exe
-            out: MobileClaudeHost-windows-x64.exe
+            file: asenascale.exe
+            out: AsenaScale-windows-x64.exe
           - os: ubuntu-latest
-            file: mobile-claude-host
-            out: MobileClaudeHost-linux-x64
+            file: asenascale
+            out: AsenaScale-linux-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -181,13 +181,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly
-          name: Mobile Claude nightly
+          name: AsenaScale nightly
           prerelease: true
           body: |
             Son derleme: `${{ env.VERSION_NAME }}` — ${{ github.sha }} (${{ github.ref_name }})
 
-            **Telefon:** çoğu telefon için **MobileClaude-arm64-v8a.apk**, emin değilsen **MobileClaude-universal.apk**.
-            **PC:** Windows için **MobileClaudeHost-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
+            **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
+            **PC:** Windows için **AsenaScale-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
           files: dist/*
 
       - name: Publish release
@@ -196,9 +196,9 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           target_commitish: ${{ github.sha }}
-          name: Mobile Claude ${{ env.RELEASE_TAG }}
+          name: AsenaScale ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           body: |
-            **Telefon:** çoğu telefon için **MobileClaude-arm64-v8a.apk**, emin değilsen **MobileClaude-universal.apk**.
-            **PC:** Windows için **MobileClaudeHost-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
+            **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
+            **PC:** Windows için **AsenaScale-windows-x64.exe** (çift tıkla, tepsiye yerleşir).
           files: dist/*

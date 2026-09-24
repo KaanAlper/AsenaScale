@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.mobileclaude.term.TerminalCanvasView
+import dev.asenascale.term.TerminalCanvasView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

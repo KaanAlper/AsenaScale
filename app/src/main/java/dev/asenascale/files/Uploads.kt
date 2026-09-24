@@ -1,13 +1,13 @@
-package dev.mobileclaude.files
+package dev.asenascale.files
 
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Base64
-import dev.mobileclaude.ssh.SshConnection
+import dev.asenascale.ssh.SshConnection
 
 /**
- * Sends files from the phone to the PC's Downloads/Mobile Claude folder and
+ * Sends files from the phone to the PC's Downloads/AsenaScale folder and
  * returns their path on the PC, ready to hand to Claude.
  */
 object Uploads {

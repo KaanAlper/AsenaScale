@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import android.graphics.BitmapFactory
 import android.widget.Toast
@@ -64,10 +64,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import dev.mobileclaude.shot.ShotList
-import dev.mobileclaude.shot.ShotTarget
-import dev.mobileclaude.shot.Screenshots
-import dev.mobileclaude.ssh.SshConnection
+import dev.asenascale.shot.ShotList
+import dev.asenascale.shot.ShotTarget
+import dev.asenascale.shot.Screenshots
+import dev.asenascale.ssh.SshConnection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

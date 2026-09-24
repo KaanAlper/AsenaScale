@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import android.content.Intent
 import android.net.Uri
@@ -60,12 +60,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.mobileclaude.App
-import dev.mobileclaude.data.Host
-import dev.mobileclaude.ssh.ConnState
-import dev.mobileclaude.ssh.Keys
-import dev.mobileclaude.tailnet.Peer
-import dev.mobileclaude.tailnet.TailnetState
+import dev.asenascale.App
+import dev.asenascale.data.Host
+import dev.asenascale.ssh.ConnState
+import dev.asenascale.ssh.Keys
+import dev.asenascale.tailnet.Peer
+import dev.asenascale.tailnet.TailnetState
 
 @Composable
 fun HomeScreen(
@@ -94,7 +94,7 @@ fun HomeScreen(
             ) {
                 Text(">_", fontFamily = Mono, color = Mocha.mauve, fontSize = 22.sp)
                 Spacer(Modifier.width(10.dp))
-                Text("Mobile Claude", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text("AsenaScale", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 IconButton(onClick = { showKey = true }) {
                     Icon(Icons.Outlined.Key, contentDescription = "SSH anahtarım", tint = Mocha.subtext)
                 }

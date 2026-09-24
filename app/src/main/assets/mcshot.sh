@@ -1,4 +1,4 @@
-# Mobile Claude screenshot helper. Piped to `sh -s` over SSH; nothing is
+# AsenaScale screenshot helper. Piped to `sh -s` over SSH; nothing is
 # installed on the PC.
 #   sh -s list               -> "kind<TAB>id<TAB>label" lines
 #   sh -s shot KIND ID       -> PNG on stdout

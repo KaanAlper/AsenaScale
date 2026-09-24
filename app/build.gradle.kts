@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.mobileclaude"
+    namespace = "dev.asenascale"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.mobileclaude"
+        applicationId = "dev.asenascale"
         minSdk = 26
         targetSdk = 36
         // CI passes the run number so every build installs over the last one.

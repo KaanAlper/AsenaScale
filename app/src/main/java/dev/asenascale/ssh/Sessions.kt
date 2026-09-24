@@ -1,8 +1,8 @@
-package dev.mobileclaude.ssh
+package dev.asenascale.ssh
 
 import android.content.Context
-import dev.mobileclaude.KeepAliveService
-import dev.mobileclaude.data.Host
+import dev.asenascale.KeepAliveService
+import dev.asenascale.data.Host
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

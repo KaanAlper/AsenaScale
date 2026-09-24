@@ -1,4 +1,4 @@
-module github.com/kaanalper/mobile-claude/tsbridge
+module github.com/kaanalper/asenascale/tsbridge
 
 go 1.26.6
 

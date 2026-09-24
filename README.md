@@ -1,4 +1,4 @@
-# Mobile Claude
+# AsenaScale
 
 Telefondan PC'deki Claude Code'u rahatça kullanmak için native Android uygulaması.
 Uzak masaüstü değil: **Tailscale uygulamanın içine gömülü**, PC'ye doğrudan SSH ile
@@ -16,14 +16,14 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 
 ## Kurulum
 
-1. APK: [Releases](../../releases) → en yeni sürüm → **`MobileClaude-arm64-v8a.apk`**
-   (çoğu telefon) ya da emin değilsen `MobileClaude-universal.apk`.
+1. APK: [Releases](../../releases) → en yeni sürüm → **`AsenaScale-Mobile-arm64-v8a.apk`**
+   (çoğu telefon) ya da emin değilsen `AsenaScale-Mobile-universal.apk`.
    Her push'ta güncellenen deneme sürümü: [nightly](../../releases/tag/nightly).
 2. Uygulamada Tailscale anahtarını aç → **Giriş yap** → tarayıcıda onayla.
-   Telefon tailnet'inde `mobile-claude-<model>` adıyla görünür.
+   Telefon tailnet'inde `asenascale-<model>` adıyla görünür.
 3. **Cihazlar** listesinde PC'ne dokun.
 4. PC'ye erişim:
-   - **Önerilen — Mobile Claude Host (Windows/Linux):** Releases'tan `MobileClaudeHost-windows-x64.exe`'yi
+   - **Önerilen — AsenaScale (Windows/Linux):** Releases'tan `AsenaScale-windows-x64.exe`'yi
      indirip çalıştır. Sistem tepsisine yerleşir, oturum açınca kendiliğinden başlar. Kurulum komutu
      ya da yönetici izni gerekmez. Telefon onu kendisi bulur; ilk bağlantıda PC'de çıkan
      **"bağlanmak istiyor — izin veriyor musun?"** penceresinde *Evet*'e basman yeterli.
@@ -32,7 +32,7 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
    - **Linux/macOS SSH:** 🔑 anahtarını `~/.ssh/authorized_keys`'e ekle ya da `sudo tailscale set --ssh`.
 5. "Bağlanınca çalıştır" için `claude` seç (Linux'ta `tmux new -As claude claude` de olur).
 
-## Mobile Claude Host (PC uygulaması)
+## AsenaScale (PC uygulaması)
 
 Rust ile yazılmış küçük (~4 MB) bir tepsi uygulaması (`host/`):
 
@@ -41,11 +41,11 @@ Rust ile yazılmış küçük (~4 MB) bir tepsi uygulaması (`host/`):
   cihaz adı görünüyor. Onaylanan telefonlar hatırlanıyor; tepsi menüsünden sıfırlanabiliyor.
 - Terminal gerçek bir ConPTY (Windows'ta PowerShell 7 varsa o, yoksa Windows PowerShell).
 - Senin oturumunda çalıştığı için ekran/pencere görüntüsünü doğrudan alıyor (hızlı, arkadaki pencereler dahil).
-- Telefondan gönderilen dosyalar `İndirilenler\Mobile Claude\` klasörüne kaydediliyor.
+- Telefondan gönderilen dosyalar `İndirilenler\AsenaScale\` klasörüne kaydediliyor.
 
 ## Dosya ve fotoğraf gönderme
 
-Terminalde **📎** → *Fotoğraf / video* ya da *Dosya*. Dosya PC'de `İndirilenler/Mobile Claude/`
+Terminalde **📎** → *Fotoğraf / video* ya da *Dosya*. Dosya PC'de `İndirilenler/AsenaScale/`
 klasörüne gider ve **PC'deki yolu terminale yazılır**; Claude'a "bu resme bak" demen yeterli.
 PC uygulamasıyla ya da düz SSH sunucusuyla (SFTP) çalışır.
 
@@ -89,7 +89,7 @@ görüntü, senin oturumunda çalışan geçici bir zamanlanmış görevle alın
 
 ```
 tsbridge/        Go: gömülü Tailscale (tsnet) + 127.0.0.1 → tailnet TCP yönlendirme
-host/            Rust: Mobile Claude Host PC tepsi uygulaması (SSH sunucusu, izin, ekran görüntüsü)
+host/            Rust: AsenaScale PC tepsi uygulaması (SSH sunucusu, izin, ekran görüntüsü)
 terminal/        Termux terminal emülatörü (Apache-2.0, bkz. terminal/NOTICE)
 app/             Kotlin + Jetpack Compose arayüzü, SSH (JSch), terminal görünümü
 ```

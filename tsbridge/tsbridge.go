@@ -358,7 +358,7 @@ func Ping(ip string) int {
 
 // Banner connects to target over the tailnet and returns the first line
 // the server sends (an SSH server's identification, e.g.
-// "SSH-2.0-MobileClaudeHost_0.1.0"), or "" if nothing answers. The app uses
+// "SSH-2.0-AsenaScale_0.1.0"), or "" if nothing answers. The app uses
 // it to recognize the PC companion app.
 func Banner(target string) string {
 	s := current()

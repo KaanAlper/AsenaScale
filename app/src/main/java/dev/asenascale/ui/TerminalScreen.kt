@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import android.net.Uri
 import android.widget.Toast
@@ -10,7 +10,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.rememberCoroutineScope
-import dev.mobileclaude.files.Uploads
+import dev.asenascale.files.Uploads
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,12 +65,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import dev.mobileclaude.App
-import dev.mobileclaude.data.AuthMode
-import dev.mobileclaude.ssh.ConnState
-import dev.mobileclaude.ssh.Keys
-import dev.mobileclaude.term.TerminalCanvasView
-import dev.mobileclaude.term.TermTheme
+import dev.asenascale.App
+import dev.asenascale.data.AuthMode
+import dev.asenascale.ssh.ConnState
+import dev.asenascale.ssh.Keys
+import dev.asenascale.term.TerminalCanvasView
+import dev.asenascale.term.TermTheme
 
 @Composable
 fun TerminalScreen(hostId: String, onBack: () -> Unit) {

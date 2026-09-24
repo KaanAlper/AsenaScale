@@ -8,7 +8,7 @@ mod imp {
     use std::os::windows::process::CommandExt;
     use std::process::Command;
 
-    const RULE: &str = "Mobile Claude Host";
+    const RULE: &str = "AsenaScale";
 
     /// Whether our rule exists (querying needs no admin rights).
     pub fn has_rule() -> bool {

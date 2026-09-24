@@ -1,4 +1,4 @@
-//! `mc put`: files sent from the phone land in Downloads/Mobile Claude.
+//! `mc put`: files sent from the phone land in Downloads/AsenaScale.
 
 use std::fs;
 use std::path::PathBuf;
@@ -12,7 +12,7 @@ pub fn dir() -> PathBuf {
     dirs::download_dir()
         .or_else(|| dirs::home_dir().map(|h| h.join("Downloads")))
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("Mobile Claude")
+        .join("AsenaScale")
 }
 
 /// base64url (no padding) of a UTF-8 file name; anything odd becomes "dosya".

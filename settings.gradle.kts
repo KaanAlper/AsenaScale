@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MobileClaude"
+rootProject.name = "AsenaScale"
 include(":app", ":terminal")

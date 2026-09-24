@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub fn dir() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("MobileClaudeHost")
+        .join("AsenaScale")
 }
 
 /// ECDSA P-256: the one host key type Android's crypto provider verifies

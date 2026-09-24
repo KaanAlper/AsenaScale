@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import dev.mobileclaude.App
+import dev.asenascale.App
 
 private val urlRegex = Regex("""https?://[^\s<>"'`]+[^\s<>"'`.,;:!?)\]]""")
 

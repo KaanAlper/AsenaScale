@@ -1,4 +1,4 @@
-package dev.mobileclaude.ssh
+package dev.asenascale.ssh
 
 import android.content.Context
 import com.jcraft.jsch.JSch
@@ -30,7 +30,7 @@ object Keys {
     fun windowsSetupScript(context: Context): String {
         val key = publicKey(context)
         return """
-            |# Mobile Claude: Windows kurulumu (Yonetici olarak acilan PowerShell'e yapistir)
+            |# AsenaScale: Windows kurulumu (Yonetici olarak acilan PowerShell'e yapistir)
             |${'$'}ErrorActionPreference = 'Stop'
             |if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-Null }
             |Set-Service sshd -StartupType Automatic; Start-Service sshd
@@ -55,7 +55,7 @@ object Keys {
         if (priv.exists()) return
         val kp = KeyPair.genKeyPair(JSch(), KeyPair.ECDSA, 256)
         val pubOut = ByteArrayOutputStream()
-        kp.writePublicKey(pubOut, "mobile-claude")
+        kp.writePublicKey(pubOut, "asenascale")
         File(context.filesDir, "$NAME.pub").writeBytes(pubOut.toByteArray())
         val tmp = File(context.filesDir, "$NAME.tmp")
         tmp.outputStream().use { kp.writePrivateKey(it) }

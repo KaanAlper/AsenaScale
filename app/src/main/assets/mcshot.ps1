@@ -1,4 +1,4 @@
-# Mobile Claude screenshot helper for Windows (Windows PowerShell 5.1+).
+# AsenaScale screenshot helper for Windows (Windows PowerShell 5.1+).
 # The app pipes this to powershell.exe over SSH and prepends:
 #   $Mode = 'list' | 'shot'; $Kind = 'screen' | 'output' | 'active' | 'window'; $Target = '...'
 #   list -> "kind<TAB>id<TAB>label" lines;  shot -> PNG as base64
@@ -160,7 +160,7 @@ public static class McWin {
 '@
 
 try {
-    $work = Join-Path $env:LOCALAPPDATA 'MobileClaude'
+    $work = Join-Path $env:LOCALAPPDATA 'AsenaScale'
     New-Item -ItemType Directory -Force -Path $work | Out-Null
     $id = [guid]::NewGuid().ToString('N').Substring(0, 8)
     $innerPath = Join-Path $work 'shot.ps1'
@@ -174,7 +174,7 @@ try {
     $conhost = Join-Path $env:WINDIR 'System32\conhost.exe'
     if (Test-Path $conhost) { $exe = $conhost; $arg = "--headless powershell.exe $psArgs" }
 
-    $task = "MobileClaudeShot-$id"
+    $task = "AsenaScaleShot-$id"
     $user = try { [Security.Principal.WindowsIdentity]::GetCurrent().Name } catch { "$env:USERDOMAIN\$env:USERNAME" }
     $action = New-ScheduledTaskAction -Execute $exe -Argument $arg
     $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited

@@ -1,4 +1,4 @@
-package dev.mobileclaude.shot
+package dev.asenascale.shot
 
 import android.content.ContentValues
 import android.content.Context
@@ -8,7 +8,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
 import androidx.core.content.FileProvider
-import dev.mobileclaude.ssh.SshConnection
+import dev.asenascale.ssh.SshConnection
 import java.io.File
 
 data class ShotTarget(val kind: String, val id: String, val label: String)
@@ -135,7 +135,7 @@ object Screenshots {
             put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             if (Build.VERSION.SDK_INT >= 29) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Mobile Claude")
+                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/AsenaScale")
             }
         }
         val resolver = context.contentResolver

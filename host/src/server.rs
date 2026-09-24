@@ -22,7 +22,7 @@ use tokio::process::ChildStdin;
 use crate::approve;
 use crate::store::Devices;
 
-pub const SERVER_ID: &str = concat!("SSH-2.0-MobileClaudeHost_", env!("CARGO_PKG_VERSION"));
+pub const SERVER_ID: &str = concat!("SSH-2.0-AsenaScale_", env!("CARGO_PKG_VERSION"));
 
 /// Shared between connections and the tray.
 pub struct State {

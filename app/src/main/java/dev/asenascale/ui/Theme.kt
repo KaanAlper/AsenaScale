@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import dev.mobileclaude.R
+import dev.asenascale.R
 
 /** Catppuccin Mocha, to match the terminal. */
 object Mocha {
@@ -64,7 +64,7 @@ private val typography = Typography().run {
 val MonoSmall = TextStyle(fontFamily = Mono, fontSize = 12.sp)
 
 @Composable
-fun MobileClaudeTheme(content: @Composable () -> Unit) {
+fun AsenaScaleTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = colors, typography = typography) {
         // Without this, Text outside a Surface falls back to black, which
         // disappears on the dark background.

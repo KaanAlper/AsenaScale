@@ -1,4 +1,4 @@
-package dev.mobileclaude.ssh
+package dev.asenascale.ssh
 
 import android.os.Handler
 import android.os.Looper
@@ -13,11 +13,11 @@ import com.jcraft.jsch.UserInfo
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalOutput
 import com.termux.terminal.TerminalSessionClient
-import dev.mobileclaude.App
-import dev.mobileclaude.data.AuthMode
-import dev.mobileclaude.data.Host
-import dev.mobileclaude.tailnet.HOST_APP_PORT
-import dev.mobileclaude.term.TermTheme
+import dev.asenascale.App
+import dev.asenascale.data.AuthMode
+import dev.asenascale.data.Host
+import dev.asenascale.tailnet.HOST_APP_PORT
+import dev.asenascale.term.TermTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.ByteArrayOutputStream
@@ -54,7 +54,7 @@ class SshConnection(val host: Host) {
     private var shellOut: OutputStream? = null
     private var localPort = 0
 
-    /** Connected to the Mobile Claude Host PC app (not a plain SSH server). */
+    /** Connected to the AsenaScale PC app (not a plain SSH server). */
     @Volatile var isHostApp = false
         private set
 
@@ -277,7 +277,7 @@ class SshConnection(val host: Host) {
     }
 
     /**
-     * Copies a file to the PC's Downloads/Mobile Claude folder over SFTP (for
+     * Copies a file to the PC's Downloads/AsenaScale folder over SFTP (for
      * plain SSH servers; the PC app has its own `mc put`). Returns the PC path.
      */
     fun sftpPut(name: String, bytes: ByteArray): String {
@@ -287,7 +287,7 @@ class SshConnection(val host: Host) {
         try {
             val home = ch.home.trimEnd('/')
             runCatching { ch.mkdir("$home/Downloads") }
-            val dir = "$home/Downloads/Mobile Claude"
+            val dir = "$home/Downloads/AsenaScale"
             runCatching { ch.mkdir(dir) }
             val dot = name.lastIndexOf('.').takeIf { it > 0 } ?: name.length
             var remote = "$dir/$name"

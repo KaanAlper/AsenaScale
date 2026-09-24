@@ -15,9 +15,9 @@
         android:name=".App"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Mobile Claude"
+        android:label="AsenaScale Mobile"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MobileClaude">
+        android:theme="@style/Theme.AsenaScale">
 
         <activity
             android:name=".MainActivity"

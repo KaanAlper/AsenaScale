@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kaanalper/mobile-claude/tsbridge"
+	"github.com/kaanalper/asenascale/tsbridge"
 )
 
 type plat struct{}

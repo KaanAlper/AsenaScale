@@ -1,4 +1,4 @@
-package dev.mobileclaude
+package dev.asenascale
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -36,7 +36,7 @@ class KeepAliveService : Service() {
         }
         if (wakeLock == null) {
             wakeLock = getSystemService(PowerManager::class.java)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "mobileclaude:ssh")
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "asenascale:ssh")
                 .apply { setReferenceCounted(false); acquire() }
         }
         return START_NOT_STICKY

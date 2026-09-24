@@ -1,4 +1,4 @@
-package dev.mobileclaude.tailnet
+package dev.asenascale.tailnet
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -47,9 +47,9 @@ data class TailnetState(
     val needsLogin get() = backend == "NeedsLogin" || backend == "NeedsMachineAuth"
 }
 
-/** Port and SSH identification of the Mobile Claude Host PC app. */
+/** Port and SSH identification of the AsenaScale PC app. */
 const val HOST_APP_PORT = 2222
-const val HOST_APP_ID = "MobileClaudeHost"
+const val HOST_APP_ID = "AsenaScale"
 
 /**
  * Embedded Tailscale node (Go tsnet via gomobile). All tailnet traffic stays
@@ -113,7 +113,7 @@ class Tailnet(private val context: Context) {
         scope.launch(ops) {
             if (on) {
                 try {
-                    val host = "mobile-claude-" + Build.MODEL.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+                    val host = "asenascale-" + Build.MODEL.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
                     tsbridge.Tsbridge.start(context.filesDir.absolutePath, host.take(60), platform)
                 } catch (e: Exception) {
                     _state.value = _state.value.copy(error = e.message ?: e.toString())
@@ -188,7 +188,7 @@ class Tailnet(private val context: Context) {
         return tsbridge.Tsbridge.probe("$h:$port").ifEmpty { null }
     }
 
-    /** True if the Mobile Claude Host PC app answers on [ip]. */
+    /** True if the AsenaScale PC app answers on [ip]. */
     fun isHostApp(ip: String): Boolean {
         val h = if (':' in ip) "[$ip]" else ip
         return runCatching { tsbridge.Tsbridge.banner("$h:$HOST_APP_PORT") }.getOrDefault("").contains(HOST_APP_ID)

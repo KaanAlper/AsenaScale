@@ -36,7 +36,7 @@ fn tailscale_cli() -> Command {
     }
 }
 
-/// Human name of the tailnet device at `ip`, e.g. "mobile-claude-pixel-8
+/// Human name of the tailnet device at `ip`, e.g. "asenascale-pixel-8
 /// (Kaan)", via the local Tailscale client. Falls back to the IP.
 pub fn device_name(ip: IpAddr) -> String {
     let out = tailscale_cli().args(["whois", "--json", &ip.to_string()]).output();
@@ -74,11 +74,11 @@ pub fn ask(device: &str, fingerprint: &str) -> bool {
         return true;
     }
     let text = format!(
-        "{device}\nMobile Claude ile bu bilgisayara bağlanmak istiyor.\n\n\
+        "{device}\nAsenaScale ile bu bilgisayara bağlanmak istiyor.\n\n\
          İzin verirsen bu telefon terminali kullanabilir ve ekran görüntüsü alabilir. \
          Bir daha sorulmaz.\n\nAnahtar: {fingerprint}\n\nİzin veriyor musun?"
     );
-    show_yes_no("Mobile Claude — bağlantı isteği", &text)
+    show_yes_no("AsenaScale — bağlantı isteği", &text)
 }
 
 #[cfg(windows)]

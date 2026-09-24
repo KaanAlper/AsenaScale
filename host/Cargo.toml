@@ -1,8 +1,8 @@
 [package]
-name = "mobile-claude-host"
+name = "asenascale"
 version = "0.1.0"
 edition = "2021"
-description = "Tray app that lets the Mobile Claude phone app into this PC over Tailscale"
+description = "Tray app that lets the AsenaScale phone app into this PC over Tailscale"
 license = "MIT"
 
 [dependencies]

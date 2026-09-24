@@ -1,4 +1,4 @@
-//! Mobile Claude Host: a tray app that lets the Mobile Claude phone app
+//! AsenaScale: a tray app that lets the AsenaScale phone app
 //! into this PC over Tailscale. No setup commands, no admin rights: the
 //! first time a phone connects, a dialog asks whether to allow it.
 
@@ -41,7 +41,7 @@ fn main() {
 
     if let Err(e) = start_server(state.clone()) {
         approve::info(
-            "Mobile Claude",
+            "AsenaScale",
             &format!("Başlatılamadı: {e:#}\n\nUygulama zaten çalışıyor olabilir (sistem tepsisine bak)."),
         );
         return;
@@ -89,7 +89,7 @@ fn main() {
             let d = state.devices.lock().unwrap().len();
             devices.set_text(format!("İzinli telefon: {d}"));
             if let Some(t) = tray {
-                let _ = t.set_tooltip(Some(format!("Mobile Claude — {text}")));
+                let _ = t.set_tooltip(Some(format!("AsenaScale — {text}")));
             }
         }
     };
@@ -102,7 +102,7 @@ fn main() {
             Event::NewEvents(StartCause::Init) => {
                 tray = TrayIconBuilder::new()
                     .with_menu(Box::new(menu.clone()))
-                    .with_tooltip("Mobile Claude")
+                    .with_tooltip("AsenaScale")
                     .with_icon(icon())
                     .build()
                     .ok();

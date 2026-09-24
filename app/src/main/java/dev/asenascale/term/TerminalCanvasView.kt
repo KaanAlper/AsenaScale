@@ -1,4 +1,4 @@
-package dev.mobileclaude.term
+package dev.asenascale.term
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -23,8 +23,8 @@ import androidx.core.content.res.ResourcesCompat
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.TerminalEmulator
 import com.termux.view.TerminalRenderer
-import dev.mobileclaude.R
-import dev.mobileclaude.ssh.SshConnection
+import dev.asenascale.R
+import dev.asenascale.ssh.SshConnection
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt

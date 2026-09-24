@@ -3,7 +3,7 @@ package com.termux.terminal;
 /**
  * Callbacks from {@link TerminalEmulator} to its host.
  *
- * Trimmed for Mobile Claude: the original Termux interface also carried
+ * Trimmed for AsenaScale: the original Termux interface also carried
  * TerminalSession (local pty) callbacks, which this app does not use.
  */
 public interface TerminalSessionClient {

@@ -1,11 +1,11 @@
-package dev.mobileclaude
+package dev.asenascale
 
 import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
-import dev.mobileclaude.data.HostStore
-import dev.mobileclaude.ssh.Sessions
-import dev.mobileclaude.tailnet.Tailnet
+import dev.asenascale.data.HostStore
+import dev.asenascale.ssh.Sessions
+import dev.asenascale.tailnet.Tailnet
 
 class App : Application() {
     lateinit var tailnet: Tailnet

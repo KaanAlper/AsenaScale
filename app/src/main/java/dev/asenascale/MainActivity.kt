@@ -1,4 +1,4 @@
-package dev.mobileclaude
+package dev.asenascale
 
 import android.Manifest
 import android.graphics.Color
@@ -18,10 +18,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import dev.mobileclaude.ui.HomeScreen
-import dev.mobileclaude.ui.HostEditScreen
-import dev.mobileclaude.ui.MobileClaudeTheme
-import dev.mobileclaude.ui.TerminalScreen
+import dev.asenascale.ui.HomeScreen
+import dev.asenascale.ui.HostEditScreen
+import dev.asenascale.ui.AsenaScaleTheme
+import dev.asenascale.ui.TerminalScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
 
         val app = App.instance
         setContent {
-            MobileClaudeTheme {
+            AsenaScaleTheme {
                 // "home" | "edit:<id or new>" | "edit:new:<address>" | "term:<id>"
                 var route by rememberSaveable { mutableStateOf("home") }
                 BackHandler(enabled = route != "home") { route = "home" }

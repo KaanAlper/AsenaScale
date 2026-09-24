@@ -1,4 +1,4 @@
-package dev.mobileclaude.ui
+package dev.asenascale.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -37,9 +37,9 @@ import androidx.compose.runtime.Composable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
-import dev.mobileclaude.tailnet.HOST_APP_PORT
+import dev.asenascale.tailnet.HOST_APP_PORT
 import androidx.compose.material3.TextButton
-import dev.mobileclaude.ssh.Keys
+import dev.asenascale.ssh.Keys
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -55,9 +55,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.mobileclaude.App
-import dev.mobileclaude.data.AuthMode
-import dev.mobileclaude.data.Host
+import dev.asenascale.App
+import dev.asenascale.data.AuthMode
+import dev.asenascale.data.Host
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +74,7 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
     var password by remember { mutableStateOf(base.password) }
     var startup by remember { mutableStateOf(base.startup) }
 
-    // Is the Mobile Claude Host PC app running there? Then nothing else is needed.
+    // Is the AsenaScale PC app running there? Then nothing else is needed.
     var hostApp by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(address, ts.running) {
         hostApp = null
@@ -284,7 +284,7 @@ private fun HostAppFoundCard() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("✓ PC'de Mobile Claude Host bulundu", fontWeight = FontWeight.Medium, color = Mocha.green)
+        Text("✓ PC'de AsenaScale bulundu", fontWeight = FontWeight.Medium, color = Mocha.green)
         Text(
             "Kurulum gerekmiyor. İlk bağlantıda PC'de bir izin penceresi çıkar, \"Evet\"e basman yeterli.",
             fontSize = 13.sp,
@@ -306,8 +306,8 @@ private fun WindowsSetupCard(onCopyLink: () -> Unit, onCopyScript: () -> Unit) {
     ) {
         Text("Windows'a bağlanmak için", fontWeight = FontWeight.Medium)
         Text(
-            "Önerilen: PC'ye Mobile Claude Host'u kur. Bağlantıyı PC'de aç, " +
-                "MobileClaudeHost-windows-x64.exe dosyasını indirip çalıştır. Sistem tepsisine yerleşir; " +
+            "Önerilen: PC'ye AsenaScale'u kur. Bağlantıyı PC'de aç, " +
+                "AsenaScale-windows-x64.exe dosyasını indirip çalıştır. Sistem tepsisine yerleşir; " +
                 "komut ya da yönetici izni gerekmez. Kurunca bu ekran onu kendiliğinden bulur.",
             fontSize = 13.sp,
             color = Mocha.subtext,

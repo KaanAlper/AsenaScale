@@ -1,4 +1,4 @@
-package dev.mobileclaude.term
+package dev.asenascale.term
 
 import com.termux.terminal.TerminalColors
 import java.util.Properties

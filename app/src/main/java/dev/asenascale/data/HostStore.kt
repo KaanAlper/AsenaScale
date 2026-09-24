@@ -1,4 +1,4 @@
-package dev.mobileclaude.data
+package dev.asenascale.data
 
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
