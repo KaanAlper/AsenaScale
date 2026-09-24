@@ -174,7 +174,8 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                         color = Mocha.subtext,
                         textAlign = TextAlign.Center,
                     )
-                    if (closed?.reason?.startsWith("Kimlik") == true && host.auth == AuthMode.KEY) {
+                    val reason = closed?.reason.orEmpty()
+                    if ((reason.startsWith("Kimlik") && host.auth == AuthMode.KEY) || "kurulum komutu" in reason) {
                         val windows = app.tailnet.peerFor(host.address)?.isWindows == true
                         TextButton(onClick = {
                             app.copyToClipboard(if (windows) Keys.windowsSetupScript(context) else Keys.publicKey(context))

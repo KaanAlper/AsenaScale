@@ -36,6 +36,7 @@ object Keys {
             |Set-Service sshd -StartupType Automatic; Start-Service sshd
             |New-ItemProperty -Path HKLM:\SOFTWARE\OpenSSH -Name DefaultShell -Value "${'$'}env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force | Out-Null
             |if (-not (Get-NetFirewallRule -Name OpenSSH-Server-In-TCP -ErrorAction SilentlyContinue)) { New-NetFirewallRule -Name OpenSSH-Server-In-TCP -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null }
+            |Set-NetFirewallRule -Name OpenSSH-Server-In-TCP -Enabled True -Profile Any -Action Allow
             |${'$'}key = '$key'
             |${'$'}admin = "${'$'}env:ProgramData\ssh\administrators_authorized_keys"
             |if (-not (Test-Path ${'$'}admin) -or -not (Select-String -Path ${'$'}admin -SimpleMatch ${'$'}key -Quiet)) { Add-Content -Path ${'$'}admin -Value ${'$'}key }
@@ -43,7 +44,8 @@ object Keys {
             |New-Item -ItemType Directory -Force "${'$'}env:USERPROFILE\.ssh" | Out-Null
             |${'$'}user = "${'$'}env:USERPROFILE\.ssh\authorized_keys"
             |if (-not (Test-Path ${'$'}user) -or -not (Select-String -Path ${'$'}user -SimpleMatch ${'$'}key -Quiet)) { Add-Content -Path ${'$'}user -Value ${'$'}key }
-            |Write-Host "Hazir. Uygulamada kullanici adi: ${'$'}env:USERNAME" -ForegroundColor Green
+            |${'$'}ok = (Get-Service sshd).Status -eq 'Running' -and (Test-NetConnection 127.0.0.1 -Port 22 -WarningAction SilentlyContinue).TcpTestSucceeded
+            |if (${'$'}ok) { Write-Host "Hazir. Uygulamada kullanici adi: ${'$'}env:USERNAME" -ForegroundColor Green } else { Write-Host "SSH sunucusu calismiyor: Get-Service sshd" -ForegroundColor Red }
         """.trimMargin()
     }
 

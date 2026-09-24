@@ -309,3 +309,21 @@ func NetworkChanged(ifname, gateway string) {
 		nm.InjectEvent()
 	}
 }
+
+// Probe dials target over the tailnet and hangs up. It returns "" when the
+// port answers, or the dial error, so the app can say *why* it can't
+// connect (nothing listening vs. firewall/asleep) instead of a bare EOF.
+func Probe(target string) string {
+	s := current()
+	if s == nil {
+		return "tailscale not started"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	c, err := s.Dial(ctx, "tcp", target)
+	if err != nil {
+		return err.Error()
+	}
+	c.Close()
+	return ""
+}

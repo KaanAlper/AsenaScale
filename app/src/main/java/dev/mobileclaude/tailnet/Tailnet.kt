@@ -178,6 +178,12 @@ class Tailnet(private val context: Context) {
         return peer?.ipv4 ?: peer?.ips?.firstOrNull() ?: address
     }
 
+    /** Null if [host]:[port] answers over the tailnet, else the dial error. */
+    fun probe(host: String, port: Int): String? {
+        val h = if (':' in host) "[$host]" else host
+        return tsbridge.Tsbridge.probe("$h:$port").ifEmpty { null }
+    }
+
     /** Opens a 127.0.0.1 port that tunnels to [host]:[port] over the tailnet. */
     fun forward(host: String, port: Int): Int {
         val h = if (':' in host) "[$host]" else host

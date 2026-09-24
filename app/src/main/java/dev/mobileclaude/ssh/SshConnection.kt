@@ -128,6 +128,8 @@ class SshConnection(val host: Host) {
             if (!tn.state.value.running) error("Tailscale bağlı değil. Ana ekrandan aç ve giriş yap.")
             // Prefer the peer's Tailscale IP; fall back to MagicDNS resolution.
             val target = tn.resolve(host.address)
+            // Knock first: tells "no SSH server" apart from "firewall / asleep".
+            tn.probe(target, host.port)?.let { error(probeMessage(it)) }
             localPort = tn.forward(target, host.port)
 
             val jsch = JSch()
@@ -260,6 +262,27 @@ class SshConnection(val host: Host) {
         localPort = 0
         shellOut = null
         main.post { app.sessions.onClosed(this) }
+    }
+
+    private fun probeMessage(err: String): String {
+        val e = err.lowercase()
+        val windows = app.tailnet.peerFor(host.address)?.isWindows == true
+        return when {
+            "refused" in e -> if (windows) {
+                "PC'ye ulaşıldı ama ${host.port}. portta SSH sunucusu yok. Windows kurulum komutunu " +
+                    "(🔑 → Windows kurulum komutu) Yönetici PowerShell'de çalıştırdın mı?"
+            } else {
+                "PC'ye ulaşıldı ama ${host.port}. portta SSH sunucusu yok: sudo systemctl enable --now sshd"
+            }
+            "timeout" in e || "deadline" in e -> if (windows) {
+                "PC'den yanıt yok. Windows Güvenlik Duvarı SSH'ı engelliyor olabilir: kurulum komutunu tekrar " +
+                    "çalıştır (kuralı tüm ağlar için açar). PC uykuda da olabilir."
+            } else {
+                "PC'den yanıt yok: güvenlik duvarı 22. portu engelliyor olabilir ya da PC uykuda."
+            }
+            "unknown" in e || "no such host" in e -> "\"${host.address}\" adında bir cihaz bulunamadı. Adresi kontrol et."
+            else -> "PC'ye bağlanılamadı: $err"
+        }
     }
 
     private fun friendly(e: Exception): String {
