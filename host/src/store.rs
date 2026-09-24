@@ -100,4 +100,33 @@ impl Devices {
     pub fn len(&self) -> usize {
         self.list.len()
     }
+
+    pub fn list(&self) -> &[Device] {
+        &self.list
+    }
+
+    /// Clears the list; returns how many there were.
+    pub fn clear_count(&mut self) -> usize {
+        let n = self.list.len();
+        self.clear();
+        n
+    }
+
+    /// Removes by 1-based number or by (part of) the name; returns how many.
+    pub fn remove(&mut self, which: &str) -> usize {
+        let before = self.list.len();
+        if let Ok(n) = which.parse::<usize>() {
+            if n >= 1 && n <= self.list.len() {
+                self.list.remove(n - 1);
+            }
+        } else if !which.is_empty() {
+            let w = which.to_lowercase();
+            self.list.retain(|d| !d.name.to_lowercase().contains(&w));
+        }
+        let removed = before - self.list.len();
+        if removed > 0 {
+            self.save();
+        }
+        removed
+    }
 }

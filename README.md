@@ -35,6 +35,24 @@ curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.s
 Kaldırmak için: `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh -s -- --uninstall`
 (ya da elle: `AsenaScale-x86_64.AppImage`).
 
+### Komut satırı (Windows ve Linux)
+Kurulumdan sonra terminalde `asenascale` komutu var (Windows'ta cmd/PowerShell, Linux'ta
+`~/.local/bin`). Çalışan tepsi uygulamasıyla konuşur:
+
+```text
+asenascale status            Tailscale durumu, bu PC'nin adı ve IP'leri, oturumlar, telefonlar
+asenascale devices           tailnet cihazları: ad, IPv4, OS, çevrimiçi/dışı, direkt/relay, IPv6
+asenascale ip [-4|-6]        bu PC'nin Tailscale IP'si
+asenascale connect           tailnet'e bağlan (gerekirse giriş linki verir)
+asenascale disconnect        tailnet'ten çık (telefon connect'e kadar ulaşamaz)
+asenascale ping CİHAZ        Tailscale üzerinden gecikme
+asenascale sessions | kill ID|all
+asenascale phones | revoke N|AD|all
+asenascale log [-f] [-n N]   günlük (-f: canlı izle; telefon bağlandı/ayrıldı dahil)
+asenascale start | quit | login | logout | version
+```
+`status`, `devices` ve `sessions` için `--json` eklenebilir.
+
 ### İlk bağlantı
 PC uygulaması ilk açılışta tarayıcıda Tailscale girişini açar (telefondakiyle **aynı hesap**).
 PC, telefonun ana ekranında kendiliğinden belirir. Dokun, bir araç seç (Claude Code, Codex,

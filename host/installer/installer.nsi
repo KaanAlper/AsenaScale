@@ -135,6 +135,18 @@ Section "Install"
 
   CreateShortCut "$SMPROGRAMS\${APP}.lnk" "$INSTDIR\asenascale.exe"
 
+  ; `asenascale` on the command line (cmd, PowerShell, Windows Terminal):
+  ; a small shim in a folder that is on every user's PATH. Through a .cmd
+  ; the terminal waits for the command and shows its output; with no
+  ; arguments it just starts the tray app.
+  CreateDirectory "$LOCALAPPDATA\Microsoft\WindowsApps"
+  FileOpen $0 "$LOCALAPPDATA\Microsoft\WindowsApps\asenascale.cmd" w
+  FileWrite $0 '@echo off$\r$\n'
+  FileWrite $0 'if "%~1"=="" (start "" "$INSTDIR\asenascale.exe" & exit /b 0)$\r$\n'
+  FileWrite $0 '"$INSTDIR\asenascale.exe" %*$\r$\n'
+  FileWrite $0 'exit /b %errorlevel%$\r$\n'
+  FileClose $0
+
   WriteRegStr HKCU "Software\${APP}" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "${APP}"
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayVersion" "${VERSION}"
@@ -168,6 +180,7 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\${APP}.lnk"
+  Delete "$LOCALAPPDATA\Microsoft\WindowsApps\asenascale.cmd"
   DeleteRegValue HKCU "${RUN_KEY}" "${APP}"
   DeleteRegKey HKCU "${UNINST_KEY}"
   DeleteRegKey HKCU "Software\${APP}"

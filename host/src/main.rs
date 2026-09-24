@@ -6,6 +6,8 @@
 
 mod approve;
 mod autostart;
+mod cli;
+mod control;
 mod firewall;
 mod files;
 mod i18n;
@@ -32,9 +34,15 @@ pub const PORT: u16 = 2222;
 enum UserEvent {
     Menu(MenuEvent),
     Changed,
+    Quit,
 }
 
 fn main() {
+    // Any argument: the command line (asenascale status, devices, ...).
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if !args.is_empty() {
+        std::process::exit(cli::run(&args));
+    }
     init_log();
 
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
@@ -61,11 +69,28 @@ fn main() {
 
     // The embedded Tailscale node, and a slow watcher for the tray.
     let ts = Arc::new(Mutex::new(tailnet::Status::default()));
+    let net = control::Net::new();
     {
-        let (ts, changed) = (ts.clone(), proxy.clone());
-        std::thread::spawn(move || watch_tailnet(ts, move || {
+        let (ts, net, changed) = (ts.clone(), net.clone(), proxy.clone());
+        std::thread::spawn(move || watch_tailnet(ts, net, move || {
             let _ = changed.send_event(UserEvent::Changed);
         }));
+    }
+
+    // The command line talks to this process.
+    {
+        let quit = proxy.clone();
+        let ctx = control::Ctx {
+            state: state.clone(),
+            ts: ts.clone(),
+            net: net.clone(),
+            quit: Box::new(move || {
+                let _ = quit.send_event(UserEvent::Quit);
+            }),
+        };
+        if let Err(e) = control::start(ctx) {
+            log::warn!("command line unavailable: {e:#}");
+        }
     }
 
     let menu_proxy = proxy.clone();
@@ -83,6 +108,7 @@ fn main() {
     let fix_firewall = MenuItem::new(t("fix_firewall"), cfg!(windows), None);
     let autorun = CheckMenuItem::new(t("autorun"), true, autostart::is_enabled(), None);
     let logout = MenuItem::new(t("ts_logout"), true, None);
+    let toggle = MenuItem::new(if net.want_up() { t("ts_disconnect") } else { t("ts_connect") }, true, None);
     let quit = MenuItem::new(t("quit"), true, None);
     let menu = Menu::new();
     let _ = menu.append_items(&[
@@ -96,14 +122,24 @@ fn main() {
         &reset,
         &fix_firewall,
         &autorun,
+        &toggle,
         &logout,
         &PredefinedMenuItem::separator(),
         &quit,
     ]);
 
     let refresh = {
-        let (status, address, login, devices, state, ts, peers_menu) =
-            (status.clone(), address.clone(), login.clone(), devices.clone(), state.clone(), ts.clone(), peers_menu.clone());
+        let (status, address, login, devices, state, ts, peers_menu, toggle, net) = (
+            status.clone(),
+            address.clone(),
+            login.clone(),
+            devices.clone(),
+            state.clone(),
+            ts.clone(),
+            peers_menu.clone(),
+            toggle.clone(),
+            net.clone(),
+        );
         move |tray: Option<&tray_icon::TrayIcon>| {
             let live = state.sessions.list();
             let attached: usize = live.iter().map(|s| s.attached()).sum();
@@ -114,7 +150,10 @@ fn main() {
             };
             status.set_text(&text);
             let st = ts.lock().unwrap().clone();
-            let line = if st.running() {
+            toggle.set_text(if net.want_up() { t("ts_disconnect") } else { t("ts_connect") });
+            let line = if !net.want_up() {
+                t("ts_off").to_string()
+            } else if st.running() {
                 let name = st.me.as_ref().map(|m| m.dns_name.split('.').next().unwrap_or("").to_string()).unwrap_or_default();
                 format!("Tailscale: {}  ·  {name}", st.ipv4().unwrap_or_default())
             } else if st.needs_login() {
@@ -168,8 +207,14 @@ fn main() {
                 refresh(tray.as_ref());
             }
             Event::UserEvent(UserEvent::Changed) => refresh(tray.as_ref()),
+            Event::UserEvent(UserEvent::Quit) => {
+                let _ = std::fs::remove_file(control::Endpoint::path());
+                tray = None;
+                *control_flow = ControlFlow::Exit;
+            }
             Event::UserEvent(UserEvent::Menu(e)) => {
                 if e.id == quit.id() {
+                    let _ = std::fs::remove_file(control::Endpoint::path());
                     tray = None;
                     *control_flow = ControlFlow::Exit;
                 } else if e.id == reset.id() {
@@ -184,6 +229,9 @@ fn main() {
                     } else {
                         approve::open_url(&url);
                     }
+                } else if e.id == toggle.id() {
+                    net.set(!net.want_up());
+                    refresh(tray.as_ref());
                 } else if e.id == logout.id() {
                     std::thread::spawn(|| { let _ = tailnet::logout(); });
                 } else if e.id == fix_firewall.id() {
@@ -231,18 +279,30 @@ fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
 /// Starts the embedded node, forwards its port to the local server, and
 /// keeps the tray's copy of its status fresh: every 2 s while logging in,
 /// every 30 s once connected (it costs next to nothing).
-fn watch_tailnet(ts: Arc<Mutex<tailnet::Status>>, changed: impl Fn()) {
+fn watch_tailnet(ts: Arc<Mutex<tailnet::Status>>, net: Arc<control::Net>, changed: impl Fn()) {
     let dir = store::dir().to_string_lossy().into_owned();
-    if let Err(e) = tailnet::start(&dir, &tailnet::hostname()) {
-        log::error!("tailscale start: {e:#}");
-        return;
-    }
-    if let Err(e) = tailnet::serve(PORT, PORT) {
-        log::error!("tailscale serve: {e:#}");
-    }
+    let mut up = false;
     let mut opened_login = false;
     loop {
-        let st = tailnet::status();
+        // Follow the on/off switch (tray or `asenascale connect/disconnect`).
+        let want = net.want_up();
+        if want && !up {
+            match tailnet::start(&dir, &tailnet::hostname()) {
+                Ok(()) => {
+                    if let Err(e) = tailnet::serve(PORT, PORT) {
+                        log::error!("tailscale serve: {e:#}");
+                    }
+                    log::info!("tailscale on");
+                    up = true;
+                }
+                Err(e) => log::error!("tailscale start: {e:#}"),
+            }
+        } else if !want && up {
+            tailnet::stop();
+            log::info!("tailscale off");
+            up = false;
+        }
+        let st = if up { tailnet::status() } else { tailnet::Status { state: "Stopped".into(), ..Default::default() } };
         // First time only: take the user straight to the login page.
         if st.needs_login() && !st.auth_url.is_empty() && !opened_login {
             opened_login = true;
@@ -258,7 +318,7 @@ fn watch_tailnet(ts: Arc<Mutex<tailnet::Status>>, changed: impl Fn()) {
         if differs {
             changed();
         }
-        std::thread::sleep(Duration::from_secs(if running { 30 } else { 2 }));
+        net.wait(Duration::from_secs(if running || !want { 30 } else { 2 }));
     }
 }
 

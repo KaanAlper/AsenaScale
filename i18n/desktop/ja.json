@@ -20,5 +20,8 @@
   "mark_offline": "オフライン",
   "allowed_phones": "許可したスマホ: {d}",
   "request_title": "AsenaScale — 接続リクエスト",
-  "request_body": "{device}\nが AsenaScale でこのコンピューターに接続しようとしています。\n\n許可すると、このスマホはターミナルを使い、スクリーンショットを撮れるようになります。再度確認はしません。\n\nキー: {key}\n\n許可しますか？"
+  "request_body": "{device}\nが AsenaScale でこのコンピューターに接続しようとしています。\n\n許可すると、このスマホはターミナルを使い、スクリーンショットを撮れるようになります。再度確認はしません。\n\nキー: {key}\n\n許可しますか？",
+  "ts_off": "Tailscale: オフ",
+  "ts_connect": "Tailscale に接続",
+  "ts_disconnect": "Tailscale から切断"
 }

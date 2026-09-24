@@ -20,5 +20,8 @@
   "mark_offline": "离线",
   "allowed_phones": "已允许的手机：{d}",
   "request_title": "AsenaScale — 连接请求",
-  "request_body": "{device}\n想通过 AsenaScale 连接到这台电脑。\n\n允许后，这部手机可以使用终端并截图。之后不会再询问。\n\n密钥：{key}\n\n是否允许？"
+  "request_body": "{device}\n想通过 AsenaScale 连接到这台电脑。\n\n允许后，这部手机可以使用终端并截图。之后不会再询问。\n\n密钥：{key}\n\n是否允许？",
+  "ts_off": "Tailscale：已关闭",
+  "ts_connect": "连接 Tailscale",
+  "ts_disconnect": "断开 Tailscale"
 }

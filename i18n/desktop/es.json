@@ -20,5 +20,8 @@
   "mark_offline": "sin conexión",
   "allowed_phones": "Teléfonos permitidos: {d}",
   "request_title": "AsenaScale — solicitud de conexión",
-  "request_body": "{device}\nquiere conectarse a este ordenador con AsenaScale.\n\nSi lo permites, este teléfono podrá usar el terminal y hacer capturas de pantalla. No se volverá a preguntar.\n\nClave: {key}\n\n¿Permitir?"
+  "request_body": "{device}\nquiere conectarse a este ordenador con AsenaScale.\n\nSi lo permites, este teléfono podrá usar el terminal y hacer capturas de pantalla. No se volverá a preguntar.\n\nClave: {key}\n\n¿Permitir?",
+  "ts_off": "Tailscale: apagado",
+  "ts_connect": "Conectar a Tailscale",
+  "ts_disconnect": "Desconectar de Tailscale"
 }

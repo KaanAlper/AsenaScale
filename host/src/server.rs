@@ -97,7 +97,14 @@ impl Conn {
     fn mark_connected(&mut self, ip: &str) {
         if self.tailnet_ip.is_none() {
             self.tailnet_ip = Some(ip.to_string());
-            self.state.connected.lock().unwrap().push(ip.to_string());
+            let mut c = self.state.connected.lock().unwrap();
+            // The phone opens a few connections (terminal, transfers); log the first.
+            if !c.iter().any(|x| x == ip) {
+                let who = self.tailnet_peer().map(|p| p.label()).unwrap_or_default();
+                log::info!("phone connected: {who} {ip}");
+            }
+            c.push(ip.to_string());
+            drop(c);
             (self.state.on_change)();
         }
     }
@@ -124,6 +131,9 @@ impl Drop for Conn {
             let mut c = self.state.connected.lock().unwrap();
             if let Some(i) = c.iter().position(|x| *x == ip) {
                 c.remove(i);
+            }
+            if !c.iter().any(|x| *x == ip) {
+                log::info!("phone disconnected: {ip}");
             }
             drop(c);
             (self.state.on_change)();

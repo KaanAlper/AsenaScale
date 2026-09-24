@@ -20,5 +20,8 @@
   "mark_offline": "غير متصل",
   "allowed_phones": "الهواتف المسموح بها: {d}",
   "request_title": "AsenaScale — طلب اتصال",
-  "request_body": "{device}\nيريد الاتصال بهذا الكمبيوتر عبر AsenaScale.\n\nإذا سمحت، يستطيع هذا الهاتف استخدام الطرفية والتقاط لقطات الشاشة. لن يُطرح السؤال مجددًا.\n\nالمفتاح: {key}\n\nهل تسمح؟"
+  "request_body": "{device}\nيريد الاتصال بهذا الكمبيوتر عبر AsenaScale.\n\nإذا سمحت، يستطيع هذا الهاتف استخدام الطرفية والتقاط لقطات الشاشة. لن يُطرح السؤال مجددًا.\n\nالمفتاح: {key}\n\nهل تسمح؟",
+  "ts_off": "Tailscale: متوقف",
+  "ts_connect": "الاتصال بـ Tailscale",
+  "ts_disconnect": "قطع الاتصال بـ Tailscale"
 }

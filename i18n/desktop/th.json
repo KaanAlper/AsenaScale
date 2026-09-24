@@ -20,5 +20,8 @@
   "mark_offline": "ออฟไลน์",
   "allowed_phones": "โทรศัพท์ที่อนุญาต: {d}",
   "request_title": "AsenaScale — คำขอเชื่อมต่อ",
-  "request_body": "{device}\nต้องการเชื่อมต่อกับคอมพิวเตอร์นี้ด้วย AsenaScale\n\nถ้าอนุญาต โทรศัพท์นี้จะใช้เทอร์มินัลและจับภาพหน้าจอได้ จะไม่ถามอีก\n\nคีย์: {key}\n\nอนุญาตหรือไม่"
+  "request_body": "{device}\nต้องการเชื่อมต่อกับคอมพิวเตอร์นี้ด้วย AsenaScale\n\nถ้าอนุญาต โทรศัพท์นี้จะใช้เทอร์มินัลและจับภาพหน้าจอได้ จะไม่ถามอีก\n\nคีย์: {key}\n\nอนุญาตหรือไม่",
+  "ts_off": "Tailscale: ปิด",
+  "ts_connect": "เชื่อมต่อ Tailscale",
+  "ts_disconnect": "ตัดการเชื่อมต่อ Tailscale"
 }

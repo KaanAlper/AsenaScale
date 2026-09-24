@@ -13,6 +13,8 @@ extern "C" {
     fn AsPeer(src_port: c_int) -> *mut c_char;
     fn AsLogin() -> *mut c_char;
     fn AsLogout() -> *mut c_char;
+    fn AsPing(ip: *const c_char) -> c_int;
+    fn AsStop();
     fn AsFree(p: *mut c_char);
 }
 
@@ -51,6 +53,18 @@ pub fn logout() -> Result<()> {
     check(unsafe { AsLogout() })
 }
 
+/// Shuts the node down (off the tailnet); `start` + `serve` bring it back.
+pub fn stop() {
+    unsafe { AsStop() }
+}
+
+/// Tailscale-level round trip to a peer in ms, or None if it doesn't answer.
+pub fn ping(ip: &str) -> Option<u32> {
+    let c = CString::new(ip).ok()?;
+    let ms = unsafe { AsPing(c.as_ptr()) };
+    (ms >= 0).then_some(ms as u32)
+}
+
 #[derive(Deserialize, Default, Debug, Clone)]
 pub struct Node {
     #[serde(default, rename = "dnsName")]
@@ -71,11 +85,27 @@ pub struct PeerStatus {
     pub ips: Option<Vec<String>>,
     #[serde(default)]
     pub online: bool,
+    /// RFC 3339, only while offline.
+    #[serde(default, rename = "lastSeen")]
+    pub last_seen: String,
+    /// ip:port when the link is direct (peer to peer).
+    #[serde(default)]
+    pub direct: String,
+    /// DERP relay region when relayed.
+    #[serde(default)]
+    pub relay: String,
+    #[serde(default)]
+    pub rx: u64,
+    #[serde(default)]
+    pub tx: u64,
 }
 
 impl PeerStatus {
     pub fn ipv4(&self) -> String {
         self.ips.as_ref().and_then(|v| v.iter().find(|ip| ip.contains('.')).cloned()).unwrap_or_default()
+    }
+    pub fn ipv6(&self) -> String {
+        self.ips.as_ref().and_then(|v| v.iter().find(|ip| ip.contains(':')).cloned()).unwrap_or_default()
     }
     pub fn short_name(&self) -> String {
         self.dns_name.split('.').next().filter(|s| !s.is_empty()).unwrap_or(&self.name).to_string()
@@ -88,6 +118,10 @@ pub struct Status {
     pub state: String,
     #[serde(default, rename = "authURL")]
     pub auth_url: String,
+    #[serde(default)]
+    pub tailnet: String,
+    #[serde(default)]
+    pub error: String,
     #[serde(rename = "self")]
     pub me: Option<Node>,
     #[serde(default)]
@@ -103,6 +137,9 @@ impl Status {
     }
     pub fn ipv4(&self) -> Option<String> {
         self.me.as_ref()?.ips.as_ref()?.iter().find(|ip| ip.contains('.')).cloned()
+    }
+    pub fn ipv6(&self) -> Option<String> {
+        self.me.as_ref()?.ips.as_ref()?.iter().find(|ip| ip.contains(':')).cloned()
     }
 }
 

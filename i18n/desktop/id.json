@@ -20,5 +20,8 @@
   "mark_offline": "offline",
   "allowed_phones": "Ponsel diizinkan: {d}",
   "request_title": "AsenaScale — permintaan koneksi",
-  "request_body": "{device}\ningin terhubung ke komputer ini dengan AsenaScale.\n\nJika diizinkan, ponsel ini bisa memakai terminal dan mengambil tangkapan layar. Tidak akan ditanya lagi.\n\nKunci: {key}\n\nIzinkan?"
+  "request_body": "{device}\ningin terhubung ke komputer ini dengan AsenaScale.\n\nJika diizinkan, ponsel ini bisa memakai terminal dan mengambil tangkapan layar. Tidak akan ditanya lagi.\n\nKunci: {key}\n\nIzinkan?",
+  "ts_off": "Tailscale: mati",
+  "ts_connect": "Hubungkan ke Tailscale",
+  "ts_disconnect": "Putuskan dari Tailscale"
 }

@@ -17,6 +17,7 @@ APPIMAGE="$DIR/AsenaScale.AppImage"
 ICON="$HOME/.local/share/icons/hicolor/256x256/apps/asenascale.png"
 MENU="$HOME/.local/share/applications/asenascale.desktop"
 AUTOSTART="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/asenascale.desktop"
+BIN="$HOME/.local/bin/asenascale"
 
 say() { printf '\033[1;35m::\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -28,7 +29,7 @@ stop_running() {
 
 if [ "${1:-}" = "--uninstall" ]; then
   stop_running
-  rm -f "$APPIMAGE" "$ICON" "$MENU" "$AUTOSTART"
+  rm -f "$APPIMAGE" "$ICON" "$MENU" "$AUTOSTART" "$BIN"
   rmdir "$DIR" 2>/dev/null || true
   say "AsenaScale removed. (Settings stay in ~/.config/AsenaScale; delete that folder to forget approved phones.)"
   exit 0
@@ -69,11 +70,13 @@ fi
 
 say "Downloading AsenaScale"
 stop_running
-mkdir -p "$DIR" "$(dirname "$ICON")" "$(dirname "$MENU")" "$(dirname "$AUTOSTART")"
+mkdir -p "$DIR" "$(dirname "$ICON")" "$(dirname "$MENU")" "$(dirname "$AUTOSTART")" "$(dirname "$BIN")"
 curl -fL --progress-bar -o "$APPIMAGE.new" "$URL/AsenaScale-x86_64.AppImage"
 mv "$APPIMAGE.new" "$APPIMAGE"
 chmod +x "$APPIMAGE"
 curl -fsSL -o "$ICON" "$URL/asenascale.png" || true
+# The command line: asenascale status, devices, connect, log -f, ...
+ln -sf "$APPIMAGE" "$BIN"
 
 cat > "$MENU" <<EOF
 [Desktop Entry]
@@ -95,3 +98,7 @@ command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q "$HOME/.
 say "Starting AsenaScale (look for it in the system tray)"
 nohup "$APPIMAGE" >/dev/null 2>&1 &
 say "Done. First run opens the Tailscale login page in your browser."
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) say "Command line: asenascale help" ;;
+  *) say "Command line: ~/.local/bin/asenascale help (add ~/.local/bin to PATH to type just 'asenascale')" ;;
+esac

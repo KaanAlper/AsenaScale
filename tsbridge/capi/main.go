@@ -42,6 +42,9 @@ func AsLogin() *C.char { return cerr(tsbridge.Login()) }
 //export AsLogout
 func AsLogout() *C.char { return cerr(tsbridge.Logout()) }
 
+//export AsPing
+func AsPing(ip *C.char) C.int { return C.int(tsbridge.Ping(C.GoString(ip))) }
+
 //export AsStop
 func AsStop() { tsbridge.Stop() }
 

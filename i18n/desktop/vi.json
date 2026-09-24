@@ -20,5 +20,8 @@
   "mark_offline": "ngoại tuyến",
   "allowed_phones": "Điện thoại được phép: {d}",
   "request_title": "AsenaScale — yêu cầu kết nối",
-  "request_body": "{device}\nmuốn kết nối tới máy tính này bằng AsenaScale.\n\nNếu cho phép, điện thoại này có thể dùng terminal và chụp màn hình. Sẽ không hỏi lại.\n\nKhóa: {key}\n\nCho phép?"
+  "request_body": "{device}\nmuốn kết nối tới máy tính này bằng AsenaScale.\n\nNếu cho phép, điện thoại này có thể dùng terminal và chụp màn hình. Sẽ không hỏi lại.\n\nKhóa: {key}\n\nCho phép?",
+  "ts_off": "Tailscale: tắt",
+  "ts_connect": "Kết nối Tailscale",
+  "ts_disconnect": "Ngắt kết nối Tailscale"
 }

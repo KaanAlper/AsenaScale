@@ -20,5 +20,8 @@
   "mark_offline": "離線",
   "allowed_phones": "已允許的手機：{d}",
   "request_title": "AsenaScale — 連線要求",
-  "request_body": "{device}\n想透過 AsenaScale 連線到這台電腦。\n\n允許後，這支手機可以使用終端機並截圖。之後不會再詢問。\n\n金鑰：{key}\n\n是否允許？"
+  "request_body": "{device}\n想透過 AsenaScale 連線到這台電腦。\n\n允許後，這支手機可以使用終端機並截圖。之後不會再詢問。\n\n金鑰：{key}\n\n是否允許？",
+  "ts_off": "Tailscale：已關閉",
+  "ts_connect": "連線 Tailscale",
+  "ts_disconnect": "中斷 Tailscale 連線"
 }

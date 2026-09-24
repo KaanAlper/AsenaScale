@@ -20,5 +20,8 @@
   "mark_offline": "offline",
   "allowed_phones": "Toegestane telefoons: {d}",
   "request_title": "AsenaScale — verbindingsverzoek",
-  "request_body": "{device}\nwil met AsenaScale verbinding maken met deze computer.\n\nAls je het toestaat, kan deze telefoon de terminal gebruiken en schermafbeeldingen maken. Er wordt niet opnieuw gevraagd.\n\nSleutel: {key}\n\nToestaan?"
+  "request_body": "{device}\nwil met AsenaScale verbinding maken met deze computer.\n\nAls je het toestaat, kan deze telefoon de terminal gebruiken en schermafbeeldingen maken. Er wordt niet opnieuw gevraagd.\n\nSleutel: {key}\n\nToestaan?",
+  "ts_off": "Tailscale: uit",
+  "ts_connect": "Verbinden met Tailscale",
+  "ts_disconnect": "Verbinding met Tailscale verbreken"
 }

@@ -20,5 +20,8 @@
   "mark_offline": "çevrimdışı",
   "allowed_phones": "İzinli telefon: {d}",
   "request_title": "AsenaScale — bağlantı isteği",
-  "request_body": "{device}\nAsenaScale ile bu bilgisayara bağlanmak istiyor.\n\nİzin verirsen bu telefon terminali kullanabilir ve ekran görüntüsü alabilir. Bir daha sorulmaz.\n\nAnahtar: {key}\n\nİzin veriyor musun?"
+  "request_body": "{device}\nAsenaScale ile bu bilgisayara bağlanmak istiyor.\n\nİzin verirsen bu telefon terminali kullanabilir ve ekran görüntüsü alabilir. Bir daha sorulmaz.\n\nAnahtar: {key}\n\nİzin veriyor musun?",
+  "ts_off": "Tailscale: kapalı",
+  "ts_connect": "Tailscale'e bağlan",
+  "ts_disconnect": "Tailscale bağlantısını kes"
 }
