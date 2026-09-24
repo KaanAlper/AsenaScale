@@ -1,6 +1,7 @@
 package dev.asenascale.ssh
 
 import android.os.Handler
+import dev.asenascale.R
 import android.os.Looper
 import android.util.Log
 import com.jcraft.jsch.ChannelExec
@@ -79,6 +80,11 @@ class SshConnection(
     /** Id of the terminal session on the PC app (kept across reconnects and app restarts). */
     val sessionId: String = App.instance.sessionIds.getOrCreate(key)
 
+    /** Why the last attempt failed, for the UI to offer the right fix. */
+    enum class Failure { AUTH, NEEDS_SETUP }
+    @Volatile var failure: Failure? = null
+        private set
+
     /** Set when the user leaves on purpose; no automatic reconnect then. */
     @Volatile var userClosed = false
     /** Reached the shell at least once (so a drop is worth reconnecting). */
@@ -126,7 +132,7 @@ class SshConnection(
                 if (!tn.state.value.enabled || tn.state.value.needsLogin) break
                 Thread.sleep(250)
             }
-            if (!tn.state.value.running) error("Tailscale bağlı değil. Ana ekrandan aç ve giriş yap.")
+            if (!tn.state.value.running) error(str(R.string.err_tailscale_off))
             // Prefer the peer's Tailscale IP; fall back to MagicDNS resolution.
             val target = tn.resolve(host.address)
             // The PC app, when running, beats a plain SSH server: no setup,
@@ -170,7 +176,7 @@ class SshConnection(
             s.setServerAliveCountMax(3)
             s.timeout = 0
             // The first time, the PC app waits for someone to click "Yes" on the PC.
-            if (isHostApp) _hint.value = "PC'de çıkan izin penceresinde \"Evet\"e bas (ilk bağlantıda bir kez)."
+            if (isHostApp) _hint.value = str(R.string.hint_approve)
             s.connect(if (isHostApp) 120_000 else 20_000)
             _hint.value = null
             session = s
@@ -193,7 +199,7 @@ class SshConnection(
             // The PC app starts the command itself (and only once per session).
             if (!isHostApp && tool.command.isNotBlank()) send((tool.command + "\r").toByteArray())
             readLoop(input)
-            close("Bağlantı kapandı")
+            close(str(R.string.conn_closed))
         } catch (e: Exception) {
             Log.w("ssh", "connect failed", e)
             close(friendly(e))
@@ -240,7 +246,7 @@ class SshConnection(
 
     /** Runs [command] on the machine, optionally piping [stdin]; returns stdout. */
     fun exec(command: String, stdin: ByteArray? = null, timeoutMs: Long = 30_000): ExecResult {
-        val s = session ?: error("Bağlı değil")
+        val s = session ?: error(str(R.string.not_connected))
         val ch = s.openChannel("exec") as ChannelExec
         ch.setCommand(command)
         val out = ByteArrayOutputStream()
@@ -275,7 +281,7 @@ class SshConnection(
             watchdog.interrupt()
             ch.disconnect()
         }
-        if (timedOut) error("Zaman aşımı: bilgisayar yanıt vermedi")
+        if (timedOut) error(str(R.string.err_exec_timeout))
         return ExecResult(ch.exitStatus, out.toByteArray(), err.toString(Charsets.UTF_8.name()))
     }
 
@@ -284,7 +290,7 @@ class SshConnection(
      * plain SSH servers; the PC app has its own `mc put`). Returns the PC path.
      */
     fun sftpPut(name: String, bytes: ByteArray): String {
-        val s = session ?: error("Bağlı değil")
+        val s = session ?: error(str(R.string.not_connected))
         val ch = s.openChannel("sftp") as ChannelSftp
         ch.connect(10_000)
         try {
@@ -328,44 +334,35 @@ class SshConnection(
             // (answered by tailscaled, not the OS) tells tunnel from PC.
             val ms = app.tailnet.ping(target)
             return when {
-                ms < 0 -> "Tailscale üzerinden PC'ye ulaşılamıyor. PC'de Tailscale açık ve bağlı mı? PC uykuda olabilir."
-                windows -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama $port. port yanıt vermiyor: Windows'ta " +
-                    "SSH sunucusu kurulu değil ya da Güvenlik Duvarı engelliyor. Kurulum komutunu PC'de " +
-                    "Yönetici PowerShell'de çalıştır."
-                else -> "Tailscale tüneli PC'ye ulaşıyor ($ms ms) ama $port. port yanıt vermiyor: " +
-                    "SSH sunucusu kapalı ya da güvenlik duvarı engelliyor."
+                ms < 0 -> str(R.string.err_unreachable)
+                windows -> str(R.string.err_port_silent_windows, ms, port).also { failure = Failure.NEEDS_SETUP }
+                else -> str(R.string.err_port_silent, ms, port)
             }
         }
         return when {
             "refused" in e -> if (windows) {
-                "PC'ye ulaşıldı ama $port. portta SSH sunucusu yok. Windows kurulum komutunu " +
-                    "(ana ekran > anahtar simgesi > Windows kurulum komutu) Yönetici PowerShell'de çalıştırdın mı?"
-            } else {
-                "PC'ye ulaşıldı ama $port. portta SSH sunucusu yok: sudo systemctl enable --now sshd"
-            }
-            "timeout" in e || "deadline" in e -> if (windows) {
-                "PC'den yanıt yok. Windows Güvenlik Duvarı SSH'ı engelliyor olabilir: kurulum komutunu tekrar " +
-                    "çalıştır (kuralı tüm ağlar için açar). PC uykuda da olabilir."
-            } else {
-                "PC'den yanıt yok: güvenlik duvarı 22. portu engelliyor olabilir ya da PC uykuda."
-            }
-            "unknown" in e || "no such host" in e -> "\"${host.address}\" adında bir cihaz bulunamadı. Adresi kontrol et."
-            else -> "PC'ye bağlanılamadı: $err"
+                failure = Failure.NEEDS_SETUP
+                str(R.string.err_refused_windows, port)
+            } else str(R.string.err_refused, port)
+            "unknown" in e || "no such host" in e -> str(R.string.err_unknown_host, host.address)
+            else -> str(R.string.err_generic, err)
         }
     }
 
     private fun friendly(e: Exception): String {
         val m = e.message ?: e.toString()
+        val auth = "Auth fail" in m || "Auth cancel" in m
         return when {
-            ("Auth fail" in m || "Auth cancel" in m) && isHostApp ->
-                "PC'de izin verilmedi. Tekrar bağlan ve PC'de çıkan pencerede \"Evet\"e bas."
-            "Auth fail" in m || "Auth cancel" in m -> "Kimlik doğrulama başarısız. Kullanıcı adını ve anahtarı/şifreyi kontrol et."
-            "timeout" in m.lowercase() -> "Zaman aşımı: bilgisayar açık ve Tailscale'e bağlı mı?"
-            "refused" in m.lowercase() || "dial" in m.lowercase() ->
-                "Bağlantı reddedildi: PC'de SSH sunucusu çalışıyor mu? (Windows'ta: PC'ye AsenaScale kur)"
+            auth && isHostApp -> str(R.string.err_denied)
+            auth -> str(R.string.err_auth).also { failure = Failure.AUTH }
+            "timeout" in m.lowercase() -> str(R.string.err_timeout)
+            "refused" in m.lowercase() || "dial" in m.lowercase() -> str(R.string.err_refused_generic)
             else -> m
         }
     }
+
+    private fun str(id: Int, vararg args: Any): String = app.getString(id, *args)
+
 
     private class PasswordInfo(private val pw: String) : UserInfo, UIKeyboardInteractive {
         override fun getPassphrase(): String? = null

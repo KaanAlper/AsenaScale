@@ -40,6 +40,14 @@ PC uygulaması ilk açılışta tarayıcıda Tailscale girişini açar (telefond
 PC, telefonun ana ekranında kendiliğinden belirir. Dokun, bir araç seç (Claude Code, Codex,
 Gemini, Grok, kabuk), ilk seferde PC'de çıkan izin penceresinde *Evet*'e bas. Bu kadar.
 
+### Dil
+Telefon uygulaması ve PC uygulaması sistem dilini izler; o dil yoksa İngilizce açılır.
+Desteklenen diller: Türkçe, English, Deutsch, Français, Español, Italiano, Português,
+Nederlands, Polski, Русский, Українська, العربية, فارسی, हिन्दी, Bahasa Indonesia,
+日本語, 한국어, 简体中文, 繁體中文, Tiếng Việt, ไทย. Android 13+ üzerinde uygulamaya özel
+dil *Ayarlar → Uygulamalar → AsenaScale Mobile → Dil*'den seçilebilir.
+Çeviriler `i18n/` klasöründe JSON olarak durur; düzenledikten sonra `python3 i18n/gen.py`.
+
 ## Kullanım ipuçları
 
 - **Terminal hareketleri:** dokun → klavye, kaydır → geçmiş (fırlatınca akar),

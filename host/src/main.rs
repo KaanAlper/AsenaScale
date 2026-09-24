@@ -8,6 +8,7 @@ mod approve;
 mod autostart;
 mod firewall;
 mod files;
+mod i18n;
 mod server;
 mod session;
 mod shot;
@@ -21,6 +22,8 @@ use tao::event::{Event, StartCause};
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
 use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tray_icon::{Icon, TrayIconBuilder};
+
+use i18n::{t, tf};
 
 /// The phone app looks for this port on the PC.
 pub const PORT: u16 = 2222;
@@ -43,7 +46,7 @@ fn main() {
     if let Err(e) = start_server(state.clone()) {
         approve::info(
             "AsenaScale",
-            &format!("Başlatılamadı: {e:#}\n\nUygulama zaten çalışıyor olabilir (sistem tepsisine bak)."),
+            &tf("start_failed", &[("e", &format!("{e:#}"))]),
         );
         return;
     }
@@ -69,17 +72,17 @@ fn main() {
         let _ = menu_proxy.send_event(UserEvent::Menu(e));
     }));
 
-    let status = MenuItem::new("Başlatılıyor…", false, None);
-    let address = MenuItem::new("Tailscale başlatılıyor…", false, None);
-    let login = MenuItem::new("Tailscale'e giriş yap", false, None);
+    let status = MenuItem::new(t("starting"), false, None);
+    let address = MenuItem::new(t("ts_starting"), false, None);
+    let login = MenuItem::new(t("ts_login"), false, None);
     let devices = MenuItem::new("", false, None);
-    let peers_menu = Submenu::new("Cihazlar", true);
-    let reset = MenuItem::new("İzinli telefonları sıfırla", true, None);
-    let close_all = MenuItem::new("Tüm oturumları kapat", true, None);
-    let fix_firewall = MenuItem::new("Güvenlik duvarı iznini onar", cfg!(windows), None);
-    let autorun = CheckMenuItem::new("Oturum açınca başlat", true, autostart::is_enabled(), None);
-    let logout = MenuItem::new("Tailscale hesabından çık", true, None);
-    let quit = MenuItem::new("Çıkış", true, None);
+    let peers_menu = Submenu::new(t("devices"), true);
+    let reset = MenuItem::new(t("reset"), true, None);
+    let close_all = MenuItem::new(t("close_all"), true, None);
+    let fix_firewall = MenuItem::new(t("fix_firewall"), cfg!(windows), None);
+    let autorun = CheckMenuItem::new(t("autorun"), true, autostart::is_enabled(), None);
+    let logout = MenuItem::new(t("ts_logout"), true, None);
+    let quit = MenuItem::new(t("quit"), true, None);
     let menu = Menu::new();
     let _ = menu.append_items(&[
         &status,
@@ -104,9 +107,9 @@ fn main() {
             let live = state.sessions.list();
             let attached: usize = live.iter().map(|s| s.attached()).sum();
             let text = match (live.len(), attached) {
-                (0, _) => "Hazır, telefon bekleniyor".to_string(),
-                (n, 0) => format!("{n} oturum açık (telefon bağlı değil)"),
-                (n, a) => format!("{n} oturum açık, {a} telefon bağlı"),
+                (0, _) => t("ready").to_string(),
+                (n, 0) => tf("sessions_no_phone", &[("n", &n)]),
+                (n, a) => tf("sessions_phones", &[("n", &n), ("a", &a)]),
             };
             status.set_text(&text);
             let st = ts.lock().unwrap().clone();
@@ -114,9 +117,9 @@ fn main() {
                 let name = st.me.as_ref().map(|m| m.dns_name.split('.').next().unwrap_or("").to_string()).unwrap_or_default();
                 format!("Tailscale: {}  ·  {name}", st.ipv4().unwrap_or_default())
             } else if st.needs_login() {
-                "Tailscale: giriş gerekli".to_string()
+                t("ts_needs_login").to_string()
             } else {
-                "Tailscale: bağlanıyor…".to_string()
+                t("ts_connecting").to_string()
             };
             address.set_text(line);
             login.set_enabled(st.needs_login());
@@ -127,16 +130,22 @@ fn main() {
             let mut peers = st.peers.clone().unwrap_or_default();
             peers.sort_by_key(|p| (!p.online, p.short_name()));
             if peers.is_empty() {
-                let _ = peers_menu.append(&MenuItem::new("Henüz cihaz yok", false, None));
+                let _ = peers_menu.append(&MenuItem::new(t("no_devices"), false, None));
             }
             for p in peers.iter().take(30) {
                 let ip = p.ipv4();
-                let mark = if connected.contains(&ip) { "  ·  bağlı" } else if p.online { "" } else { "  ·  çevrimdışı" };
+                let mark = if connected.contains(&ip) {
+                    format!("  ·  {}", t("mark_connected"))
+                } else if p.online {
+                    String::new()
+                } else {
+                    format!("  ·  {}", t("mark_offline"))
+                };
                 let text = format!("{}   {}   {}{}", p.short_name(), ip, p.os, mark);
                 let _ = peers_menu.append(&MenuItem::new(text, false, None));
             }
             let d = state.devices.lock().unwrap().len();
-            devices.set_text(format!("İzinli telefon: {d}"));
+            devices.set_text(tf("allowed_phones", &[("d", &d)]));
             if let Some(t) = tray {
                 let _ = t.set_tooltip(Some(format!("AsenaScale — {text}")));
             }

@@ -6,12 +6,8 @@ pub fn ask(device: &str, fingerprint: &str) -> bool {
     if cfg!(debug_assertions) && std::env::var_os("AS_AUTO_APPROVE").is_some() {
         return true;
     }
-    let text = format!(
-        "{device}\nAsenaScale ile bu bilgisayara bağlanmak istiyor.\n\n\
-         İzin verirsen bu telefon terminali kullanabilir ve ekran görüntüsü alabilir. \
-         Bir daha sorulmaz.\n\nAnahtar: {fingerprint}\n\nİzin veriyor musun?"
-    );
-    show_yes_no("AsenaScale — bağlantı isteği", &text)
+    let text = crate::i18n::tf("request_body", &[("device", &device), ("key", &fingerprint)]);
+    show_yes_no(crate::i18n::t("request_title"), &text)
 }
 
 #[cfg(windows)]

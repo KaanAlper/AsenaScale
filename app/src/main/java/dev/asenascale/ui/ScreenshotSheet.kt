@@ -1,6 +1,8 @@
 package dev.asenascale.ui
 
 import android.graphics.BitmapFactory
+import dev.asenascale.R
+import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -105,7 +107,7 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
     ) {
         Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)) {
-                Text("Ekran görüntüsü", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.screenshot), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 list?.desktop?.takeIf { it.isNotEmpty() }?.let {
                     Text(it, style = MonoSmall, color = Pal.overlay0)
                 }
@@ -137,7 +139,7 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
                     if (l.targets.none { it.kind == "window" }) {
                         item {
                             Text(
-                                "Pencere listesi bu masaüstünde alınamadı; tüm ekran veya aktif pencere kullanılabilir.",
+                                stringResource(R.string.no_window_list),
                                 fontSize = 12.sp,
                                 color = Pal.overlay0,
                                 modifier = Modifier.padding(12.dp),
@@ -158,7 +160,7 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
             onRetake = { last?.let { capture(it) } },
             onSave = {
                 runCatching { Screenshots.saveToGallery(context, file) }
-                    .onSuccess { Toast.makeText(context, "Galeriye kaydedildi", Toast.LENGTH_SHORT).show() }
+                    .onSuccess { Toast.makeText(context, context.getString(R.string.saved_to_gallery), Toast.LENGTH_SHORT).show() }
                     .onFailure { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() }
             },
             onShare = { Screenshots.share(context, file) },
@@ -204,7 +206,7 @@ private fun ShotViewer(
         Box(Modifier.fillMaxSize().background(Pal.crust)) {
             Image(
                 bitmap = bitmap,
-                contentDescription = "Bilgisayar ekranı",
+                contentDescription = stringResource(R.string.pc_screen),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxSize()
@@ -233,19 +235,19 @@ private fun ShotViewer(
                 Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RoundIcon(AsIcons.Close, "Kapat", onClose)
+                RoundIcon(AsIcons.Close, stringResource(R.string.close), onClose)
                 Spacer(Modifier.weight(1f))
                 if (busy) {
                     Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Pal.mauve)
                     }
                 } else {
-                    RoundIcon(AsIcons.Refresh, "Yenile", onRetake)
+                    RoundIcon(AsIcons.Refresh, stringResource(R.string.refresh), onRetake)
                 }
                 Spacer(Modifier.width(8.dp))
-                RoundIcon(AsIcons.Download, "Kaydet", onSave)
+                RoundIcon(AsIcons.Download, stringResource(R.string.save), onSave)
                 Spacer(Modifier.width(8.dp))
-                RoundIcon(AsIcons.Share, "Paylaş", onShare)
+                RoundIcon(AsIcons.Share, stringResource(R.string.share), onShare)
             }
         }
     }

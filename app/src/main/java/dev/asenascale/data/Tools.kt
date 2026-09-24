@@ -1,14 +1,16 @@
 package dev.asenascale.data
 
 import android.content.Context
+import dev.asenascale.R
+import dev.asenascale.App
 import java.util.UUID
 
 /** Something to run in a terminal on the PC: an AI CLI, or just the shell. */
 data class Tool(val id: String, val name: String, val command: String)
 
 object Tools {
-    val shell = Tool("shell", "Kabuk", "")
-    val builtIn = listOf(
+    val shell get() = Tool("shell", App.instance.getString(R.string.tool_shell), "")
+    val builtIn get() = listOf(
         Tool("claude", "Claude Code", "claude"),
         Tool("codex", "Codex", "codex"),
         Tool("gemini", "Gemini CLI", "gemini"),

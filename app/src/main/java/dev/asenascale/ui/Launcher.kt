@@ -1,6 +1,8 @@
 package dev.asenascale.ui
 
 import androidx.compose.foundation.background
+import dev.asenascale.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +50,7 @@ fun LauncherSheet(host: Host, onPick: (Tool) -> Unit, onEdit: () -> Unit, onDism
             Row(Modifier.padding(start = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(host.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Icon(
-                    AsIcons.Edit, "Düzenle", tint = Pal.overlay0,
+                    AsIcons.Edit, stringResource(R.string.edit), tint = Pal.overlay0,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onEdit).padding(8.dp).size(18.dp),
                 )
             }
@@ -67,11 +69,11 @@ fun LauncherSheet(host: Host, onPick: (Tool) -> Unit, onEdit: () -> Unit, onDism
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
                         Text(tool.name, fontWeight = FontWeight.Medium)
-                        Text(tool.command.ifEmpty { "PowerShell / kabuk" }, style = MonoSmall, color = Pal.overlay0)
+                        Text(tool.command.ifEmpty { stringResource(R.string.tool_shell_desc) }, style = MonoSmall, color = Pal.overlay0)
                     }
                     if (running) {
                         Text(
-                            "açık",
+                            stringResource(R.string.badge_open),
                             style = MonoSmall,
                             color = Pal.mauve,
                             modifier = Modifier
@@ -83,7 +85,7 @@ fun LauncherSheet(host: Host, onPick: (Tool) -> Unit, onEdit: () -> Unit, onDism
                 }
             }
             Text(
-                "Her biri PC'de ayrı ve kalıcı bir terminal: uygulamayı kapatsan da çalışmaya devam eder.",
+                stringResource(R.string.launcher_note),
                 fontSize = 12.sp,
                 color = Pal.overlay0,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

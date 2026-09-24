@@ -1,6 +1,8 @@
 package dev.asenascale.ui
 
 import androidx.compose.foundation.background
+import dev.asenascale.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,11 +50,11 @@ fun SelectTextDialog(text: String, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(Pal.base).statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDismiss) { Icon(AsIcons.Close, "Kapat", tint = Pal.subtext) }
-                Text("Metin seç", color = Pal.subtext, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                IconButton(onClick = onDismiss) { Icon(AsIcons.Close, stringResource(R.string.close), tint = Pal.subtext) }
+                Text(stringResource(R.string.select_text), color = Pal.subtext, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { App.instance.copyToClipboard(text); onDismiss() }) {
                     Icon(AsIcons.Copy, null, tint = Pal.mauve)
-                    Text("  Tümünü kopyala", color = Pal.mauve)
+                    Text("  " + stringResource(R.string.copy_all), color = Pal.mauve)
                 }
             }
             Box(Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = 12.dp, vertical = 8.dp)) {

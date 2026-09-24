@@ -1,6 +1,7 @@
 package dev.asenascale.shot
 
 import android.content.ContentValues
+import dev.asenascale.R
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -36,7 +37,7 @@ object Screenshots {
         else "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"$RUN_STDIN\""
 
     private fun checkId(s: String): String {
-        require(Regex("[A-Za-z0-9_.:,x-]*").matches(s)) { "geçersiz hedef: $s" }
+        require(Regex("[A-Za-z0-9_.:,x-]*").matches(s)) { "invalid target: $s" }
         return s
     }
 
@@ -72,7 +73,7 @@ object Screenshots {
         } else {
             conn.exec("sh -s list", script(context, "mcshot.sh"))
         }
-        if (r.stdout.isEmpty()) error(friendly(r.stderr, "Liste alınamadı"))
+        if (r.stdout.isEmpty()) error(friendly(context, r.stderr, context.getString(R.string.shot_list_failed)))
         var desktop = ""
         val lines = r.stdout.toString(Charsets.UTF_8).lines().flatMap { line ->
             // Windows sends the window list base64-encoded to survive the console code page.
@@ -85,8 +86,8 @@ object Screenshots {
             if (parts.size < 3) return@mapNotNull null
             when (parts[0]) {
                 "de" -> { desktop = parts[1]; null }
-                "screen" -> ShotTarget("screen", parts[1], "Tüm ekran")
-                "active" -> ShotTarget("active", parts[1], "Aktif pencere")
+                "screen" -> ShotTarget("screen", parts[1], context.getString(R.string.whole_screen))
+                "active" -> ShotTarget("active", parts[1], context.getString(R.string.active_window))
                 else -> ShotTarget(parts[0], parts[1], parts[2])
             }
         }
@@ -98,15 +99,15 @@ object Screenshots {
         val os = if (conn.isHostApp) "host" else os(conn)
         val png = if (os == "host") {
             val r = conn.exec("mc shot ${checkId(target.kind)} ${checkId(target.id)}", timeoutMs = 30_000)
-            r.stdout.takeIf { isPng(it) } ?: error(friendly(r.stderr, "Ekran görüntüsü alınamadı"))
+            r.stdout.takeIf { isPng(it) } ?: error(friendly(context, r.stderr, context.getString(R.string.shot_failed)))
         } else if (os != "posix") {
             val r = conn.exec(windowsCmd(os), windowsScript(context, "shot", target.kind, target.id), timeoutMs = 60_000)
             val text = r.stdout.toString(Charsets.US_ASCII).trim()
             runCatching { Base64.decode(text, Base64.DEFAULT) }.getOrNull()
-                ?.takeIf { isPng(it) } ?: error(friendly(r.stderr, "Ekran görüntüsü alınamadı"))
+                ?.takeIf { isPng(it) } ?: error(friendly(context, r.stderr, context.getString(R.string.shot_failed)))
         } else {
             val r = conn.exec("sh -s shot ${q(target.kind)} ${q(target.id)}", script(context, "mcshot.sh"), timeoutMs = 45_000)
-            r.stdout.takeIf { isPng(it) } ?: error(friendly(r.stderr, "Ekran görüntüsü alınamadı"))
+            r.stdout.takeIf { isPng(it) } ?: error(friendly(context, r.stderr, context.getString(R.string.shot_failed)))
         }
         val dir = File(context.cacheDir, "shots").apply { mkdirs() }
         dir.listFiles()?.sortedByDescending { it.lastModified() }?.drop(10)?.forEach { it.delete() }
@@ -117,15 +118,14 @@ object Screenshots {
         b.size > 8 && b[0] == 0x89.toByte() && b[1] == 'P'.code.toByte() && b[2] == 'N'.code.toByte()
 
     /** Turns the helper scripts' error output into something readable. */
-    private fun friendly(stderr: String, fallback: String): String {
+    private fun friendly(context: Context, stderr: String, fallback: String): String {
         val m = stderr.trim()
         return when {
             m.isEmpty() -> fallback
-            "E_NOSESSION" in m -> "Windows'ta oturum açık değil. Ekran görüntüsü için PC'de oturumun açık olmalı."
-            "E_NOWINDOW" in m -> "Pencere bulunamadı (kapanmış olabilir). Listeyi yenile."
-            "handle is invalid" in m.lowercase() || "tanıtıcı geçersiz" in m.lowercase() ->
-                "PC'nin ekranı kilitli görünüyor. Kilidi açıkken dene."
-            "is not recognized" in m || "tanınmıyor" in m -> "PC'de PowerShell bulunamadı."
+            "E_NOSESSION" in m -> context.getString(R.string.shot_no_session)
+            "E_NOWINDOW" in m -> context.getString(R.string.shot_no_window)
+            "handle is invalid" in m.lowercase() -> context.getString(R.string.shot_locked)
+            "is not recognized" in m -> context.getString(R.string.shot_no_powershell)
             else -> m.lines().first { it.isNotBlank() }.take(300)
         }
     }

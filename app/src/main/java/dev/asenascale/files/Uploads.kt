@@ -1,6 +1,7 @@
 package dev.asenascale.files
 
 import android.content.Context
+import dev.asenascale.R
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Base64
@@ -17,15 +18,15 @@ object Uploads {
         val name = displayName(context, uri)
         val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
             val size = runCatching { context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } }.getOrNull() ?: -1
-            if (size > MAX_BYTES) error("Dosya çok büyük (en fazla 512 MB)")
+            if (size > MAX_BYTES) error(context.getString(R.string.file_too_big))
             input.readBytes()
-        } ?: error("Dosya okunamadı")
+        } ?: error(context.getString(R.string.file_unreadable))
 
         return if (conn.isHostApp) {
             // Base64url keeps spaces and Turkish letters intact through the command line.
             val encoded = Base64.encodeToString(name.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
             val r = conn.exec("mc put $encoded", bytes, timeoutMs = 10 * 60_000)
-            r.stdout.toString(Charsets.UTF_8).trim().ifEmpty { error(r.stderr.trim().ifEmpty { "Gönderilemedi" }) }
+            r.stdout.toString(Charsets.UTF_8).trim().ifEmpty { error(r.stderr.trim().ifEmpty { context.getString(R.string.send_failed_generic) }) }
         } else {
             conn.sftpPut(name, bytes)
         }

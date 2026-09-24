@@ -1,6 +1,8 @@
 package dev.asenascale.ui
 
 import androidx.compose.foundation.background
+import dev.asenascale.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -95,11 +97,11 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
             .imePadding(),
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onDone) { Icon(AsIcons.Back, "Geri") }
-            Text(if (host == null) "Bilgisayar ekle" else "Düzenle", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            IconButton(onClick = onDone) { Icon(AsIcons.Back, stringResource(R.string.back)) }
+            Text(if (host == null) stringResource(R.string.add_computer) else stringResource(R.string.edit), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             if (host != null) {
                 IconButton(onClick = { app.sessions.disconnectHost(host.id); app.hosts.delete(host.id); onDone() }) {
-                    Icon(AsIcons.Trash, "Sil", tint = Pal.red)
+                    Icon(AsIcons.Trash, stringResource(R.string.delete), tint = Pal.red)
                 }
             }
         }
@@ -108,8 +110,8 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Field("Ad", name, { name = it }, placeholder = "Masaüstü")
-            Field("Adres", address, { address = it }, placeholder = "bilgisayar-adi veya 100.x.y.z", mono = true)
+            Field(stringResource(R.string.field_name), name, { name = it }, placeholder = stringResource(R.string.field_name_hint))
+            Field(stringResource(R.string.field_address), address, { address = it }, placeholder = stringResource(R.string.field_address_hint), mono = true)
             val suggestions = ts.peers.filter { it.online }.map { it.shortName }.filter { it != address }
             if (suggestions.isNotEmpty() && host == null) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -132,21 +134,21 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Field(
-                        "Kullanıcı", user, { user = it.trim() }, Modifier.weight(1f), mono = true,
-                        placeholder = if (isWindows) "Windows kullanıcı adın" else "",
+                        stringResource(R.string.field_user), user, { user = it.trim() }, Modifier.weight(1f), mono = true,
+                        placeholder = if (isWindows) stringResource(R.string.field_user_hint_windows) else "",
                     )
                     Field(
-                        "Port", port, { port = it.filter(Char::isDigit).take(5) }, Modifier.width(96.dp),
+                        stringResource(R.string.field_port), port, { port = it.filter(Char::isDigit).take(5) }, Modifier.width(96.dp),
                         mono = true, keyboard = KeyboardType.Number,
                     )
                 }
 
-                Text("Giriş", fontSize = 13.sp, color = Pal.subtext)
+                Text(stringResource(R.string.auth_title), fontSize = 13.sp, color = Pal.subtext)
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     val options = listOfNotNull(
-                        AuthMode.KEY to "Anahtar",
+                        AuthMode.KEY to stringResource(R.string.auth_key),
                         (AuthMode.TAILSCALE to "Tailscale SSH").takeUnless { isWindows },
-                        AuthMode.PASSWORD to "Şifre",
+                        AuthMode.PASSWORD to stringResource(R.string.auth_password),
                     )
                     options.forEachIndexed { i, (mode, label) ->
                         SegmentedButton(
@@ -166,20 +168,19 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                 }
                 Text(
                     when (auth) {
-                        AuthMode.KEY -> if (isWindows) "OpenSSH kurulum komutu bu telefonun anahtarını da ekler."
-                        else "Uygulamanın anahtarını (ana ekrandaki anahtar simgesi) bilgisayardaki ~/.ssh/authorized_keys dosyasına ekle."
-                        AuthMode.TAILSCALE -> "Bilgisayarda `sudo tailscale set --ssh` açıksa şifresiz bağlanır."
-                        AuthMode.PASSWORD -> "Şifre bu telefonda uygulamanın özel alanında saklanır."
+                        AuthMode.KEY -> if (isWindows) stringResource(R.string.auth_key_windows) else stringResource(R.string.auth_key_other)
+                        AuthMode.TAILSCALE -> stringResource(R.string.auth_tailscale_help)
+                        AuthMode.PASSWORD -> stringResource(R.string.auth_password_help)
                     },
                     fontSize = 12.sp,
                     color = Pal.overlay0,
                 )
                 if (auth == AuthMode.PASSWORD) {
-                    Field("Şifre", password, { password = it }, password = true)
+                    Field(stringResource(R.string.auth_password), password, { password = it }, password = true)
                 }
             }
 
-            Field("Bağlanınca çalıştır", startup, { startup = it }, placeholder = "boş = sadece kabuk", mono = true)
+            Field(stringResource(R.string.field_startup), startup, { startup = it }, placeholder = stringResource(R.string.field_startup_hint), mono = true)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val presets = if (isWindows) listOf("claude", "claude --continue")
                 else listOf("claude", "claude --continue", "tmux new -As claude claude")
@@ -188,8 +189,7 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                 }
             }
             Text(
-                if (isWindows) "İpucu: bağlantı koparsa `claude --continue` ile son sohbete kaldığın yerden dönersin."
-                else "İpucu: tmux ile bağlantı koparsa Claude oturumu PC'de yaşamaya devam eder, tekrar bağlanınca kaldığın yerden sürer.",
+                if (isWindows) stringResource(R.string.tip_windows) else stringResource(R.string.tip_tmux),
                 fontSize = 12.sp,
                 color = Pal.overlay0,
             )
@@ -214,7 +214,7 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
             enabled = valid,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth().padding(20.dp).height(50.dp),
-        ) { Text("Kaydet") }
+        ) { Text(stringResource(R.string.save)) }
     }
 }
 
@@ -285,10 +285,10 @@ private fun HostAppFoundCard() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(AsIcons.Check, null, tint = Pal.green, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("PC'de AsenaScale bulundu", fontWeight = FontWeight.Medium, color = Pal.green)
+            Text(stringResource(R.string.host_app_found), fontWeight = FontWeight.Medium, color = Pal.green)
         }
         Text(
-            "Kurulum gerekmiyor. İlk bağlantıda PC'de bir izin penceresi çıkar, \"Evet\"e basman yeterli.",
+            stringResource(R.string.host_app_found_body),
             fontSize = 13.sp,
             color = Pal.subtext,
         )
@@ -306,11 +306,9 @@ private fun WindowsSetupCard(onCopyLink: () -> Unit, onCopyScript: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("Windows'a bağlanmak için", fontWeight = FontWeight.Medium)
+        Text(stringResource(R.string.windows_card_title), fontWeight = FontWeight.Medium)
         Text(
-            "Önerilen: PC'ye AsenaScale'u kur. Bağlantıyı PC'de aç, " +
-                "AsenaScale-windows-x64.exe dosyasını indirip çalıştır. Sistem tepsisine yerleşir; " +
-                "komut ya da yönetici izni gerekmez. Kurunca bu ekran onu kendiliğinden bulur.",
+            stringResource(R.string.windows_card_body),
             fontSize = 13.sp,
             color = Pal.subtext,
             lineHeight = 19.sp,
@@ -319,10 +317,10 @@ private fun WindowsSetupCard(onCopyLink: () -> Unit, onCopyScript: () -> Unit) {
             onClick = { onCopyLink(); copied = "link" },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (copied == "link") "Bağlantı kopyalandı" else "İndirme bağlantısını kopyala") }
+        ) { Text(if (copied == "link") stringResource(R.string.link_copied) else stringResource(R.string.copy_download_link)) }
         TextButton(onClick = { onCopyScript(); copied = "script" }, modifier = Modifier.fillMaxWidth()) {
             Text(
-                if (copied == "script") "Komut kopyalandı" else "Alternatif: Windows OpenSSH kurulum komutu",
+                if (copied == "script") stringResource(R.string.command_copied) else stringResource(R.string.alt_openssh),
                 fontSize = 13.sp,
                 color = Pal.overlay0,
             )

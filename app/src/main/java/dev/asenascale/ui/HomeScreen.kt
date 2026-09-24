@@ -1,6 +1,8 @@
 package dev.asenascale.ui
 
 import android.content.Intent
+import dev.asenascale.R
+import androidx.compose.ui.res.stringResource
 import android.net.Uri
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -107,7 +109,7 @@ fun HomeScreen(
                 Spacer(Modifier.width(10.dp))
                 Text("AsenaScale", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 IconButton(onClick = { showKey = true }) {
-                    Icon(AsIcons.Key, contentDescription = "SSH anahtarım", tint = Pal.subtext)
+                    Icon(AsIcons.Key, contentDescription = stringResource(R.string.my_ssh_key), tint = Pal.subtext)
                 }
             }
         }
@@ -115,15 +117,15 @@ fun HomeScreen(
         item { TailscaleCard(ts) }
 
         item {
-            SectionHeader("Bilgisayarlar") {
+            SectionHeader(stringResource(R.string.section_computers)) {
                 IconButton(onClick = { onNewHost(null) }) {
-                    Icon(AsIcons.Plus, contentDescription = "Ekle", tint = Pal.subtext)
+                    Icon(AsIcons.Plus, contentDescription = stringResource(R.string.add), tint = Pal.subtext)
                 }
             }
         }
         if (hosts.isEmpty()) {
             item {
-                Hint("AsenaScale'i PC'de çalıştır, burada kendiliğinden görünür. Ya da aşağıdan bir cihaza dokun.")
+                Hint(stringResource(R.string.hint_no_computers))
             }
         }
         items(hosts, key = { it.id }) { host ->
@@ -139,8 +141,8 @@ fun HomeScreen(
         }
 
         if (ts.running) {
-            item { SectionHeader("Cihazlar") }
-            if (ts.peers.isEmpty()) item { Hint("Tailnet'te başka cihaz yok.") }
+            item { SectionHeader(stringResource(R.string.section_devices)) }
+            if (ts.peers.isEmpty()) item { Hint(stringResource(R.string.no_other_devices)) }
             items(ts.peers, key = { "peer:" + it.dnsName + it.name }) { peer ->
                 PeerRow(peer, saved = hosts.any { peer.matches(it.address) }) { deviceFor = peer }
             }
@@ -221,10 +223,10 @@ private fun TailscaleCard(ts: TailnetState) {
     }
 
     val (dot, label) = when {
-        !ts.enabled -> Pal.overlay0 to "Kapalı"
-        ts.running -> Pal.green to "Bağlı"
-        ts.needsLogin -> Pal.yellow to "Giriş gerekli"
-        else -> Pal.peach to "Bağlanıyor…"
+        !ts.enabled -> Pal.overlay0 to stringResource(R.string.ts_off)
+        ts.running -> Pal.green to stringResource(R.string.ts_connected)
+        ts.needsLogin -> Pal.yellow to stringResource(R.string.ts_needs_login)
+        else -> Pal.peach to stringResource(R.string.ts_connecting)
     }
 
     Surface(
@@ -279,7 +281,7 @@ private fun TailscaleCard(ts: TailnetState) {
                     if (waitingForUrl) {
                         CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Pal.crust)
                     } else {
-                        Text("Giriş yap")
+                        Text(stringResource(R.string.sign_in))
                     }
                 }
             }
@@ -288,7 +290,7 @@ private fun TailscaleCard(ts: TailnetState) {
                     TextButton(onClick = { app.tailnet.logout() }) {
                         Icon(AsIcons.Logout, null, Modifier.size(16.dp), tint = Pal.overlay0)
                         Spacer(Modifier.width(6.dp))
-                        Text("Çıkış yap", color = Pal.overlay0, fontSize = 13.sp)
+                        Text(stringResource(R.string.sign_out), color = Pal.overlay0, fontSize = 13.sp)
                     }
                 }
             }
@@ -353,7 +355,7 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
                     if (sessionOpen) {
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "açık",
+                            stringResource(R.string.badge_open),
                             style = MonoSmall,
                             color = Pal.mauve,
                             modifier = Modifier
@@ -372,7 +374,7 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
                 )
             }
             IconButton(onClick = onEdit) {
-                Icon(AsIcons.Edit, contentDescription = "Düzenle", tint = Pal.overlay0, modifier = Modifier.size(18.dp))
+                Icon(AsIcons.Edit, contentDescription = stringResource(R.string.edit), tint = Pal.overlay0, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -403,7 +405,7 @@ private fun PeerRow(peer: Peer, saved: Boolean, onClick: () -> Unit) {
                 color = Pal.overlay0,
             )
         }
-        Text(if (peer.online) "çevrimiçi" else "çevrimdışı", fontSize = 12.sp, color = if (peer.online) Pal.green else Pal.overlay0)
+        Text(if (peer.online) stringResource(R.string.online) else stringResource(R.string.offline), fontSize = 12.sp, color = if (peer.online) Pal.green else Pal.overlay0)
         Spacer(Modifier.width(4.dp))
         Icon(
             if (saved) AsIcons.Chevron else AsIcons.Plus,
@@ -421,12 +423,11 @@ private fun KeyDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        title = { Text("SSH anahtarım") },
+        title = { Text(stringResource(R.string.my_ssh_key)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Windows PC: kurulum komutunu kopyala, PC'de Yönetici PowerShell'e yapıştır. " +
-                        "SSH'ı kurar ve bu anahtarı yetkilendirir.",
+                    stringResource(R.string.key_dialog_windows),
                     fontSize = 14.sp,
                     color = Pal.subtext,
                 )
@@ -434,10 +435,9 @@ private fun KeyDialog(onDismiss: () -> Unit) {
                     onClick = { App.instance.copyToClipboard(Keys.windowsSetupScript(context)); onDismiss() },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Windows kurulum komutunu kopyala") }
+                ) { Text(stringResource(R.string.copy_windows_setup)) }
                 Text(
-                    "Linux/macOS: aşağıdaki satırı ~/.ssh/authorized_keys dosyasına ekle " +
-                        "(Tailscale SSH kullanıyorsan gerek yok).",
+                    stringResource(R.string.key_dialog_linux),
                     fontSize = 14.sp,
                     color = Pal.subtext,
                 )
@@ -457,9 +457,9 @@ private fun KeyDialog(onDismiss: () -> Unit) {
             TextButton(onClick = { App.instance.copyToClipboard(key); onDismiss() }) {
                 Icon(AsIcons.Copy, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Anahtarı kopyala")
+                Text(stringResource(R.string.copy_key))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Kapat", color = Pal.subtext) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = Pal.subtext) } },
     )
 }

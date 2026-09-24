@@ -39,15 +39,15 @@ class KeepAliveService : Service() {
     private fun notification(count: Int): Notification {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL, "Açık oturumlar", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(CHANNEL, getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW)
         )
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE,
         )
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(if (count == 1) "1 terminal açık" else "$count terminal açık")
-            .setContentText("Tailscale üzerinden bağlı")
+            .setContentTitle(if (count == 1) getString(R.string.notif_one) else getString(R.string.notif_many, count))
+            .setContentText(getString(R.string.notif_text))
             .setContentIntent(open)
             .setOngoing(true)
             .build()

@@ -422,7 +422,7 @@ fn builtin(args: &[String], sessions: &Sessions) -> anyhow::Result<Vec<u8>> {
             crate::shot::shot(kind, id)
         }
         Some("version") => Ok(format!("{SERVER_ID}\n").into_bytes()),
-        _ => anyhow::bail!("bilinmeyen komut"),
+        _ => anyhow::bail!("unknown command"),
     }
 }
 

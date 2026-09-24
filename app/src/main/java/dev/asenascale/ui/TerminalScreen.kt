@@ -1,6 +1,9 @@
 package dev.asenascale.ui
 
 import android.net.Uri
+import dev.asenascale.ssh.SshConnection
+import dev.asenascale.R
+import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -114,10 +117,10 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
         scope.launch {
             val paths = mutableListOf<String>()
             for ((i, uri) in uris.withIndex()) {
-                uploading = if (uris.size > 1) "Gönderiliyor ${i + 1}/${uris.size}…" else "Gönderiliyor…"
+                uploading = if (uris.size > 1) context.getString(R.string.sending_n, i + 1, uris.size) else context.getString(R.string.sending)
                 runCatching { withContext(Dispatchers.IO) { Uploads.send(context, conn, uri) } }
                     .onSuccess { paths += it }
-                    .onFailure { Toast.makeText(context, "Gönderilemedi: ${it.message}", Toast.LENGTH_LONG).show() }
+                    .onFailure { Toast.makeText(context, context.getString(R.string.send_failed, it.message ?: ""), Toast.LENGTH_LONG).show() }
             }
             uploading = null
             if (paths.isNotEmpty()) {
@@ -143,7 +146,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
             Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) { Icon(AsIcons.Back, "Geri", tint = Pal.subtext) }
+            IconButton(onClick = onBack) { Icon(AsIcons.Back, stringResource(R.string.back), tint = Pal.subtext) }
             StatusDot(
                 when (state) {
                     ConnState.Connected -> Pal.green
@@ -163,11 +166,11 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { shots = true }, enabled = state == ConnState.Connected) {
-                Icon(AsIcons.Camera, "Ekran görüntüsü", tint = Pal.subtext)
+                Icon(AsIcons.Camera, stringResource(R.string.screenshot), tint = Pal.subtext)
             }
             Box {
                 IconButton(onClick = { attachMenu = true }, enabled = state == ConnState.Connected && uploading == null) {
-                    Icon(AsIcons.Attach, "PC'ye gönder", tint = Pal.subtext)
+                    Icon(AsIcons.Attach, stringResource(R.string.send_to_pc), tint = Pal.subtext)
                 }
                 DropdownMenu(
                     expanded = attachMenu,
@@ -175,7 +178,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Fotoğraf / video") },
+                        text = { Text(stringResource(R.string.photo_video)) },
                         leadingIcon = { Icon(AsIcons.Image, null) },
                         onClick = {
                             attachMenu = false
@@ -183,33 +186,33 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text("Dosya") },
+                        text = { Text(stringResource(R.string.file)) },
                         leadingIcon = { Icon(AsIcons.File, null) },
                         onClick = { attachMenu = false; pickFiles.launch("*/*") },
                     )
                 }
             }
             IconButton(onClick = { app.clipboardText()?.let { term.paste(it) } }) {
-                Icon(AsIcons.Paste, "Yapıştır", tint = Pal.subtext)
+                Icon(AsIcons.Paste, stringResource(R.string.paste), tint = Pal.subtext)
             }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(AsIcons.More, "Menü", tint = Pal.subtext) }
+                IconButton(onClick = { menu = true }) { Icon(AsIcons.More, stringResource(R.string.menu), tint = Pal.subtext) }
                 DropdownMenu(
                     expanded = menu,
                     onDismissRequest = { menu = false },
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
-                    DropdownMenuItem(text = { Text("Metin seç") }, onClick = {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.select_text)) }, onClick = {
                         menu = false
                         selectText = term.copyAllText()
                     })
-                    DropdownMenuItem(text = { Text("Yeniden bağlan") }, onClick = { menu = false; reconnect() })
-                    DropdownMenuItem(text = { Text("Ayrıl (PC'de çalışmaya devam etsin)") }, onClick = {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.reconnect)) }, onClick = { menu = false; reconnect() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.leave)) }, onClick = {
                         menu = false
                         app.sessions.disconnect(conn.key)
                         onBack()
                     })
-                    DropdownMenuItem(text = { Text("Oturumu sonlandır", color = Pal.red) }, onClick = {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.end_session), color = Pal.red) }, onClick = {
                         menu = false
                         app.sessions.end(conn.key)
                         onBack()
@@ -239,7 +242,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                 )
             }
             Icon(
-                AsIcons.Plus, "Yeni terminal", tint = Pal.subtext,
+                AsIcons.Plus, stringResource(R.string.new_terminal), tint = Pal.subtext,
                 modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { launcher = true }.padding(6.dp).size(16.dp),
             )
         }
@@ -259,7 +262,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                     CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.5.dp, color = Pal.mauve)
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        if (conn.attempt > 0) "Bağlantı koptu, yeniden bağlanıyor…" else "${host.address} bağlanıyor…",
+                        if (conn.attempt > 0) stringResource(R.string.reconnecting) else stringResource(R.string.connecting_to, host.address),
                         fontFamily = Mono,
                         fontSize = 12.sp,
                         color = Pal.overlay0,
@@ -290,7 +293,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text("Bağlantı kesildi", fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.disconnected), fontWeight = FontWeight.Medium)
                     Text(
                         closed?.reason.orEmpty(),
                         fontSize = 13.sp,
@@ -298,19 +301,19 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                         textAlign = TextAlign.Center,
                     )
                     val reason = closed?.reason.orEmpty()
-                    if ((reason.startsWith("Kimlik") && host.auth == AuthMode.KEY) || "kurulum komutu" in reason) {
+                    if ((conn.failure == SshConnection.Failure.AUTH && host.auth == AuthMode.KEY) || conn.failure == SshConnection.Failure.NEEDS_SETUP) {
                         val windows = app.tailnet.peerFor(host.address)?.isWindows == true
                         TextButton(onClick = {
                             app.copyToClipboard(if (windows) Keys.windowsSetupScript(context) else Keys.publicKey(context))
                         }) {
                             Text(
-                                if (windows) "Windows kurulum komutunu kopyala" else "SSH anahtarını kopyala (authorized_keys için)",
+                                if (windows) stringResource(R.string.copy_windows_setup) else stringResource(R.string.copy_ssh_key_hint),
                                 color = Pal.mauve,
                                 fontSize = 13.sp,
                             )
                         }
                     }
-                    Button(onClick = { reconnect() }, shape = RoundedCornerShape(12.dp)) { Text("Yeniden bağlan") }
+                    Button(onClick = { reconnect() }, shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.reconnect)) }
                 }
             }
         }

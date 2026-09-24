@@ -30,7 +30,7 @@ object Keys {
     fun windowsSetupScript(context: Context): String {
         val key = publicKey(context)
         return """
-            |# AsenaScale: Windows kurulumu (Yonetici olarak acilan PowerShell'e yapistir)
+            |# AsenaScale: Windows setup (paste into PowerShell opened as administrator)
             |${'$'}ErrorActionPreference = 'Stop'
             |if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-Null }
             |Set-Service sshd -StartupType Automatic; Start-Service sshd
@@ -45,7 +45,7 @@ object Keys {
             |${'$'}user = "${'$'}env:USERPROFILE\.ssh\authorized_keys"
             |if (-not (Test-Path ${'$'}user) -or -not (Select-String -Path ${'$'}user -SimpleMatch ${'$'}key -Quiet)) { Add-Content -Path ${'$'}user -Value ${'$'}key }
             |${'$'}ok = (Get-Service sshd).Status -eq 'Running' -and (Test-NetConnection 127.0.0.1 -Port 22 -WarningAction SilentlyContinue).TcpTestSucceeded
-            |if (${'$'}ok) { Write-Host "Hazir. Uygulamada kullanici adi: ${'$'}env:USERNAME" -ForegroundColor Green } else { Write-Host "SSH sunucusu calismiyor: Get-Service sshd" -ForegroundColor Red }
+            |if (${'$'}ok) { Write-Host "Ready. User name for the app: ${'$'}env:USERNAME" -ForegroundColor Green } else { Write-Host "The SSH server is not running: Get-Service sshd" -ForegroundColor Red }
         """.trimMargin()
     }
 
