@@ -1,0 +1,10 @@
+The Java sources in this module come from the Termux terminal-emulator and
+terminal-view libraries (https://github.com/termux/termux-app, tag v0.118.0),
+which are based on Jack Palevich's Android-Terminal-Emulator and are licensed
+under the Apache License, Version 2.0:
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Modifications: TerminalSessionClient was trimmed to drop the local-pty
+TerminalSession callbacks; TerminalSession, JNI and the pty C code were not
+imported.

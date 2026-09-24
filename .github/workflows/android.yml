@@ -1,0 +1,59 @@
+name: Android APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tsbridge/go.mod
+          cache-dependency-path: tsbridge/go.sum
+
+      - name: Build embedded Tailscale (gomobile)
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
+        run: ./scripts/build-tsbridge.sh
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk MobileClaude.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MobileClaude-apk
+          path: MobileClaude.apk
+
+      # Phone-friendly download: always-current APK on the "nightly" release.
+      - name: Publish nightly release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Mobile Claude (nightly)
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          body: "Son derleme: ${{ github.sha }} (${{ github.ref_name }})"
+          files: MobileClaude.apk
