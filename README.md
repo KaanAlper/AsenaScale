@@ -86,5 +86,6 @@ sh app/src/main/assets/mcshot.sh list  # PC'de: ekran görüntüsü hedeflerini 
 ```
 
 Her push'ta GitHub Actions universal + ABI'ye özel APK'ları (arm64-v8a, armeabi-v7a,
-x86_64, x86) derler ve `nightly` sürümüne yükler; `v*` etiketi gerçek bir release oluşturur. APK repodaki
+x86_64, x86) derler ve `nightly` sürümüne yükler. Yeni sürüm çıkarmak için: Actions → **Android APK** →
+**Run workflow** → `release` alanına `0.2.0` yaz (ya da `v0.2.0` etiketi push et). APK repodaki
 sabit `app/debug.keystore` ile imzalanır, böylece yeni sürüm eskisinin üzerine kurulur.

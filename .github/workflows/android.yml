@@ -4,6 +4,7 @@ name: Android APK
 # (arm64-v8a, armeabi-v7a, x86_64, x86).
 #   - branch push -> "nightly" pre-release is updated
 #   - tag v*      -> a real GitHub release
+#   - Actions -> "Android APK" -> Run workflow with "release" = 0.2.0 -> release v0.2.0
 on:
   push:
     branches: ["**"]
