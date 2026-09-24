@@ -16,7 +16,7 @@
   "offline": "ngoại tuyến",
   "my_ssh_key": "Khóa SSH của tôi",
   "section_computers": "Máy tính",
-  "section_devices": "Thiết bị",
+  "section_devices": "Thiết bị khác",
   "hint_no_computers": "Chạy AsenaScale trên PC và nó sẽ tự hiện ở đây. Hoặc chạm vào một thiết bị bên dưới.",
   "no_other_devices": "Không có thiết bị nào khác trong tailnet của bạn.",
   "ts_off": "Tắt",

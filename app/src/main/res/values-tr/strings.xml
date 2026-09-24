@@ -18,7 +18,7 @@
     <string name="offline">çevrimdışı</string>
     <string name="my_ssh_key">SSH anahtarım</string>
     <string name="section_computers">Bilgisayarlar</string>
-    <string name="section_devices">Cihazlar</string>
+    <string name="section_devices">Diğer cihazlar</string>
     <string name="hint_no_computers">AsenaScale\'i PC\'de çalıştır, burada kendiliğinden görünür. Ya da aşağıdan bir cihaza dokun.</string>
     <string name="no_other_devices">Tailnet\'te başka cihaz yok.</string>
     <string name="ts_off">Kapalı</string>

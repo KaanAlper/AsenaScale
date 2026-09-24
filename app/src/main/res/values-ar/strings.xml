@@ -18,7 +18,7 @@
     <string name="offline">غير متصل</string>
     <string name="my_ssh_key">مفتاح SSH الخاص بي</string>
     <string name="section_computers">أجهزة الكمبيوتر</string>
-    <string name="section_devices">الأجهزة</string>
+    <string name="section_devices">أجهزة أخرى</string>
     <string name="hint_no_computers">شغّل AsenaScale على الكمبيوتر وسيظهر هنا تلقائيًا. أو اضغط على جهاز أدناه.</string>
     <string name="no_other_devices">لا توجد أجهزة أخرى في شبكة tailnet.</string>
     <string name="ts_off">متوقف</string>

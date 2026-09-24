@@ -16,7 +16,7 @@
   "offline": "offline",
   "my_ssh_key": "My SSH key",
   "section_computers": "Computers",
-  "section_devices": "Devices",
+  "section_devices": "Other devices",
   "hint_no_computers": "Run AsenaScale on your PC and it shows up here by itself. Or tap a device below.",
   "no_other_devices": "No other devices on your tailnet.",
   "ts_off": "Off",

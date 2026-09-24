@@ -16,7 +16,7 @@
   "offline": "آفلاین",
   "my_ssh_key": "کلید SSH من",
   "section_computers": "رایانه‌ها",
-  "section_devices": "دستگاه‌ها",
+  "section_devices": "دستگاه‌های دیگر",
   "hint_no_computers": "AsenaScale را روی رایانه اجرا کنید تا خودش اینجا ظاهر شود. یا روی یکی از دستگاه‌های زیر بزنید.",
   "no_other_devices": "دستگاه دیگری در tailnet شما نیست.",
   "ts_off": "خاموش",

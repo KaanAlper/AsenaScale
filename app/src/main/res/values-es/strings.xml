@@ -18,7 +18,7 @@
     <string name="offline">sin conexión</string>
     <string name="my_ssh_key">Mi clave SSH</string>
     <string name="section_computers">Ordenadores</string>
-    <string name="section_devices">Dispositivos</string>
+    <string name="section_devices">Otros dispositivos</string>
     <string name="hint_no_computers">Ejecuta AsenaScale en tu PC y aparecerá aquí solo. O toca un dispositivo abajo.</string>
     <string name="no_other_devices">No hay otros dispositivos en tu tailnet.</string>
     <string name="ts_off">Apagado</string>

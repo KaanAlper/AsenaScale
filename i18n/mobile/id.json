@@ -16,7 +16,7 @@
   "offline": "offline",
   "my_ssh_key": "Kunci SSH saya",
   "section_computers": "Komputer",
-  "section_devices": "Perangkat",
+  "section_devices": "Perangkat lain",
   "hint_no_computers": "Jalankan AsenaScale di PC dan PC akan muncul di sini dengan sendirinya. Atau ketuk perangkat di bawah.",
   "no_other_devices": "Tidak ada perangkat lain di tailnet Anda.",
   "ts_off": "Mati",

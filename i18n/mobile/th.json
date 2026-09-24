@@ -16,7 +16,7 @@
   "offline": "ออฟไลน์",
   "my_ssh_key": "คีย์ SSH ของฉัน",
   "section_computers": "คอมพิวเตอร์",
-  "section_devices": "อุปกรณ์",
+  "section_devices": "อุปกรณ์อื่น",
   "hint_no_computers": "เปิด AsenaScale บนพีซี แล้วจะแสดงที่นี่เอง หรือแตะอุปกรณ์ด้านล่าง",
   "no_other_devices": "ไม่มีอุปกรณ์อื่นใน tailnet ของคุณ",
   "ts_off": "ปิด",

@@ -16,7 +16,7 @@
   "offline": "offline",
   "my_ssh_key": "Mój klucz SSH",
   "section_computers": "Komputery",
-  "section_devices": "Urządzenia",
+  "section_devices": "Inne urządzenia",
   "hint_no_computers": "Uruchom AsenaScale na komputerze, a pojawi się tu sam. Albo dotknij urządzenia poniżej.",
   "no_other_devices": "Brak innych urządzeń w Twojej tailnecie.",
   "ts_off": "Wyłączony",

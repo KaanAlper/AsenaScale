@@ -16,7 +16,7 @@
   "offline": "オフライン",
   "my_ssh_key": "SSH キー",
   "section_computers": "コンピューター",
-  "section_devices": "デバイス",
+  "section_devices": "その他のデバイス",
   "hint_no_computers": "PC で AsenaScale を起動すると、ここに自動で表示されます。または下のデバイスをタップしてください。",
   "no_other_devices": "tailnet にほかのデバイスはありません。",
   "ts_off": "オフ",

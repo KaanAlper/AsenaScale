@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Mein SSH-Schlüssel</string>
     <string name="section_computers">Computer</string>
-    <string name="section_devices">Geräte</string>
+    <string name="section_devices">Andere Geräte</string>
     <string name="hint_no_computers">Starte AsenaScale auf deinem PC, dann erscheint er hier von selbst. Oder tippe unten auf ein Gerät.</string>
     <string name="no_other_devices">Keine anderen Geräte in deinem Tailnet.</string>
     <string name="ts_off">Aus</string>

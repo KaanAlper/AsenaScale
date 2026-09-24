@@ -18,7 +18,7 @@
     <string name="offline">ngoại tuyến</string>
     <string name="my_ssh_key">Khóa SSH của tôi</string>
     <string name="section_computers">Máy tính</string>
-    <string name="section_devices">Thiết bị</string>
+    <string name="section_devices">Thiết bị khác</string>
     <string name="hint_no_computers">Chạy AsenaScale trên PC và nó sẽ tự hiện ở đây. Hoặc chạm vào một thiết bị bên dưới.</string>
     <string name="no_other_devices">Không có thiết bị nào khác trong tailnet của bạn.</string>
     <string name="ts_off">Tắt</string>

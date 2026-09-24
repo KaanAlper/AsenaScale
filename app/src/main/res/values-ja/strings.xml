@@ -18,7 +18,7 @@
     <string name="offline">オフライン</string>
     <string name="my_ssh_key">SSH キー</string>
     <string name="section_computers">コンピューター</string>
-    <string name="section_devices">デバイス</string>
+    <string name="section_devices">その他のデバイス</string>
     <string name="hint_no_computers">PC で AsenaScale を起動すると、ここに自動で表示されます。または下のデバイスをタップしてください。</string>
     <string name="no_other_devices">tailnet にほかのデバイスはありません。</string>
     <string name="ts_off">オフ</string>

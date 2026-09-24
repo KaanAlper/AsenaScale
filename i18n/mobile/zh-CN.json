@@ -16,7 +16,7 @@
   "offline": "离线",
   "my_ssh_key": "我的 SSH 密钥",
   "section_computers": "电脑",
-  "section_devices": "设备",
+  "section_devices": "其他设备",
   "hint_no_computers": "在电脑上运行 AsenaScale，它会自动出现在这里。或点按下方的设备。",
   "no_other_devices": "你的 tailnet 中没有其他设备。",
   "ts_off": "已关闭",

@@ -18,7 +18,7 @@
     <string name="offline">не в сети</string>
     <string name="my_ssh_key">Мой SSH-ключ</string>
     <string name="section_computers">Компьютеры</string>
-    <string name="section_devices">Устройства</string>
+    <string name="section_devices">Другие устройства</string>
     <string name="hint_no_computers">Запустите AsenaScale на ПК, и он сам появится здесь. Или нажмите на устройство ниже.</string>
     <string name="no_other_devices">В вашем tailnet нет других устройств.</string>
     <string name="ts_off">Выключен</string>

@@ -18,7 +18,7 @@
     <string name="offline">ऑफ़लाइन</string>
     <string name="my_ssh_key">मेरी SSH कुंजी</string>
     <string name="section_computers">कंप्यूटर</string>
-    <string name="section_devices">डिवाइस</string>
+    <string name="section_devices">अन्य डिवाइस</string>
     <string name="hint_no_computers">अपने PC पर AsenaScale चलाएँ, वह यहाँ अपने आप दिखेगा। या नीचे किसी डिवाइस पर टैप करें।</string>
     <string name="no_other_devices">आपके tailnet पर कोई और डिवाइस नहीं है।</string>
     <string name="ts_off">बंद</string>

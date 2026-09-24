@@ -16,7 +16,7 @@
   "offline": "offline",
   "my_ssh_key": "Mijn SSH-sleutel",
   "section_computers": "Computers",
-  "section_devices": "Apparaten",
+  "section_devices": "Andere apparaten",
   "hint_no_computers": "Start AsenaScale op je pc en hij verschijnt hier vanzelf. Of tik hieronder op een apparaat.",
   "no_other_devices": "Geen andere apparaten in je tailnet.",
   "ts_off": "Uit",

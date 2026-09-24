@@ -161,13 +161,35 @@ impl Sessions {
         let (sessions, s, rt) = (self.clone(), session.clone(), tokio::runtime::Handle::current());
         std::thread::Builder::new().name(format!("pty-{id}")).spawn(move || {
             let mut buf = [0u8; 16 * 1024];
+            let mut dsr = CursorQueries::default();
             loop {
                 let n = match reader.read(&mut buf) {
                     Ok(0) | Err(_) => break,
                     Ok(n) => n,
                 };
-                let bytes = &buf[..n];
-                s.screen.lock().unwrap().process(bytes);
+                // Cursor position queries are answered here, from the screen
+                // copy: Windows' ConPTY asks one at startup and shows nothing
+                // until it gets an answer, even with no phone attached.
+                let mut owned = Vec::with_capacity(n);
+                {
+                    let mut screen = s.screen.lock().unwrap();
+                    for piece in dsr.split(&buf[..n]) {
+                        match piece {
+                            Piece::Output(bytes) => {
+                                screen.process(&bytes);
+                                owned.extend_from_slice(&bytes);
+                            }
+                            Piece::Query => {
+                                let (row, col) = screen.screen().cursor_position();
+                                s.write(format!("\x1b[{};{}R", row + 1, col + 1).as_bytes());
+                            }
+                        }
+                    }
+                }
+                if owned.is_empty() {
+                    continue;
+                }
+                let bytes = &owned[..];
                 // Fan out to every attached phone; drop the ones that are gone.
                 let clients: Vec<(u64, Handle, ChannelId)> =
                     s.clients.lock().unwrap().iter().map(|(k, c)| (*k, c.handle.clone(), c.channel)).collect();
@@ -228,7 +250,78 @@ fn which(exe: &str) -> Option<String> {
     })
 }
 
+enum Piece {
+    Output(Vec<u8>),
+    /// ESC[6n: "where is the cursor?"
+    Query,
+}
+
+/// Finds ESC[6n (cursor position query) in terminal output, also when split
+/// across reads, so it can be answered here and kept from the phones.
+#[derive(Default)]
+struct CursorQueries {
+    carry: Vec<u8>,
+}
+
+impl CursorQueries {
+    const QUERY: &'static [u8] = b"\x1b[6n";
+
+    fn split(&mut self, input: &[u8]) -> Vec<Piece> {
+        let mut data = std::mem::take(&mut self.carry);
+        data.extend_from_slice(input);
+        let mut pieces = Vec::new();
+        let mut start = 0;
+        let mut i = 0;
+        while i < data.len() {
+            if data[i..].starts_with(Self::QUERY) {
+                if i > start {
+                    pieces.push(Piece::Output(data[start..i].to_vec()));
+                }
+                pieces.push(Piece::Query);
+                i += Self::QUERY.len();
+                start = i;
+            } else if data[i] == 0x1b && Self::QUERY.starts_with(&data[i..]) {
+                break; // a query cut at the end of this read: hold it back
+            } else {
+                i += 1;
+            }
+        }
+        if i > start {
+            pieces.push(Piece::Output(data[start..i].to_vec()));
+        }
+        self.carry = data[i..].to_vec();
+        pieces
+    }
+}
+
 /// Ids come from phones: keep them short and plain.
 pub fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn run(q: &mut CursorQueries, input: &[u8]) -> (Vec<u8>, usize) {
+        let mut out = Vec::new();
+        let mut n = 0;
+        for p in q.split(input) {
+            match p {
+                Piece::Output(b) => out.extend(b),
+                Piece::Query => n += 1,
+            }
+        }
+        (out, n)
+    }
+
+    #[test]
+    fn cursor_queries() {
+        let mut q = CursorQueries::default();
+        assert_eq!(run(&mut q, b"hi\x1b[6nthere\x1b["), (b"hithere".to_vec(), 1));
+        assert_eq!(run(&mut q, b"6nok\x1b[31m"), (b"ok\x1b[31m".to_vec(), 1));
+        // An ESC that turns out not to be a query is passed on.
+        assert_eq!(run(&mut q, b"x\x1b"), (b"x".to_vec(), 0));
+        assert_eq!(run(&mut q, b"[Ay"), (b"\x1b[Ay".to_vec(), 0));
+    }
 }

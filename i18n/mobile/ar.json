@@ -16,7 +16,7 @@
   "offline": "غير متصل",
   "my_ssh_key": "مفتاح SSH الخاص بي",
   "section_computers": "أجهزة الكمبيوتر",
-  "section_devices": "الأجهزة",
+  "section_devices": "أجهزة أخرى",
   "hint_no_computers": "شغّل AsenaScale على الكمبيوتر وسيظهر هنا تلقائيًا. أو اضغط على جهاز أدناه.",
   "no_other_devices": "لا توجد أجهزة أخرى في شبكة tailnet.",
   "ts_off": "متوقف",

@@ -16,7 +16,7 @@
   "offline": "오프라인",
   "my_ssh_key": "내 SSH 키",
   "section_computers": "컴퓨터",
-  "section_devices": "기기",
+  "section_devices": "기타 기기",
   "hint_no_computers": "PC에서 AsenaScale을 실행하면 여기에 자동으로 나타납니다. 또는 아래 기기를 탭하세요.",
   "no_other_devices": "tailnet에 다른 기기가 없습니다.",
   "ts_off": "꺼짐",

@@ -16,7 +16,7 @@
   "offline": "çevrimdışı",
   "my_ssh_key": "SSH anahtarım",
   "section_computers": "Bilgisayarlar",
-  "section_devices": "Cihazlar",
+  "section_devices": "Diğer cihazlar",
   "hint_no_computers": "AsenaScale'i PC'de çalıştır, burada kendiliğinden görünür. Ya da aşağıdan bir cihaza dokun.",
   "no_other_devices": "Tailnet'te başka cihaz yok.",
   "ts_off": "Kapalı",

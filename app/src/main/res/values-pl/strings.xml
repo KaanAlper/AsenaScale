@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Mój klucz SSH</string>
     <string name="section_computers">Komputery</string>
-    <string name="section_devices">Urządzenia</string>
+    <string name="section_devices">Inne urządzenia</string>
     <string name="hint_no_computers">Uruchom AsenaScale na komputerze, a pojawi się tu sam. Albo dotknij urządzenia poniżej.</string>
     <string name="no_other_devices">Brak innych urządzeń w Twojej tailnecie.</string>
     <string name="ts_off">Wyłączony</string>

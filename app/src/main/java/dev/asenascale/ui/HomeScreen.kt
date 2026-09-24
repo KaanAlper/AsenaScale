@@ -41,6 +41,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import dev.asenascale.tailnet.HOST_APP_PORT
@@ -82,6 +84,7 @@ fun HomeScreen(
     var launcherFor by remember { mutableStateOf<Host?>(null) }
     var deviceFor by remember { mutableStateOf<Peer?>(null) }
     val onOpenHost: (Host) -> Unit = { launcherFor = it }
+    val scope = rememberCoroutineScope()
 
     // PCs running AsenaScale show up by themselves: while this screen is
     // open, online non-phone devices are knocked on once a minute.
@@ -128,11 +131,16 @@ fun HomeScreen(
                 Hint(stringResource(R.string.hint_no_computers))
             }
         }
-        items(hosts, key = { it.id }) { host ->
+        // Online first, then by name.
+        val sorted = hosts.sortedWith(
+            compareBy<Host>({ h -> ts.peers.firstOrNull { it.matches(h.address) }?.online != true }, { it.title.lowercase() }),
+        )
+        items(sorted, key = { it.id }) { host ->
             val peer = ts.peers.firstOrNull { it.matches(host.address) }
             val openHere = open.values.count { it.host.id == host.id && it.state.collectAsState().value !is ConnState.Closed }
             HostRow(
                 host = host,
+                peer = peer,
                 online = peer?.online,
                 sessionOpen = openHere > 0,
                 onClick = { onOpenHost(host) },
@@ -140,11 +148,17 @@ fun HomeScreen(
             )
         }
 
-        if (ts.running) {
+        // Everything else on the tailnet. Devices already listed above (and
+        // AsenaScale nodes, which join the list above by themselves) are
+        // not repeated; tap one to add it as a computer.
+        val others = ts.peers.filter { p ->
+            !p.shortName.startsWith("asenascale-") &&
+                hosts.none { p.matches(it.address) || it.address.equals("asenascale-" + p.shortName, ignoreCase = true) }
+        }
+        if (ts.running && others.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.section_devices)) }
-            if (ts.peers.isEmpty()) item { Hint(stringResource(R.string.no_other_devices)) }
-            items(ts.peers, key = { "peer:" + it.dnsName + it.name }) { peer ->
-                PeerRow(peer, saved = hosts.any { peer.matches(it.address) }) { deviceFor = peer }
+            items(others, key = { "peer:" + it.dnsName + it.name }) { peer ->
+                PeerRow(peer, saved = false) { deviceFor = peer }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
@@ -160,7 +174,14 @@ fun HomeScreen(
             saved = existing != null,
             onAction = {
                 deviceFor = null
-                if (existing != null) launcherFor = existing else onNewHost(peer.shortName)
+                when {
+                    existing != null -> launcherFor = existing
+                    else -> scope.launch {
+                        // Runs the PC app? Then no form: add it and open.
+                        val added = withContext(Dispatchers.IO) { addIfHostApp(peer) }
+                        if (added != null) launcherFor = added else onNewHost(peer.shortName)
+                    }
+                }
             },
             onDismiss = { deviceFor = null },
         )
@@ -188,19 +209,24 @@ private fun discoverHostApps() {
     }
     for (peer in candidates) {
         checked[peer.dnsName] = now
-        val ip = peer.ipv4 ?: continue
-        if (app.tailnet.isHostApp(ip)) {
-            app.hosts.save(
-                Host(
-                    name = peer.shortName.removePrefix("asenascale-"),
-                    address = peer.shortName,
-                    port = HOST_APP_PORT,
-                    user = "pc",
-                    auth = AuthMode.KEY,
-                ),
-            )
-        }
+        addIfHostApp(peer)
     }
+}
+
+/** Saves [peer] as a computer if it runs the AsenaScale PC app; returns it. */
+private fun addIfHostApp(peer: Peer): Host? {
+    val app = App.instance
+    val ip = peer.ipv4 ?: return null
+    if (!app.tailnet.isHostApp(ip)) return null
+    val host = Host(
+        name = peer.shortName.removePrefix("asenascale-"),
+        address = peer.shortName,
+        port = HOST_APP_PORT,
+        user = "pc",
+        auth = AuthMode.KEY,
+    )
+    app.hosts.save(host)
+    return host
 }
 
 private fun Peer.matches(address: String): Boolean {
@@ -331,7 +357,7 @@ private fun Hint(text: String) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick: () -> Unit, onEdit: () -> Unit) {
+private fun HostRow(host: Host, peer: Peer?, online: Boolean?, sessionOpen: Boolean, onClick: () -> Unit, onEdit: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -365,8 +391,14 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
                         )
                     }
                 }
+                // The PC app needs no user name: show what matters instead.
+                val detail = if (host.port == HOST_APP_PORT) {
+                    listOfNotNull("AsenaScale", peer?.os?.ifEmpty { null }, peer?.ipv4 ?: host.address).joinToString("  ·  ")
+                } else {
+                    "${host.user}@${host.address}" + if (host.startup.isNotBlank()) "  ›  ${host.startup}" else ""
+                }
                 Text(
-                    "${host.user}@${host.address}" + if (host.startup.isNotBlank()) "  ›  ${host.startup}" else "",
+                    detail,
                     style = MonoSmall,
                     color = Pal.subtext,
                     maxLines = 1,

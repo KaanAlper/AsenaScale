@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Kunci SSH saya</string>
     <string name="section_computers">Komputer</string>
-    <string name="section_devices">Perangkat</string>
+    <string name="section_devices">Perangkat lain</string>
     <string name="hint_no_computers">Jalankan AsenaScale di PC dan PC akan muncul di sini dengan sendirinya. Atau ketuk perangkat di bawah.</string>
     <string name="no_other_devices">Tidak ada perangkat lain di tailnet Anda.</string>
     <string name="ts_off">Mati</string>

@@ -16,7 +16,7 @@
   "offline": "не в сети",
   "my_ssh_key": "Мой SSH-ключ",
   "section_computers": "Компьютеры",
-  "section_devices": "Устройства",
+  "section_devices": "Другие устройства",
   "hint_no_computers": "Запустите AsenaScale на ПК, и он сам появится здесь. Или нажмите на устройство ниже.",
   "no_other_devices": "В вашем tailnet нет других устройств.",
   "ts_off": "Выключен",

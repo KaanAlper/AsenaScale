@@ -18,7 +18,7 @@
     <string name="offline">آفلاین</string>
     <string name="my_ssh_key">کلید SSH من</string>
     <string name="section_computers">رایانه‌ها</string>
-    <string name="section_devices">دستگاه‌ها</string>
+    <string name="section_devices">دستگاه‌های دیگر</string>
     <string name="hint_no_computers">AsenaScale را روی رایانه اجرا کنید تا خودش اینجا ظاهر شود. یا روی یکی از دستگاه‌های زیر بزنید.</string>
     <string name="no_other_devices">دستگاه دیگری در tailnet شما نیست.</string>
     <string name="ts_off">خاموش</string>

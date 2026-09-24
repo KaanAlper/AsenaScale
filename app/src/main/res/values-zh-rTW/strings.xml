@@ -18,7 +18,7 @@
     <string name="offline">離線</string>
     <string name="my_ssh_key">我的 SSH 金鑰</string>
     <string name="section_computers">電腦</string>
-    <string name="section_devices">裝置</string>
+    <string name="section_devices">其他裝置</string>
     <string name="hint_no_computers">在電腦上執行 AsenaScale，它會自動出現在這裡。或點選下方的裝置。</string>
     <string name="no_other_devices">你的 tailnet 中沒有其他裝置。</string>
     <string name="ts_off">已關閉</string>
