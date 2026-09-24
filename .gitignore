@@ -8,3 +8,4 @@ local.properties
 /app/libs/tsbridge-sources.jar
 captures/
 .kotlin/
+/host/target/
