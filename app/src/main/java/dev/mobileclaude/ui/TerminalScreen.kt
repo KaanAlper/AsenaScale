@@ -81,7 +81,8 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
         conn = app.sessions.connect(app.hosts.get(host.id) ?: host)
     }
 
-    term.onLongPress = { app.clipboardText()?.let { term.paste(it) } }
+    var selectText by remember { mutableStateOf<String?>(null) }
+    term.onLongPress = { selectText = term.copyAllText() }
 
     Column(
         Modifier
@@ -128,9 +129,9 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                     onDismissRequest = { menu = false },
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
-                    DropdownMenuItem(text = { Text("Tüm metni kopyala") }, onClick = {
+                    DropdownMenuItem(text = { Text("Metin seç") }, onClick = {
                         menu = false
-                        app.copyToClipboard(term.copyAllText())
+                        selectText = term.copyAllText()
                     })
                     DropdownMenuItem(text = { Text("Yeniden bağlan") }, onClick = { menu = false; reconnect() })
                     DropdownMenuItem(text = { Text("Bağlantıyı kapat", color = Mocha.red) }, onClick = {
@@ -179,6 +180,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     }
 
     if (shots) ScreenshotSheet(conn, onDismiss = { shots = false })
+    selectText?.let { SelectTextDialog(it, onDismiss = { selectText = null }) }
 }
 
 /** Top-level so it isn't captured by the enclosing ColumnScope overload. */
