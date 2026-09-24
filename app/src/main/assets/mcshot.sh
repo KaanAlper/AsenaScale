@@ -102,7 +102,9 @@ list() {
 grim_geo() { grim -g "$1" "$out"; }
 
 x11_grab() { # $1 = window id or "root"
-  if has import; then import -window "$1" "$out"
+  # An empty id would make `import` wait for a mouse click on the PC.
+  case "$1" in ""|0|0x0) die "Pencere bulunamadı." ;; esac
+  if has import; then import -silent -window "$1" "$out"
   elif has maim; then if [ "$1" = root ]; then maim "$out"; else maim -i "$1" "$out"; fi
   elif [ "$1" = root ] && has scrot; then scrot -o "$out"
   elif has xwd && has convert; then xwd -silent $( [ "$1" = root ] && echo -root || echo -id "$1" ) | convert xwd:- "$out"
@@ -111,7 +113,7 @@ x11_grab() { # $1 = window id or "root"
 }
 
 x11_focus() {
-  if has xdotool; then xdotool windowactivate --sync "$1" 2>/dev/null
+  if has xdotool; then t=""; has timeout && t="timeout 1.5"; $t xdotool windowactivate --sync "$1" 2>/dev/null
   elif has wmctrl; then wmctrl -i -a "$1"
   fi
   sleep 0.3
@@ -146,8 +148,13 @@ shot() {
       [ -s "$out" ] || die "GNOME (Wayland) dışarıdan ekran görüntüsü almayı engelliyor. 'gnome-screenshot' kurmayı dene." ;;
     x11:screen) x11_grab root ;;
     x11:active)
-      if has xdotool; then x11_grab "$(xdotool getactivewindow)"
-      else x11_grab "$(xprop -root _NET_ACTIVE_WINDOW | awk '{print $NF}')"; fi ;;
+      w=""
+      has xdotool && w=$(xdotool getactivewindow 2>/dev/null)
+      [ -z "$w" ] && has xprop && w=$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | awk '/#/ {print $NF}')
+      # Window managers without EWMH: fall back to the X input focus.
+      [ -z "$w" ] && has xdotool && w=$(xdotool getwindowfocus 2>/dev/null)
+      case "$w" in ""|0x0|0) die "Şu an aktif (odaklı) bir pencere yok." ;; esac
+      x11_grab "$w" ;;
     x11:window) x11_focus "$target"; x11_grab "$target" ;;
     *) die "Bu masaüstünde ($de) bu seçenek desteklenmiyor." ;;
   esac

@@ -218,20 +218,34 @@ class SshConnection(val host: Host) {
         val input = ch.inputStream
         val stdinStream = ch.outputStream
         ch.connect(10_000)
-        if (stdin != null) stdinStream.write(stdin)
-        stdinStream.close()
-        val deadline = System.currentTimeMillis() + timeoutMs
-        val buf = ByteArray(64 * 1024)
-        while (true) {
-            val n = input.read(buf)
-            if (n < 0) break
-            out.write(buf, 0, n)
-            if (System.currentTimeMillis() > deadline) break
+        // Reads block, so a watchdog closes the channel if the command hangs.
+        var timedOut = false
+        val watchdog = Thread {
+            try {
+                Thread.sleep(timeoutMs)
+                timedOut = true
+                ch.disconnect()
+            } catch (_: InterruptedException) {
+            }
+        }.apply { isDaemon = true; start() }
+        try {
+            if (stdin != null) stdinStream.write(stdin)
+            stdinStream.close()
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                out.write(buf, 0, n)
+            }
+            while (!ch.isClosed && !timedOut) Thread.sleep(10)
+        } catch (e: java.io.IOException) {
+            if (!timedOut) throw e
+        } finally {
+            watchdog.interrupt()
+            ch.disconnect()
         }
-        while (!ch.isClosed && System.currentTimeMillis() < deadline) Thread.sleep(20)
-        val code = ch.exitStatus
-        ch.disconnect()
-        return ExecResult(code, out.toByteArray(), err.toString(Charsets.UTF_8.name()))
+        if (timedOut) error("Zaman aşımı: bilgisayar yanıt vermedi")
+        return ExecResult(ch.exitStatus, out.toByteArray(), err.toString(Charsets.UTF_8.name()))
     }
 
     fun close(reason: String? = null) {
