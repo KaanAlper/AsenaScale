@@ -90,7 +90,7 @@ fun ExtraKeys(term: TerminalCanvasView, modifier: Modifier = Modifier) {
     Column(
         modifier
             .fillMaxWidth()
-            .background(Mocha.mantle)
+            .background(Pal.mantle)
             .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -123,9 +123,9 @@ private fun Key(k: XKey, active: Boolean, modifier: Modifier, textPadding: Dp = 
             .clip(RoundedCornerShape(8.dp))
             .background(
                 when {
-                    active -> Mocha.mauve.copy(alpha = 0.22f)
-                    pressed -> Mocha.surface1
-                    else -> Mocha.surface0.copy(alpha = 0.55f)
+                    active -> Pal.mauve.copy(alpha = 0.22f)
+                    pressed -> Pal.surface1
+                    else -> Pal.surface0.copy(alpha = 0.55f)
                 },
             )
             .pointerInput(repeat) {
@@ -155,7 +155,7 @@ private fun Key(k: XKey, active: Boolean, modifier: Modifier, textPadding: Dp = 
             k.label,
             fontFamily = Mono,
             fontSize = if (k.label.length > 2) 11.sp else 15.sp,
-            color = if (active) Mocha.mauve else Mocha.text,
+            color = if (active) Pal.mauve else Pal.text,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Clip,

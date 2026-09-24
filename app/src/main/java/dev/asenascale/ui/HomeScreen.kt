@@ -26,13 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -92,11 +85,11 @@ fun HomeScreen(
                 Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(">_", fontFamily = Mono, color = Mocha.mauve, fontSize = 22.sp)
+                Text(">_", fontFamily = Mono, color = Pal.mauve, fontSize = 22.sp)
                 Spacer(Modifier.width(10.dp))
                 Text("AsenaScale", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 IconButton(onClick = { showKey = true }) {
-                    Icon(Icons.Outlined.Key, contentDescription = "SSH anahtarım", tint = Mocha.subtext)
+                    Icon(AsIcons.Key, contentDescription = "SSH anahtarım", tint = Pal.subtext)
                 }
             }
         }
@@ -106,7 +99,7 @@ fun HomeScreen(
         item {
             SectionHeader("Bilgisayarlar") {
                 IconButton(onClick = { onNewHost(null) }) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Ekle", tint = Mocha.subtext)
+                    Icon(AsIcons.Plus, contentDescription = "Ekle", tint = Pal.subtext)
                 }
             }
         }
@@ -164,10 +157,10 @@ private fun TailscaleCard(ts: TailnetState) {
     }
 
     val (dot, label) = when {
-        !ts.enabled -> Mocha.overlay0 to "Kapalı"
-        ts.running -> Mocha.green to "Bağlı"
-        ts.needsLogin -> Mocha.yellow to "Giriş gerekli"
-        else -> Mocha.peach to "Bağlanıyor…"
+        !ts.enabled -> Pal.overlay0 to "Kapalı"
+        ts.running -> Pal.green to "Bağlı"
+        ts.needsLogin -> Pal.yellow to "Giriş gerekli"
+        else -> Pal.peach to "Bağlanıyor…"
     }
 
     Surface(
@@ -188,7 +181,7 @@ private fun TailscaleCard(ts: TailnetState) {
                     Text(
                         if (ts.running) detail else label,
                         style = MonoSmall,
-                        color = Mocha.subtext,
+                        color = Pal.subtext,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -197,11 +190,11 @@ private fun TailscaleCard(ts: TailnetState) {
                     checked = ts.enabled,
                     onCheckedChange = { app.tailnet.setEnabled(it) },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Mocha.crust,
-                        checkedTrackColor = Mocha.mauve,
-                        uncheckedThumbColor = Mocha.overlay0,
-                        uncheckedTrackColor = Mocha.surface0,
-                        uncheckedBorderColor = Mocha.surface1,
+                        checkedThumbColor = Pal.crust,
+                        checkedTrackColor = Pal.mauve,
+                        uncheckedThumbColor = Pal.overlay0,
+                        uncheckedTrackColor = Pal.surface0,
+                        uncheckedBorderColor = Pal.surface1,
                     ),
                 )
             }
@@ -220,7 +213,7 @@ private fun TailscaleCard(ts: TailnetState) {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (waitingForUrl) {
-                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Mocha.crust)
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Pal.crust)
                     } else {
                         Text("Giriş yap")
                     }
@@ -229,15 +222,15 @@ private fun TailscaleCard(ts: TailnetState) {
             if (ts.enabled && ts.running) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = { app.tailnet.logout() }) {
-                        Icon(Icons.AutoMirrored.Outlined.Logout, null, Modifier.size(16.dp), tint = Mocha.overlay0)
+                        Icon(AsIcons.Logout, null, Modifier.size(16.dp), tint = Pal.overlay0)
                         Spacer(Modifier.width(6.dp))
-                        Text("Çıkış yap", color = Mocha.overlay0, fontSize = 13.sp)
+                        Text("Çıkış yap", color = Pal.overlay0, fontSize = 13.sp)
                     }
                 }
             }
             if (ts.enabled && ts.error.isNotEmpty() && !ts.running && ts.backend != "Starting") {
                 Spacer(Modifier.height(6.dp))
-                Text(ts.error, style = MonoSmall, color = Mocha.red, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(ts.error, style = MonoSmall, color = Pal.red, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -258,7 +251,7 @@ private fun SectionHeader(title: String, action: @Composable () -> Unit = {}) {
         Text(
             title.uppercase(),
             style = MaterialTheme.typography.labelSmall,
-            color = Mocha.overlay0,
+            color = Pal.overlay0,
             modifier = Modifier.weight(1f),
         )
         action()
@@ -267,7 +260,7 @@ private fun SectionHeader(title: String, action: @Composable () -> Unit = {}) {
 
 @Composable
 private fun Hint(text: String) {
-    Text(text, color = Mocha.overlay0, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp))
+    Text(text, color = Pal.overlay0, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp))
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -284,9 +277,9 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
         Row(Modifier.padding(start = 18.dp, end = 6.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusDot(
                 when (online) {
-                    true -> Mocha.green
-                    false -> Mocha.overlay0
-                    null -> Mocha.surface1
+                    true -> Pal.green
+                    false -> Pal.overlay0
+                    null -> Pal.surface1
                 },
             )
             Spacer(Modifier.width(14.dp))
@@ -298,10 +291,10 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
                         Text(
                             "açık",
                             style = MonoSmall,
-                            color = Mocha.mauve,
+                            color = Pal.mauve,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Mocha.mauve.copy(alpha = 0.12f))
+                                .background(Pal.mauve.copy(alpha = 0.12f))
                                 .padding(horizontal = 6.dp, vertical = 1.dp),
                         )
                     }
@@ -309,13 +302,13 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
                 Text(
                     "${host.user}@${host.address}" + if (host.startup.isNotBlank()) "  ›  ${host.startup}" else "",
                     style = MonoSmall,
-                    color = Mocha.subtext,
+                    color = Pal.subtext,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
             IconButton(onClick = onEdit) {
-                Icon(Icons.Outlined.Edit, contentDescription = "Düzenle", tint = Mocha.overlay0, modifier = Modifier.size(18.dp))
+                Icon(AsIcons.Edit, contentDescription = "Düzenle", tint = Pal.overlay0, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -331,27 +324,27 @@ private fun PeerRow(peer: Peer, saved: Boolean, onClick: () -> Unit) {
             .padding(start = 18.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusDot(if (peer.online) Mocha.green else Mocha.surface1, size = 7)
+        StatusDot(if (peer.online) Pal.green else Pal.surface1, size = 7)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 peer.shortName,
-                color = if (peer.online) Mocha.text else Mocha.overlay0,
+                color = if (peer.online) Pal.text else Pal.overlay0,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 listOfNotNull(peer.os.ifEmpty { null }, peer.ipv4).joinToString("  ·  "),
                 style = MonoSmall,
-                color = Mocha.overlay0,
+                color = Pal.overlay0,
             )
         }
-        Text(if (peer.online) "çevrimiçi" else "çevrimdışı", fontSize = 12.sp, color = if (peer.online) Mocha.green else Mocha.overlay0)
+        Text(if (peer.online) "çevrimiçi" else "çevrimdışı", fontSize = 12.sp, color = if (peer.online) Pal.green else Pal.overlay0)
         Spacer(Modifier.width(4.dp))
         Icon(
-            if (saved) Icons.AutoMirrored.Outlined.KeyboardArrowRight else Icons.Outlined.Add,
+            if (saved) AsIcons.Chevron else AsIcons.Plus,
             contentDescription = null,
-            tint = Mocha.overlay0,
+            tint = Pal.overlay0,
             modifier = Modifier.size(18.dp),
         )
     }
@@ -371,7 +364,7 @@ private fun KeyDialog(onDismiss: () -> Unit) {
                     "Windows PC: kurulum komutunu kopyala, PC'de Yönetici PowerShell'e yapıştır. " +
                         "SSH'ı kurar ve bu anahtarı yetkilendirir.",
                     fontSize = 14.sp,
-                    color = Mocha.subtext,
+                    color = Pal.subtext,
                 )
                 Button(
                     onClick = { App.instance.copyToClipboard(Keys.windowsSetupScript(context)); onDismiss() },
@@ -382,7 +375,7 @@ private fun KeyDialog(onDismiss: () -> Unit) {
                     "Linux/macOS: aşağıdaki satırı ~/.ssh/authorized_keys dosyasına ekle " +
                         "(Tailscale SSH kullanıyorsan gerek yok).",
                     fontSize = 14.sp,
-                    color = Mocha.subtext,
+                    color = Pal.subtext,
                 )
                 SelectionContainer {
                     Text(
@@ -390,7 +383,7 @@ private fun KeyDialog(onDismiss: () -> Unit) {
                         style = MonoSmall,
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Mocha.crust)
+                            .background(Pal.crust)
                             .padding(12.dp),
                     )
                 }
@@ -398,11 +391,11 @@ private fun KeyDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = { App.instance.copyToClipboard(key); onDismiss() }) {
-                Icon(Icons.Outlined.ContentCopy, null, Modifier.size(16.dp))
+                Icon(AsIcons.Copy, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("Anahtarı kopyala")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Kapat", color = Mocha.subtext) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Kapat", color = Pal.subtext) } },
     )
 }

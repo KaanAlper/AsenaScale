@@ -114,7 +114,7 @@ class SshConnection(val host: Host) {
     }
 
     val emulator: TerminalEmulator = run {
-        TermTheme.apply()
+        if (TermTheme.dark == null) TermTheme.set(true)
         TerminalEmulator(output, 80, 24, 5000, client)
     }
 
@@ -336,7 +336,7 @@ class SshConnection(val host: Host) {
         return when {
             "refused" in e -> if (windows) {
                 "PC'ye ulaşıldı ama $port. portta SSH sunucusu yok. Windows kurulum komutunu " +
-                    "(🔑 → Windows kurulum komutu) Yönetici PowerShell'de çalıştırdın mı?"
+                    "(ana ekran > anahtar simgesi > Windows kurulum komutu) Yönetici PowerShell'de çalıştırdın mı?"
             } else {
                 "PC'ye ulaşıldı ama $port. portta SSH sunucusu yok: sudo systemctl enable --now sshd"
             }
@@ -359,7 +359,7 @@ class SshConnection(val host: Host) {
             "Auth fail" in m || "Auth cancel" in m -> "Kimlik doğrulama başarısız. Kullanıcı adını ve anahtarı/şifreyi kontrol et."
             "timeout" in m.lowercase() -> "Zaman aşımı: bilgisayar açık ve Tailscale'e bağlı mı?"
             "refused" in m.lowercase() || "dial" in m.lowercase() ->
-                "Bağlantı reddedildi: PC'de SSH sunucusu çalışıyor mu? (Windows'ta: 🔑 → Windows kurulum komutu)"
+                "Bağlantı reddedildi: PC'de SSH sunucusu çalışıyor mu? (Windows'ta: PC'ye AsenaScale kur)"
             else -> m
         }
     }

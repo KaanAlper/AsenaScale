@@ -24,14 +24,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.CropFree
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Monitor
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.WebAsset
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -115,18 +107,18 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)) {
                 Text("Ekran görüntüsü", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 list?.desktop?.takeIf { it.isNotEmpty() }?.let {
-                    Text(it, style = MonoSmall, color = Mocha.overlay0)
+                    Text(it, style = MonoSmall, color = Pal.overlay0)
                 }
             }
             error?.let {
                 Text(
                     it,
                     fontSize = 13.sp,
-                    color = Mocha.red,
+                    color = Pal.red,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Mocha.red.copy(alpha = 0.08f))
+                        .background(Pal.red.copy(alpha = 0.08f))
                         .padding(12.dp),
                 )
                 Spacer(Modifier.height(8.dp))
@@ -134,7 +126,7 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
             val l = list
             if (l == null && error == null) {
                 Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp, color = Mocha.mauve)
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp, color = Pal.mauve)
                 }
             }
             if (l != null) {
@@ -147,7 +139,7 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
                             Text(
                                 "Pencere listesi bu masaüstünde alınamadı; tüm ekran veya aktif pencere kullanılabilir.",
                                 fontSize = 12.sp,
-                                color = Mocha.overlay0,
+                                color = Pal.overlay0,
                                 modifier = Modifier.padding(12.dp),
                             )
                         }
@@ -177,9 +169,9 @@ fun ScreenshotSheet(conn: SshConnection, onDismiss: () -> Unit) {
 @Composable
 private fun TargetRow(t: ShotTarget, busy: Boolean, onClick: () -> Unit) {
     val icon: ImageVector = when (t.kind) {
-        "screen", "output" -> Icons.Outlined.Monitor
-        "active" -> Icons.Outlined.CropFree
-        else -> Icons.Outlined.WebAsset
+        "screen", "output" -> AsIcons.Monitor
+        "active" -> AsIcons.Focus
+        else -> AsIcons.Window
     }
     Row(
         Modifier
@@ -189,10 +181,10 @@ private fun TargetRow(t: ShotTarget, busy: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = if (t.kind == "window") Mocha.subtext else Mocha.mauve, modifier = Modifier.size(20.dp))
+        Icon(icon, null, tint = if (t.kind == "window") Pal.subtext else Pal.mauve, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(14.dp))
         Text(t.label, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f), fontSize = 15.sp)
-        if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Mocha.mauve)
+        if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Pal.mauve)
     }
 }
 
@@ -209,7 +201,7 @@ private fun ShotViewer(
     var offset by remember(bitmap) { mutableStateOf(Offset.Zero) }
 
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Box(Modifier.fillMaxSize().background(Mocha.crust)) {
+        Box(Modifier.fillMaxSize().background(Pal.crust)) {
             Image(
                 bitmap = bitmap,
                 contentDescription = "Bilgisayar ekranı",
@@ -241,19 +233,19 @@ private fun ShotViewer(
                 Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RoundIcon(Icons.Outlined.Close, "Kapat", onClose)
+                RoundIcon(AsIcons.Close, "Kapat", onClose)
                 Spacer(Modifier.weight(1f))
                 if (busy) {
                     Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Mocha.mauve)
+                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Pal.mauve)
                     }
                 } else {
-                    RoundIcon(Icons.Outlined.Refresh, "Yenile", onRetake)
+                    RoundIcon(AsIcons.Refresh, "Yenile", onRetake)
                 }
                 Spacer(Modifier.width(8.dp))
-                RoundIcon(Icons.Outlined.Download, "Kaydet", onSave)
+                RoundIcon(AsIcons.Download, "Kaydet", onSave)
                 Spacer(Modifier.width(8.dp))
-                RoundIcon(Icons.Outlined.Share, "Paylaş", onShare)
+                RoundIcon(AsIcons.Share, "Paylaş", onShare)
             }
         }
     }
@@ -263,6 +255,6 @@ private fun ShotViewer(
 private fun RoundIcon(icon: ImageVector, desc: String, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.clip(RoundedCornerShape(50)).background(Mocha.base.copy(alpha = 0.7f)),
-    ) { Icon(icon, desc, tint = Mocha.text) }
+        modifier = Modifier.clip(RoundedCornerShape(50)).background(Pal.base.copy(alpha = 0.7f)),
+    ) { Icon(icon, desc, tint = Pal.text) }
 }

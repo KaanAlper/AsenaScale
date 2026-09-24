@@ -6,14 +6,14 @@
     <!-- terminal prompt ">_" -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="@color/mauve"
+        android:strokeColor="@color/accent"
         android:strokeWidth="6"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:pathData="M36,40 L50,54 L36,68" />
     <path
         android:fillColor="#00000000"
-        android:strokeColor="@color/peach"
+        android:strokeColor="@color/accent"
         android:strokeWidth="6"
         android:strokeLineCap="round"
         android:pathData="M56,68 L74,68" />

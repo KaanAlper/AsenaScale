@@ -71,10 +71,18 @@ class TerminalCanvasView(context: Context) : View(context) {
     init {
         isFocusable = true
         isFocusableInTouchMode = true
-        setBackgroundColor(TermTheme.BACKGROUND)
+        setBackgroundColor(TermTheme.background)
     }
 
     val emulator: TerminalEmulator? get() = connection?.emulator
+
+    /** Follows the phone's light/dark mode. */
+    fun setDark(dark: Boolean) {
+        TermTheme.set(dark)
+        emulator?.let { TermTheme.applyTo(it) }
+        setBackgroundColor(TermTheme.background)
+        invalidate()
+    }
 
     private fun onScreenChanged() {
         val emu = emulator ?: return

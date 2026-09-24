@@ -17,9 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -34,6 +31,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -97,11 +95,11 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
             .imePadding(),
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onDone) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Geri") }
+            IconButton(onClick = onDone) { Icon(AsIcons.Back, "Geri") }
             Text(if (host == null) "Bilgisayar ekle" else "Düzenle", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             if (host != null) {
                 IconButton(onClick = { app.sessions.disconnect(host.id); app.hosts.delete(host.id); onDone() }) {
-                    Icon(Icons.Outlined.Delete, "Sil", tint = Mocha.red)
+                    Icon(AsIcons.Trash, "Sil", tint = Pal.red)
                 }
             }
         }
@@ -143,7 +141,7 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                     )
                 }
 
-                Text("Giriş", fontSize = 13.sp, color = Mocha.subtext)
+                Text("Giriş", fontSize = 13.sp, color = Pal.subtext)
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     val options = listOfNotNull(
                         AuthMode.KEY to "Anahtar",
@@ -156,11 +154,11 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                             onClick = { auth = mode },
                             shape = SegmentedButtonDefaults.itemShape(i, options.size),
                             colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = Mocha.mauve.copy(alpha = 0.16f),
-                                activeContentColor = Mocha.mauve,
+                                activeContainerColor = Pal.mauve.copy(alpha = 0.16f),
+                                activeContentColor = Pal.mauve,
                                 inactiveContainerColor = MaterialTheme.colorScheme.background,
-                                activeBorderColor = Mocha.surface1,
-                                inactiveBorderColor = Mocha.surface1,
+                                activeBorderColor = Pal.surface1,
+                                inactiveBorderColor = Pal.surface1,
                             ),
                             icon = {},
                         ) { Text(label, fontSize = 13.sp) }
@@ -169,12 +167,12 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                 Text(
                     when (auth) {
                         AuthMode.KEY -> if (isWindows) "OpenSSH kurulum komutu bu telefonun anahtarını da ekler."
-                        else "Uygulamanın anahtarını (ana ekrandaki 🔑) bilgisayardaki ~/.ssh/authorized_keys dosyasına ekle."
+                        else "Uygulamanın anahtarını (ana ekrandaki anahtar simgesi) bilgisayardaki ~/.ssh/authorized_keys dosyasına ekle."
                         AuthMode.TAILSCALE -> "Bilgisayarda `sudo tailscale set --ssh` açıksa şifresiz bağlanır."
                         AuthMode.PASSWORD -> "Şifre bu telefonda uygulamanın özel alanında saklanır."
                     },
                     fontSize = 12.sp,
-                    color = Mocha.overlay0,
+                    color = Pal.overlay0,
                 )
                 if (auth == AuthMode.PASSWORD) {
                     Field("Şifre", password, { password = it }, password = true)
@@ -193,7 +191,7 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
                 if (isWindows) "İpucu: bağlantı koparsa `claude --continue` ile son sohbete kaldığın yerden dönersin."
                 else "İpucu: tmux ile bağlantı koparsa Claude oturumu PC'de yaşamaya devam eder, tekrar bağlanınca kaldığın yerden sürer.",
                 fontSize = 12.sp,
-                color = Mocha.overlay0,
+                color = Pal.overlay0,
             )
             Spacer(Modifier.height(8.dp))
         }
@@ -229,9 +227,9 @@ private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
         shape = RoundedCornerShape(10.dp),
         colors = FilterChipDefaults.filterChipColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            labelColor = Mocha.subtext,
-            selectedContainerColor = Mocha.mauve.copy(alpha = 0.16f),
-            selectedLabelColor = Mocha.mauve,
+            labelColor = Pal.subtext,
+            selectedContainerColor = Pal.mauve.copy(alpha = 0.16f),
+            selectedLabelColor = Pal.mauve,
         ),
         border = null,
     )
@@ -252,7 +250,7 @@ private fun Field(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
-        placeholder = { if (placeholder.isNotEmpty()) Text(placeholder, color = Mocha.overlay0) },
+        placeholder = { if (placeholder.isNotEmpty()) Text(placeholder, color = Pal.overlay0) },
         singleLine = true,
         textStyle = if (mono) MonoSmall.copy(fontSize = 15.sp) else MaterialTheme.typography.bodyLarge,
         visualTransformation = if (password) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
@@ -262,8 +260,8 @@ private fun Field(
         ),
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Mocha.surface0,
-            focusedBorderColor = Mocha.mauve,
+            unfocusedBorderColor = Pal.surface0,
+            focusedBorderColor = Pal.mauve,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
@@ -280,15 +278,19 @@ private fun HostAppFoundCard() {
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Mocha.green.copy(alpha = 0.10f))
+            .background(Pal.green.copy(alpha = 0.10f))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("✓ PC'de AsenaScale bulundu", fontWeight = FontWeight.Medium, color = Mocha.green)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(AsIcons.Check, null, tint = Pal.green, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("PC'de AsenaScale bulundu", fontWeight = FontWeight.Medium, color = Pal.green)
+        }
         Text(
             "Kurulum gerekmiyor. İlk bağlantıda PC'de bir izin penceresi çıkar, \"Evet\"e basman yeterli.",
             fontSize = 13.sp,
-            color = Mocha.subtext,
+            color = Pal.subtext,
         )
     }
 }
@@ -310,19 +312,19 @@ private fun WindowsSetupCard(onCopyLink: () -> Unit, onCopyScript: () -> Unit) {
                 "AsenaScale-windows-x64.exe dosyasını indirip çalıştır. Sistem tepsisine yerleşir; " +
                 "komut ya da yönetici izni gerekmez. Kurunca bu ekran onu kendiliğinden bulur.",
             fontSize = 13.sp,
-            color = Mocha.subtext,
+            color = Pal.subtext,
             lineHeight = 19.sp,
         )
         Button(
             onClick = { onCopyLink(); copied = "link" },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (copied == "link") "Bağlantı kopyalandı ✓" else "İndirme bağlantısını kopyala") }
+        ) { Text(if (copied == "link") "Bağlantı kopyalandı" else "İndirme bağlantısını kopyala") }
         TextButton(onClick = { onCopyScript(); copied = "script" }, modifier = Modifier.fillMaxWidth()) {
             Text(
-                if (copied == "script") "Komut kopyalandı ✓" else "Alternatif: Windows OpenSSH kurulum komutu",
+                if (copied == "script") "Komut kopyalandı" else "Alternatif: Windows OpenSSH kurulum komutu",
                 fontSize = 13.sp,
-                color = Mocha.overlay0,
+                color = Pal.overlay0,
             )
         }
     }

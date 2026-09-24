@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -25,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -42,37 +40,38 @@ private val urlRegex = Regex("""https?://[^\s<>"'`]+[^\s<>"'`.,;:!?)\]]""")
 /** Terminal text with native Android selection handles; URLs are tappable. */
 @Composable
 fun SelectTextDialog(text: String, onDismiss: () -> Unit) {
-    val annotated = remember(text) { linkify(text) }
+    val linkColor = Pal.mauve
+    val annotated = remember(text, linkColor) { linkify(text, linkColor) }
     val scroll = rememberScrollState()
     LaunchedEffect(Unit) { scroll.scrollTo(scroll.maxValue) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(Mocha.base).statusBarsPadding().navigationBarsPadding()) {
+        Column(Modifier.fillMaxSize().background(Pal.base).statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDismiss) { Icon(Icons.Outlined.Close, "Kapat", tint = Mocha.subtext) }
-                Text("Metin seç", color = Mocha.subtext, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                IconButton(onClick = onDismiss) { Icon(AsIcons.Close, "Kapat", tint = Pal.subtext) }
+                Text("Metin seç", color = Pal.subtext, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { App.instance.copyToClipboard(text); onDismiss() }) {
-                    Icon(Icons.Outlined.ContentCopy, null, tint = Mocha.mauve)
-                    Text("  Tümünü kopyala", color = Mocha.mauve)
+                    Icon(AsIcons.Copy, null, tint = Pal.mauve)
+                    Text("  Tümünü kopyala", color = Pal.mauve)
                 }
             }
             Box(Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = 12.dp, vertical = 8.dp)) {
                 SelectionContainer {
-                    Text(annotated, fontFamily = Mono, fontSize = 12.5.sp, lineHeight = 17.sp, color = Mocha.text)
+                    Text(annotated, fontFamily = Mono, fontSize = 12.5.sp, lineHeight = 17.sp, color = Pal.text)
                 }
             }
         }
     }
 }
 
-private fun linkify(text: String): AnnotatedString = buildAnnotatedString {
+private fun linkify(text: String, linkColor: Color): AnnotatedString = buildAnnotatedString {
     var last = 0
     for (m in urlRegex.findAll(text)) {
         append(text, last, m.range.first)
         pushLink(
             LinkAnnotation.Url(
                 m.value,
-                TextLinkStyles(SpanStyle(color = Mocha.mauve, textDecoration = TextDecoration.Underline)),
+                TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
             ),
         )
         append(m.value)

@@ -5,9 +5,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.outlined.AttachFile
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.rememberCoroutineScope
 import dev.asenascale.files.Uploads
@@ -33,11 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ContentPaste
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -70,7 +62,6 @@ import dev.asenascale.data.AuthMode
 import dev.asenascale.ssh.ConnState
 import dev.asenascale.ssh.Keys
 import dev.asenascale.term.TerminalCanvasView
-import dev.asenascale.term.TermTheme
 
 @Composable
 fun TerminalScreen(hostId: String, onBack: () -> Unit) {
@@ -89,7 +80,11 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     var shots by remember { mutableStateOf(false) }
 
-    LaunchedEffect(conn) { term.connection = conn }
+    val dark = LocalPalette.current.dark
+    LaunchedEffect(conn, dark) {
+        term.connection = conn
+        term.setDark(dark)
+    }
     LaunchedEffect(state) { if (state is ConnState.Connected) term.showKeyboard() }
     DisposableEffect(Unit) { onDispose { term.connection = null } }
 
@@ -130,7 +125,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color(TermTheme.BACKGROUND))
+            .background(Pal.base)
             .statusBarsPadding()
             .navigationBarsPadding()
             .imePadding(),
@@ -140,12 +135,12 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
             Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Geri", tint = Mocha.subtext) }
+            IconButton(onClick = onBack) { Icon(AsIcons.Back, "Geri", tint = Pal.subtext) }
             StatusDot(
                 when (state) {
-                    ConnState.Connected -> Mocha.green
-                    ConnState.Connecting -> Mocha.peach
-                    is ConnState.Closed -> Mocha.red
+                    ConnState.Connected -> Pal.green
+                    ConnState.Connecting -> Pal.peach
+                    is ConnState.Closed -> Pal.red
                 },
                 size = 7,
             )
@@ -154,17 +149,17 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                 title,
                 fontFamily = Mono,
                 fontSize = 13.sp,
-                color = Mocha.subtext,
+                color = Pal.subtext,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { shots = true }, enabled = state == ConnState.Connected) {
-                Icon(Icons.Outlined.PhotoCamera, "Ekran görüntüsü", tint = Mocha.subtext)
+                Icon(AsIcons.Camera, "Ekran görüntüsü", tint = Pal.subtext)
             }
             Box {
                 IconButton(onClick = { attachMenu = true }, enabled = state == ConnState.Connected && uploading == null) {
-                    Icon(Icons.Outlined.AttachFile, "PC'ye gönder", tint = Mocha.subtext)
+                    Icon(AsIcons.Attach, "PC'ye gönder", tint = Pal.subtext)
                 }
                 DropdownMenu(
                     expanded = attachMenu,
@@ -173,7 +168,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                 ) {
                     DropdownMenuItem(
                         text = { Text("Fotoğraf / video") },
-                        leadingIcon = { Icon(Icons.Outlined.Image, null) },
+                        leadingIcon = { Icon(AsIcons.Image, null) },
                         onClick = {
                             attachMenu = false
                             pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
@@ -181,16 +176,16 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                     )
                     DropdownMenuItem(
                         text = { Text("Dosya") },
-                        leadingIcon = { Icon(Icons.Outlined.Description, null) },
+                        leadingIcon = { Icon(AsIcons.File, null) },
                         onClick = { attachMenu = false; pickFiles.launch("*/*") },
                     )
                 }
             }
             IconButton(onClick = { app.clipboardText()?.let { term.paste(it) } }) {
-                Icon(Icons.Outlined.ContentPaste, "Yapıştır", tint = Mocha.subtext)
+                Icon(AsIcons.Paste, "Yapıştır", tint = Pal.subtext)
             }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Menü", tint = Mocha.subtext) }
+                IconButton(onClick = { menu = true }) { Icon(AsIcons.More, "Menü", tint = Pal.subtext) }
                 DropdownMenu(
                     expanded = menu,
                     onDismissRequest = { menu = false },
@@ -201,7 +196,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                         selectText = term.copyAllText()
                     })
                     DropdownMenuItem(text = { Text("Yeniden bağlan") }, onClick = { menu = false; reconnect() })
-                    DropdownMenuItem(text = { Text("Bağlantıyı kapat", color = Mocha.red) }, onClick = {
+                    DropdownMenuItem(text = { Text("Bağlantıyı kapat", color = Pal.red) }, onClick = {
                         menu = false
                         app.sessions.disconnect(host.id)
                         onBack()
@@ -212,8 +207,8 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
 
         uploading?.let {
             Column(Modifier.fillMaxWidth()) {
-                LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp), color = Mocha.mauve, trackColor = Mocha.surface0)
-                Text(it, fontSize = 12.sp, color = Mocha.subtext, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp), color = Pal.mauve, trackColor = Pal.surface0)
+                Text(it, fontSize = 12.sp, color = Pal.subtext, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             }
         }
 
@@ -222,19 +217,19 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
 
             Fade(state == ConnState.Connecting, Modifier.align(Alignment.Center)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.5.dp, color = Mocha.mauve)
+                    CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.5.dp, color = Pal.mauve)
                     Spacer(Modifier.height(12.dp))
-                    Text("${host.address} bağlanıyor…", fontFamily = Mono, fontSize = 12.sp, color = Mocha.overlay0)
+                    Text("${host.address} bağlanıyor…", fontFamily = Mono, fontSize = 12.sp, color = Pal.overlay0)
                     hint?.let {
                         Spacer(Modifier.height(16.dp))
                         Text(
                             it,
                             fontSize = 14.sp,
-                            color = Mocha.text,
+                            color = Pal.text,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .padding(horizontal = 32.dp)
-                                .background(Mocha.mantle, RoundedCornerShape(14.dp))
+                                .background(Pal.mantle, RoundedCornerShape(14.dp))
                                 .padding(14.dp),
                         )
                     }
@@ -246,7 +241,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                 Column(
                     Modifier
                         .padding(24.dp)
-                        .background(Mocha.mantle.copy(alpha = 0.96f), RoundedCornerShape(20.dp))
+                        .background(Pal.mantle.copy(alpha = 0.96f), RoundedCornerShape(20.dp))
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -255,7 +250,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                     Text(
                         closed?.reason.orEmpty(),
                         fontSize = 13.sp,
-                        color = Mocha.subtext,
+                        color = Pal.subtext,
                         textAlign = TextAlign.Center,
                     )
                     val reason = closed?.reason.orEmpty()
@@ -266,7 +261,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                         }) {
                             Text(
                                 if (windows) "Windows kurulum komutunu kopyala" else "SSH anahtarını kopyala (authorized_keys için)",
-                                color = Mocha.mauve,
+                                color = Pal.mauve,
                                 fontSize = 13.sp,
                             )
                         }
