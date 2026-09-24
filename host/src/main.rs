@@ -6,6 +6,7 @@
 
 mod approve;
 mod autostart;
+mod firewall;
 mod files;
 mod server;
 mod shot;
@@ -49,6 +50,8 @@ fn main() {
     if autostart::first_run() {
         autostart::set(true);
     }
+    // Off the UI thread: netsh can take a moment.
+    std::thread::spawn(firewall::ensure);
 
     let menu_proxy = proxy.clone();
     MenuEvent::set_event_handler(Some(move |e| {
@@ -59,6 +62,7 @@ fn main() {
     let address = MenuItem::new("", false, None);
     let devices = MenuItem::new("", false, None);
     let reset = MenuItem::new("İzinli telefonları sıfırla", true, None);
+    let fix_firewall = MenuItem::new("Güvenlik duvarı iznini onar", cfg!(windows), None);
     let autorun = CheckMenuItem::new("Oturum açınca başlat", true, autostart::is_enabled(), None);
     let quit = MenuItem::new("Çıkış", true, None);
     let menu = Menu::new();
@@ -68,6 +72,7 @@ fn main() {
         &devices,
         &PredefinedMenuItem::separator(),
         &reset,
+        &fix_firewall,
         &autorun,
         &PredefinedMenuItem::separator(),
         &quit,
@@ -111,6 +116,8 @@ fn main() {
                 } else if e.id == reset.id() {
                     state.devices.lock().unwrap().clear();
                     refresh(tray.as_ref());
+                } else if e.id == fix_firewall.id() {
+                    std::thread::spawn(firewall::add_rule);
                 } else if e.id == autorun.id() {
                     autostart::set(autorun.is_checked());
                 }
