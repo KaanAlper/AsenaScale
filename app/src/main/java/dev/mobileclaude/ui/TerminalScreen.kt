@@ -145,7 +145,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView(factory = { term }, modifier = Modifier.fillMaxSize())
 
-            AnimatedVisibility(state == ConnState.Connecting, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.Center)) {
+            Fade(state == ConnState.Connecting, Modifier.align(Alignment.Center)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.5.dp, color = Mocha.mauve)
                     Spacer(Modifier.height(12.dp))
@@ -154,7 +154,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
             }
 
             val closed = state as? ConnState.Closed
-            AnimatedVisibility(closed != null, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.Center)) {
+            Fade(closed != null, Modifier.align(Alignment.Center)) {
                 Column(
                     Modifier
                         .padding(24.dp)
@@ -179,4 +179,10 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     }
 
     if (shots) ScreenshotSheet(conn, onDismiss = { shots = false })
+}
+
+/** Top-level so it isn't captured by the enclosing ColumnScope overload. */
+@Composable
+private fun Fade(visible: Boolean, modifier: Modifier, content: @Composable () -> Unit) {
+    AnimatedVisibility(visible, modifier, enter = fadeIn(), exit = fadeOut()) { content() }
 }
