@@ -126,4 +126,22 @@
     <string name="file_too_big">الملف كبير جدًا (الحد 512 ميغابايت)</string>
     <string name="file_unreadable">تعذّرت قراءة الملف</string>
     <string name="send_failed_generic">تعذّر الإرسال</string>
+    <string name="files">الملفات</string>
+    <string name="files_title">ملفات الكمبيوتر</string>
+    <string name="from_phone">من الهاتف</string>
+    <string name="from_pc">من الكمبيوتر</string>
+    <string name="browse_pc">تصفح ملفات الكمبيوتر</string>
+    <string name="download_to_phone">تنزيل إلى الهاتف</string>
+    <string name="insert_path">إدراج المسار في الطرفية</string>
+    <string name="copy_path">نسخ المسار</string>
+    <string name="upload_here">رفع هنا</string>
+    <string name="empty_folder">مجلد فارغ</string>
+    <string name="transfers">عمليات النقل</string>
+    <string name="clear">مسح</string>
+    <string name="saved_to">حُفظ في %1$s</string>
+    <string name="transfer_failed">فشل: %1$s</string>
+    <string name="cancelled">أُلغي</string>
+    <string name="cancel">إلغاء</string>
+    <string name="downloading">جارٍ تنزيل %1$s</string>
+    <string name="n_files">الملفات: %1$d</string>
 </resources>

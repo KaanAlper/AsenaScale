@@ -126,4 +126,22 @@
     <string name="file_too_big">Файл слишком большой (макс. 512 МБ)</string>
     <string name="file_unreadable">Не удалось прочитать файл</string>
     <string name="send_failed_generic">Не удалось отправить</string>
+    <string name="files">Файлы</string>
+    <string name="files_title">Файлы ПК</string>
+    <string name="from_phone">С телефона</string>
+    <string name="from_pc">С ПК</string>
+    <string name="browse_pc">Файлы на ПК</string>
+    <string name="download_to_phone">Скачать на телефон</string>
+    <string name="insert_path">Вставить путь в терминал</string>
+    <string name="copy_path">Копировать путь</string>
+    <string name="upload_here">Загрузить сюда</string>
+    <string name="empty_folder">Пустая папка</string>
+    <string name="transfers">Передачи</string>
+    <string name="clear">Очистить</string>
+    <string name="saved_to">Сохранено в %1$s</string>
+    <string name="transfer_failed">Ошибка: %1$s</string>
+    <string name="cancelled">Отменено</string>
+    <string name="cancel">Отмена</string>
+    <string name="downloading">Загрузка %1$s</string>
+    <string name="n_files">Файлов: %1$d</string>
 </resources>

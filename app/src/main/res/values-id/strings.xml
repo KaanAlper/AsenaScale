@@ -126,4 +126,22 @@
     <string name="file_too_big">Berkas terlalu besar (maks. 512 MB)</string>
     <string name="file_unreadable">Tidak bisa membaca berkas</string>
     <string name="send_failed_generic">Gagal mengirim</string>
+    <string name="files">Berkas</string>
+    <string name="files_title">Berkas PC</string>
+    <string name="from_phone">Dari ponsel</string>
+    <string name="from_pc">Dari PC</string>
+    <string name="browse_pc">Jelajahi berkas PC</string>
+    <string name="download_to_phone">Unduh ke ponsel</string>
+    <string name="insert_path">Sisipkan jalur ke terminal</string>
+    <string name="copy_path">Salin jalur</string>
+    <string name="upload_here">Unggah ke sini</string>
+    <string name="empty_folder">Folder kosong</string>
+    <string name="transfers">Transfer</string>
+    <string name="clear">Bersihkan</string>
+    <string name="saved_to">Disimpan ke %1$s</string>
+    <string name="transfer_failed">Gagal: %1$s</string>
+    <string name="cancelled">Dibatalkan</string>
+    <string name="cancel">Batal</string>
+    <string name="downloading">Mengunduh %1$s</string>
+    <string name="n_files">%1$d berkas</string>
 </resources>

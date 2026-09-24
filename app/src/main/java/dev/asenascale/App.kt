@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import dev.asenascale.data.HostStore
 import dev.asenascale.data.SessionIds
+import dev.asenascale.files.Transfers
 import dev.asenascale.ssh.Sessions
 import dev.asenascale.tailnet.Tailnet
 
@@ -17,6 +18,10 @@ class App : Application() {
         private set
     lateinit var sessionIds: SessionIds
         private set
+    lateinit var transfers: Transfers
+        private set
+    /** Last folder open in the PC file browser, per PC. */
+    val lastPcFolder = HashMap<String, String>()
 
     override fun onCreate() {
         super.onCreate()
@@ -25,6 +30,7 @@ class App : Application() {
         hosts = HostStore(this)
         sessionIds = SessionIds(this)
         sessions = Sessions(this)
+        transfers = Transfers(this)
         tailnet.startIfEnabled()
     }
 

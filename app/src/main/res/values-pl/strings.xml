@@ -126,4 +126,22 @@
     <string name="file_too_big">Plik jest za duży (maks. 512 MB)</string>
     <string name="file_unreadable">Nie udało się odczytać pliku</string>
     <string name="send_failed_generic">Nie udało się wysłać</string>
+    <string name="files">Pliki</string>
+    <string name="files_title">Pliki komputera</string>
+    <string name="from_phone">Z telefonu</string>
+    <string name="from_pc">Z komputera</string>
+    <string name="browse_pc">Przeglądaj pliki komputera</string>
+    <string name="download_to_phone">Pobierz na telefon</string>
+    <string name="insert_path">Wstaw ścieżkę do terminala</string>
+    <string name="copy_path">Kopiuj ścieżkę</string>
+    <string name="upload_here">Wyślij tutaj</string>
+    <string name="empty_folder">Pusty folder</string>
+    <string name="transfers">Transfery</string>
+    <string name="clear">Wyczyść</string>
+    <string name="saved_to">Zapisano w %1$s</string>
+    <string name="transfer_failed">Niepowodzenie: %1$s</string>
+    <string name="cancelled">Anulowano</string>
+    <string name="cancel">Anuluj</string>
+    <string name="downloading">Pobieranie %1$s</string>
+    <string name="n_files">Pliki: %1$d</string>
 </resources>

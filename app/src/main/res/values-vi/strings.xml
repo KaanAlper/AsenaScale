@@ -126,4 +126,22 @@
     <string name="file_too_big">Tệp quá lớn (tối đa 512 MB)</string>
     <string name="file_unreadable">Không đọc được tệp</string>
     <string name="send_failed_generic">Không gửi được</string>
+    <string name="files">Tệp</string>
+    <string name="files_title">Tệp trên PC</string>
+    <string name="from_phone">Từ điện thoại</string>
+    <string name="from_pc">Từ PC</string>
+    <string name="browse_pc">Duyệt tệp trên PC</string>
+    <string name="download_to_phone">Tải về điện thoại</string>
+    <string name="insert_path">Chèn đường dẫn vào terminal</string>
+    <string name="copy_path">Sao chép đường dẫn</string>
+    <string name="upload_here">Tải lên đây</string>
+    <string name="empty_folder">Thư mục trống</string>
+    <string name="transfers">Truyền tệp</string>
+    <string name="clear">Xóa</string>
+    <string name="saved_to">Đã lưu vào %1$s</string>
+    <string name="transfer_failed">Thất bại: %1$s</string>
+    <string name="cancelled">Đã hủy</string>
+    <string name="cancel">Hủy</string>
+    <string name="downloading">Đang tải %1$s</string>
+    <string name="n_files">%1$d tệp</string>
 </resources>

@@ -71,9 +71,16 @@ enum Chan {
     /// Attached to a persistent terminal session.
     Shell { session: Arc<Session>, client: u64 },
     Exec { stdin: Option<ChildStdin> },
-    /// `mc put NAME`: file bytes arrive as channel data until EOF.
-    Upload { name: String, data: Vec<u8>, handle: Handle },
+    /// `mc put NAME` / `mc write PATH OFFSET`: bytes arrive as channel data until EOF.
+    Upload { target: Target, data: Vec<u8>, handle: Handle },
     Busy,
+}
+
+enum Target {
+    /// A whole file for the received-files folder.
+    Put(String),
+    /// A byte range of a chunked upload.
+    Range(std::path::PathBuf, u64),
 }
 
 pub struct Conn {
@@ -273,7 +280,19 @@ impl russh::server::Handler for Conn {
         if let Some(encoded) = cmd.strip_prefix("mc put ") {
             // The name is base64url so spaces and non-ASCII survive any quoting.
             let name = crate::files::decode_name(encoded.trim());
-            self.channels.insert(channel, Chan::Upload { name, data: Vec::new(), handle });
+            self.channels.insert(channel, Chan::Upload { target: Target::Put(name), data: Vec::new(), handle });
+            return Ok(());
+        }
+        if let Some(rest) = cmd.strip_prefix("mc write ") {
+            let mut it = rest.split_whitespace();
+            let target = match (it.next().map(crate::files::decode_path), it.next().and_then(|o| o.parse().ok())) {
+                (Some(Ok(path)), Some(offset)) => Target::Range(path, offset),
+                _ => {
+                    tokio::spawn(async move { finish(&handle, channel, Vec::new(), "usage: mc write PATH OFFSET".into(), 2).await });
+                    return Ok(());
+                }
+            };
+            self.channels.insert(channel, Chan::Upload { target, data: Vec::new(), handle });
             return Ok(());
         }
 
@@ -312,8 +331,12 @@ impl russh::server::Handler for Conn {
             Some(Chan::Exec { stdin: Some(stdin) }) => {
                 stdin.write_all(data).await?;
             }
-            Some(Chan::Upload { data: buf, .. }) => {
-                if buf.len() + data.len() > crate::files::MAX_BYTES {
+            Some(Chan::Upload { data: buf, target, .. }) => {
+                let max = match target {
+                    Target::Put(_) => crate::files::MAX_BYTES,
+                    Target::Range(..) => crate::files::MAX_CHUNK,
+                };
+                if buf.len() + data.len() > max {
                     anyhow::bail!("upload too large");
                 }
                 buf.extend_from_slice(data);
@@ -327,9 +350,13 @@ impl russh::server::Handler for Conn {
         match self.channels.get_mut(&channel) {
             Some(Chan::Exec { stdin }) => *stdin = None, // closes the child's stdin
             Some(Chan::Upload { .. }) => {
-                if let Some(Chan::Upload { name, data, handle }) = self.channels.insert(channel, Chan::Busy) {
+                if let Some(Chan::Upload { target, data, handle }) = self.channels.insert(channel, Chan::Busy) {
                     tokio::spawn(async move {
-                        let saved = tokio::task::spawn_blocking(move || crate::files::save(&name, &data)).await;
+                        let saved = tokio::task::spawn_blocking(move || match target {
+                            Target::Put(name) => crate::files::save(&name, &data),
+                            Target::Range(path, offset) => crate::files::write_at(&path, offset, &data).map(|_| String::new()),
+                        })
+                        .await;
                         match saved {
                             Ok(Ok(path)) => finish(&handle, channel, path.into_bytes(), String::new(), 0).await,
                             Ok(Err(e)) => finish(&handle, channel, Vec::new(), format!("{e:#}"), 2).await,
@@ -421,6 +448,11 @@ fn builtin(args: &[String], sessions: &Sessions) -> anyhow::Result<Vec<u8>> {
             let id = args.get(2).map(String::as_str).unwrap_or("");
             crate::shot::shot(kind, id)
         }
+        Some("ls") => crate::files::list(args),
+        Some("read") => crate::files::read(args),
+        Some("prepare") => crate::files::prepare(args),
+        Some("done") => crate::files::done(args),
+        Some("abort") => crate::files::abort(args),
         Some("version") => Ok(format!("{SERVER_ID}\n").into_bytes()),
         _ => anyhow::bail!("unknown command"),
     }

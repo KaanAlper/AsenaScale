@@ -126,4 +126,22 @@
     <string name="file_too_big">فایل خیلی بزرگ است (حداکثر ۵۱۲ مگابایت)</string>
     <string name="file_unreadable">خواندن فایل ممکن نشد</string>
     <string name="send_failed_generic">ارسال نشد</string>
+    <string name="files">فایل‌ها</string>
+    <string name="files_title">فایل‌های رایانه</string>
+    <string name="from_phone">از تلفن</string>
+    <string name="from_pc">از رایانه</string>
+    <string name="browse_pc">مرور فایل‌های رایانه</string>
+    <string name="download_to_phone">دانلود به تلفن</string>
+    <string name="insert_path">درج مسیر در ترمینال</string>
+    <string name="copy_path">کپی مسیر</string>
+    <string name="upload_here">بارگذاری در اینجا</string>
+    <string name="empty_folder">پوشهٔ خالی</string>
+    <string name="transfers">انتقال‌ها</string>
+    <string name="clear">پاک کردن</string>
+    <string name="saved_to">ذخیره شد در %1$s</string>
+    <string name="transfer_failed">ناموفق: %1$s</string>
+    <string name="cancelled">لغو شد</string>
+    <string name="cancel">لغو</string>
+    <string name="downloading">در حال دانلود %1$s</string>
+    <string name="n_files">%1$d فایل</string>
 </resources>

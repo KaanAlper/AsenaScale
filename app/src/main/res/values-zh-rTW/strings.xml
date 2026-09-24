@@ -126,4 +126,22 @@
     <string name="file_too_big">檔案過大（上限 512 MB）</string>
     <string name="file_unreadable">無法讀取檔案</string>
     <string name="send_failed_generic">傳送失敗</string>
+    <string name="files">檔案</string>
+    <string name="files_title">電腦檔案</string>
+    <string name="from_phone">從手機</string>
+    <string name="from_pc">從電腦</string>
+    <string name="browse_pc">瀏覽電腦檔案</string>
+    <string name="download_to_phone">下載到手機</string>
+    <string name="insert_path">將路徑輸入終端機</string>
+    <string name="copy_path">複製路徑</string>
+    <string name="upload_here">上傳到這裡</string>
+    <string name="empty_folder">空資料夾</string>
+    <string name="transfers">傳輸</string>
+    <string name="clear">清除</string>
+    <string name="saved_to">已儲存到 %1$s</string>
+    <string name="transfer_failed">失敗：%1$s</string>
+    <string name="cancelled">已取消</string>
+    <string name="cancel">取消</string>
+    <string name="downloading">正在下載 %1$s</string>
+    <string name="n_files">%1$d 個檔案</string>
 </resources>

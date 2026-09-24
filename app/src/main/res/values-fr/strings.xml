@@ -126,4 +126,22 @@
     <string name="file_too_big">Fichier trop volumineux (512 Mo max)</string>
     <string name="file_unreadable">Impossible de lire le fichier</string>
     <string name="send_failed_generic">Échec de l\'envoi</string>
+    <string name="files">Fichiers</string>
+    <string name="files_title">Fichiers du PC</string>
+    <string name="from_phone">Depuis le téléphone</string>
+    <string name="from_pc">Depuis le PC</string>
+    <string name="browse_pc">Parcourir les fichiers du PC</string>
+    <string name="download_to_phone">Télécharger sur le téléphone</string>
+    <string name="insert_path">Insérer le chemin dans le terminal</string>
+    <string name="copy_path">Copier le chemin</string>
+    <string name="upload_here">Envoyer ici</string>
+    <string name="empty_folder">Dossier vide</string>
+    <string name="transfers">Transferts</string>
+    <string name="clear">Effacer</string>
+    <string name="saved_to">Enregistré dans %1$s</string>
+    <string name="transfer_failed">Échec : %1$s</string>
+    <string name="cancelled">Annulé</string>
+    <string name="cancel">Annuler</string>
+    <string name="downloading">Téléchargement de %1$s</string>
+    <string name="n_files">%1$d fichiers</string>
 </resources>

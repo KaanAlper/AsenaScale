@@ -126,4 +126,22 @@
     <string name="file_too_big">Arquivo grande demais (máx. 512 MB)</string>
     <string name="file_unreadable">Não foi possível ler o arquivo</string>
     <string name="send_failed_generic">Falha ao enviar</string>
+    <string name="files">Arquivos</string>
+    <string name="files_title">Arquivos do PC</string>
+    <string name="from_phone">Do telefone</string>
+    <string name="from_pc">Do PC</string>
+    <string name="browse_pc">Explorar arquivos do PC</string>
+    <string name="download_to_phone">Baixar no telefone</string>
+    <string name="insert_path">Inserir caminho no terminal</string>
+    <string name="copy_path">Copiar caminho</string>
+    <string name="upload_here">Enviar para cá</string>
+    <string name="empty_folder">Pasta vazia</string>
+    <string name="transfers">Transferências</string>
+    <string name="clear">Limpar</string>
+    <string name="saved_to">Salvo em %1$s</string>
+    <string name="transfer_failed">Falhou: %1$s</string>
+    <string name="cancelled">Cancelado</string>
+    <string name="cancel">Cancelar</string>
+    <string name="downloading">Baixando %1$s</string>
+    <string name="n_files">%1$d arquivos</string>
 </resources>

@@ -126,4 +126,22 @@
     <string name="file_too_big">Dosya çok büyük (en fazla 512 MB)</string>
     <string name="file_unreadable">Dosya okunamadı</string>
     <string name="send_failed_generic">Gönderilemedi</string>
+    <string name="files">Dosyalar</string>
+    <string name="files_title">PC dosyaları</string>
+    <string name="from_phone">Telefondan</string>
+    <string name="from_pc">PC\'den</string>
+    <string name="browse_pc">PC dosyalarına göz at</string>
+    <string name="download_to_phone">Telefona indir</string>
+    <string name="insert_path">Yolu terminale yaz</string>
+    <string name="copy_path">Yolu kopyala</string>
+    <string name="upload_here">Buraya yükle</string>
+    <string name="empty_folder">Boş klasör</string>
+    <string name="transfers">Aktarımlar</string>
+    <string name="clear">Temizle</string>
+    <string name="saved_to">Kaydedildi: %1$s</string>
+    <string name="transfer_failed">Başarısız: %1$s</string>
+    <string name="cancelled">İptal edildi</string>
+    <string name="cancel">İptal</string>
+    <string name="downloading">İndiriliyor: %1$s</string>
+    <string name="n_files">%1$d dosya</string>
 </resources>

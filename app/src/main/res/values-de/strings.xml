@@ -126,4 +126,22 @@
     <string name="file_too_big">Datei zu groß (max. 512 MB)</string>
     <string name="file_unreadable">Datei konnte nicht gelesen werden</string>
     <string name="send_failed_generic">Senden fehlgeschlagen</string>
+    <string name="files">Dateien</string>
+    <string name="files_title">PC-Dateien</string>
+    <string name="from_phone">Vom Telefon</string>
+    <string name="from_pc">Vom PC</string>
+    <string name="browse_pc">PC-Dateien durchsuchen</string>
+    <string name="download_to_phone">Aufs Telefon laden</string>
+    <string name="insert_path">Pfad ins Terminal einfügen</string>
+    <string name="copy_path">Pfad kopieren</string>
+    <string name="upload_here">Hierher hochladen</string>
+    <string name="empty_folder">Leerer Ordner</string>
+    <string name="transfers">Übertragungen</string>
+    <string name="clear">Leeren</string>
+    <string name="saved_to">Gespeichert in %1$s</string>
+    <string name="transfer_failed">Fehlgeschlagen: %1$s</string>
+    <string name="cancelled">Abgebrochen</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="downloading">Lade %1$s herunter</string>
+    <string name="n_files">%1$d Dateien</string>
 </resources>

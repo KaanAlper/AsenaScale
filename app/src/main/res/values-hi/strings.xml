@@ -126,4 +126,22 @@
     <string name="file_too_big">फ़ाइल बहुत बड़ी है (अधिकतम 512 MB)</string>
     <string name="file_unreadable">फ़ाइल पढ़ी नहीं जा सकी</string>
     <string name="send_failed_generic">भेजा नहीं जा सका</string>
+    <string name="files">फ़ाइलें</string>
+    <string name="files_title">PC फ़ाइलें</string>
+    <string name="from_phone">फ़ोन से</string>
+    <string name="from_pc">PC से</string>
+    <string name="browse_pc">PC फ़ाइलें देखें</string>
+    <string name="download_to_phone">फ़ोन पर डाउनलोड करें</string>
+    <string name="insert_path">पाथ टर्मिनल में डालें</string>
+    <string name="copy_path">पाथ कॉपी करें</string>
+    <string name="upload_here">यहाँ अपलोड करें</string>
+    <string name="empty_folder">खाली फ़ोल्डर</string>
+    <string name="transfers">ट्रांसफ़र</string>
+    <string name="clear">साफ़ करें</string>
+    <string name="saved_to">%1$s में सहेजा गया</string>
+    <string name="transfer_failed">विफल: %1$s</string>
+    <string name="cancelled">रद्द किया गया</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="downloading">%1$s डाउनलोड हो रहा है</string>
+    <string name="n_files">%1$d फ़ाइलें</string>
 </resources>

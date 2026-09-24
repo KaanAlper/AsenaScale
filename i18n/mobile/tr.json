@@ -14,7 +14,6 @@
   "badge_open": "açık",
   "online": "çevrimiçi",
   "offline": "çevrimdışı",
-
   "my_ssh_key": "SSH anahtarım",
   "section_computers": "Bilgisayarlar",
   "section_devices": "Cihazlar",
@@ -30,7 +29,6 @@
   "copy_windows_setup": "Windows kurulum komutunu kopyala",
   "key_dialog_linux": "Linux/macOS: aşağıdaki satırı ~/.ssh/authorized_keys dosyasına ekle (Tailscale SSH kullanıyorsan gerek yok).",
   "copy_key": "Anahtarı kopyala",
-
   "device_system": "Sistem",
   "device_link": "Bağlantı",
   "link_direct": "Doğrudan  %1$s",
@@ -44,7 +42,6 @@
   "seen_minutes": "%1$d dk önce görüldü",
   "seen_hours": "%1$d sa önce görüldü",
   "seen_days": "%1$d gün önce görüldü",
-
   "add_computer": "Bilgisayar ekle",
   "field_name": "Ad",
   "field_name_hint": "Masaüstü",
@@ -73,11 +70,9 @@
   "link_copied": "Bağlantı kopyalandı",
   "alt_openssh": "Alternatif: Windows OpenSSH kurulum komutu",
   "command_copied": "Komut kopyalandı",
-
   "launcher_note": "Her biri PC'de ayrı ve kalıcı bir terminal: uygulamayı kapatsan da çalışmaya devam eder.",
   "tool_shell": "Kabuk",
   "tool_shell_desc": "PowerShell / kabuk",
-
   "screenshot": "Ekran görüntüsü",
   "whole_screen": "Tüm ekran",
   "active_window": "Aktif pencere",
@@ -90,10 +85,8 @@
   "shot_no_window": "Pencere bulunamadı (kapanmış olabilir). Listeyi yenile.",
   "shot_locked": "PC'nin ekranı kilitli görünüyor. Kilidi açıkken dene.",
   "shot_no_powershell": "PC'de PowerShell bulunamadı.",
-
   "select_text": "Metin seç",
   "copy_all": "Tümünü kopyala",
-
   "sending": "Gönderiliyor…",
   "sending_n": "Gönderiliyor %1$d/%2$d…",
   "send_failed": "Gönderilemedi: %1$s",
@@ -108,7 +101,6 @@
   "connecting_to": "%1$s bağlanıyor…",
   "disconnected": "Bağlantı kesildi",
   "copy_ssh_key_hint": "SSH anahtarını kopyala (authorized_keys için)",
-
   "err_tailscale_off": "Tailscale bağlı değil. Ana ekrandan aç ve giriş yap.",
   "hint_approve": "PC'de çıkan izin penceresinde “Evet”e bas (ilk bağlantıda bir kez).",
   "conn_closed": "Bağlantı kapandı",
@@ -125,13 +117,29 @@
   "err_auth": "Kimlik doğrulama başarısız. Kullanıcı adını ve anahtarı ya da şifreyi kontrol et.",
   "err_timeout": "Zaman aşımı: bilgisayar açık ve Tailscale'e bağlı mı?",
   "err_refused_generic": "Bağlantı reddedildi: PC'de SSH sunucusu çalışıyor mu? (Windows'ta: AsenaScale'i kur.)",
-
   "notif_channel": "Açık oturumlar",
   "notif_one": "1 terminal açık",
   "notif_many": "%1$d terminal açık",
   "notif_text": "Tailscale üzerinden bağlı",
-
   "file_too_big": "Dosya çok büyük (en fazla 512 MB)",
   "file_unreadable": "Dosya okunamadı",
-  "send_failed_generic": "Gönderilemedi"
+  "send_failed_generic": "Gönderilemedi",
+  "files": "Dosyalar",
+  "files_title": "PC dosyaları",
+  "from_phone": "Telefondan",
+  "from_pc": "PC'den",
+  "browse_pc": "PC dosyalarına göz at",
+  "download_to_phone": "Telefona indir",
+  "insert_path": "Yolu terminale yaz",
+  "copy_path": "Yolu kopyala",
+  "upload_here": "Buraya yükle",
+  "empty_folder": "Boş klasör",
+  "transfers": "Aktarımlar",
+  "clear": "Temizle",
+  "saved_to": "Kaydedildi: %1$s",
+  "transfer_failed": "Başarısız: %1$s",
+  "cancelled": "İptal edildi",
+  "cancel": "İptal",
+  "downloading": "İndiriliyor: %1$s",
+  "n_files": "%1$d dosya"
 }

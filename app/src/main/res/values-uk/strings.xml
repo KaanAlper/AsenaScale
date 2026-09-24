@@ -126,4 +126,22 @@
     <string name="file_too_big">Файл завеликий (макс. 512 МБ)</string>
     <string name="file_unreadable">Не вдалося прочитати файл</string>
     <string name="send_failed_generic">Не вдалося надіслати</string>
+    <string name="files">Файли</string>
+    <string name="files_title">Файли ПК</string>
+    <string name="from_phone">З телефона</string>
+    <string name="from_pc">З ПК</string>
+    <string name="browse_pc">Файли на ПК</string>
+    <string name="download_to_phone">Завантажити на телефон</string>
+    <string name="insert_path">Вставити шлях у термінал</string>
+    <string name="copy_path">Копіювати шлях</string>
+    <string name="upload_here">Вивантажити сюди</string>
+    <string name="empty_folder">Порожня тека</string>
+    <string name="transfers">Передавання</string>
+    <string name="clear">Очистити</string>
+    <string name="saved_to">Збережено в %1$s</string>
+    <string name="transfer_failed">Помилка: %1$s</string>
+    <string name="cancelled">Скасовано</string>
+    <string name="cancel">Скасувати</string>
+    <string name="downloading">Завантаження %1$s</string>
+    <string name="n_files">Файлів: %1$d</string>
 </resources>

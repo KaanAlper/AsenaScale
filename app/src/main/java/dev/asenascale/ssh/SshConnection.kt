@@ -245,45 +245,8 @@ class SshConnection(
     }
 
     /** Runs [command] on the machine, optionally piping [stdin]; returns stdout. */
-    fun exec(command: String, stdin: ByteArray? = null, timeoutMs: Long = 30_000): ExecResult {
-        val s = session ?: error(str(R.string.not_connected))
-        val ch = s.openChannel("exec") as ChannelExec
-        ch.setCommand(command)
-        val out = ByteArrayOutputStream()
-        val err = ByteArrayOutputStream()
-        ch.setErrStream(err)
-        val input = ch.inputStream
-        val stdinStream = ch.outputStream
-        ch.connect(10_000)
-        // Reads block, so a watchdog closes the channel if the command hangs.
-        var timedOut = false
-        val watchdog = Thread {
-            try {
-                Thread.sleep(timeoutMs)
-                timedOut = true
-                ch.disconnect()
-            } catch (_: InterruptedException) {
-            }
-        }.apply { isDaemon = true; start() }
-        try {
-            if (stdin != null) stdinStream.write(stdin)
-            stdinStream.close()
-            val buf = ByteArray(64 * 1024)
-            while (true) {
-                val n = input.read(buf)
-                if (n < 0) break
-                out.write(buf, 0, n)
-            }
-            while (!ch.isClosed && !timedOut) Thread.sleep(10)
-        } catch (e: java.io.IOException) {
-            if (!timedOut) throw e
-        } finally {
-            watchdog.interrupt()
-            ch.disconnect()
-        }
-        if (timedOut) error(str(R.string.err_exec_timeout))
-        return ExecResult(ch.exitStatus, out.toByteArray(), err.toString(Charsets.UTF_8.name()))
-    }
+    fun exec(command: String, stdin: ByteArray? = null, timeoutMs: Long = 30_000): ExecResult =
+        execOn(session ?: error(str(R.string.not_connected)), command, stdin, timeoutMs)
 
     /**
      * Copies a file to the PC's Downloads/AsenaScale folder over SFTP (for
@@ -378,3 +341,44 @@ class SshConnection(
 }
 
 class ExecResult(val exitCode: Int, val stdout: ByteArray, val stderr: String)
+
+/** Runs [command] over [s] in its own channel, optionally piping [stdin]. */
+fun execOn(s: Session, command: String, stdin: ByteArray? = null, timeoutMs: Long = 30_000): ExecResult {
+    val ch = s.openChannel("exec") as ChannelExec
+    ch.setCommand(command)
+    val out = ByteArrayOutputStream()
+    val err = ByteArrayOutputStream()
+    ch.setErrStream(err)
+    val input = ch.inputStream
+    val stdinStream = ch.outputStream
+    ch.connect(10_000)
+    // Reads block, so a watchdog closes the channel if the command hangs.
+    var timedOut = false
+    val watchdog = Thread {
+        try {
+            Thread.sleep(timeoutMs)
+            timedOut = true
+            ch.disconnect()
+        } catch (_: InterruptedException) {
+        }
+    }.apply { isDaemon = true; start() }
+    try {
+        if (stdin != null) stdinStream.write(stdin)
+        stdinStream.close()
+        val buf = ByteArray(64 * 1024)
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            out.write(buf, 0, n)
+        }
+        while (!ch.isClosed && !timedOut) Thread.sleep(10)
+    } catch (e: java.io.IOException) {
+        if (!timedOut) throw e
+    } finally {
+        watchdog.interrupt()
+        ch.disconnect()
+    }
+    if (timedOut) error(App.instance.getString(R.string.err_exec_timeout))
+    return ExecResult(ch.exitStatus, out.toByteArray(), err.toString(Charsets.UTF_8.name()))
+}
+

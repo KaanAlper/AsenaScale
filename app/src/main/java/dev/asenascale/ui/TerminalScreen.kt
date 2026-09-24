@@ -112,8 +112,18 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
     val scope = rememberCoroutineScope()
     var uploading by remember { mutableStateOf<String?>(null) }
     var attachMenu by remember { mutableStateOf(false) }
+    var files by remember { mutableStateOf<Boolean?>(null) } // null = closed, true = pick a path
+    fun insertPath(path: String) {
+        conn.sendText(Uploads.quoted(path) + " ")
+        term.showKeyboard()
+    }
     fun upload(uris: List<Uri>) {
         if (uris.isEmpty() || uploading != null) return
+        if (conn.isHostApp) {
+            // Chunked, parallel, with progress; each path is typed in as it lands.
+            for (uri in uris) app.transfers.upload(host, uri, "", onDone = { insertPath(it) })
+            return
+        }
         scope.launch {
             val paths = mutableListOf<String>()
             for ((i, uri) in uris.withIndex()) {
@@ -123,10 +133,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                     .onFailure { Toast.makeText(context, context.getString(R.string.send_failed, it.message ?: ""), Toast.LENGTH_LONG).show() }
             }
             uploading = null
-            if (paths.isNotEmpty()) {
-                conn.sendText(paths.joinToString(" ") { Uploads.quoted(it) } + " ")
-                term.showKeyboard()
-            }
+            paths.forEach { insertPath(it) }
         }
     }
     val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { upload(it) }
@@ -177,6 +184,12 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                     onDismissRequest = { attachMenu = false },
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
+                    Text(
+                        stringResource(R.string.from_phone),
+                        style = MonoSmall,
+                        color = Pal.overlay0,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.photo_video)) },
                         leadingIcon = { Icon(AsIcons.Image, null) },
@@ -190,6 +203,19 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                         leadingIcon = { Icon(AsIcons.File, null) },
                         onClick = { attachMenu = false; pickFiles.launch("*/*") },
                     )
+                    if (conn.isHostApp) {
+                        Text(
+                            stringResource(R.string.from_pc),
+                            style = MonoSmall,
+                            color = Pal.overlay0,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.browse_pc)) },
+                            leadingIcon = { Icon(AsIcons.Folder, null) },
+                            onClick = { attachMenu = false; files = true },
+                        )
+                    }
                 }
             }
             IconButton(onClick = { app.clipboardText()?.let { term.paste(it) } }) {
@@ -202,6 +228,12 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
                     onDismissRequest = { menu = false },
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
+                    if (conn.isHostApp) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.files)) }, onClick = {
+                            menu = false
+                            files = false
+                        })
+                    }
                     DropdownMenuItem(text = { Text(stringResource(R.string.select_text)) }, onClick = {
                         menu = false
                         selectText = term.copyAllText()
@@ -247,6 +279,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
             )
         }
 
+        TransferBar(host.id)
         uploading?.let {
             Column(Modifier.fillMaxWidth()) {
                 LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp), color = Pal.mauve, trackColor = Pal.surface0)
@@ -322,6 +355,7 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
     }
 
     if (shots) ScreenshotSheet(conn, onDismiss = { shots = false })
+    files?.let { pick -> FilesSheet(conn, pick = pick, onInsertPath = { insertPath(it) }, onDismiss = { files = null }) }
     selectText?.let { SelectTextDialog(it, onDismiss = { selectText = null }) }
     if (launcher) {
         LauncherSheet(

@@ -126,4 +126,22 @@
     <string name="file_too_big">파일이 너무 큽니다 (최대 512 MB)</string>
     <string name="file_unreadable">파일을 읽지 못했습니다</string>
     <string name="send_failed_generic">보내지 못했습니다</string>
+    <string name="files">파일</string>
+    <string name="files_title">PC 파일</string>
+    <string name="from_phone">휴대폰에서</string>
+    <string name="from_pc">PC에서</string>
+    <string name="browse_pc">PC 파일 보기</string>
+    <string name="download_to_phone">휴대폰으로 다운로드</string>
+    <string name="insert_path">경로를 터미널에 입력</string>
+    <string name="copy_path">경로 복사</string>
+    <string name="upload_here">여기에 업로드</string>
+    <string name="empty_folder">빈 폴더</string>
+    <string name="transfers">전송</string>
+    <string name="clear">지우기</string>
+    <string name="saved_to">%1$s에 저장됨</string>
+    <string name="transfer_failed">실패: %1$s</string>
+    <string name="cancelled">취소됨</string>
+    <string name="cancel">취소</string>
+    <string name="downloading">%1$s 다운로드 중</string>
+    <string name="n_files">파일 %1$d개</string>
 </resources>

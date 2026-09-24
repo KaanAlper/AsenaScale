@@ -126,4 +126,22 @@
     <string name="file_too_big">Bestand te groot (max. 512 MB)</string>
     <string name="file_unreadable">Bestand kon niet gelezen worden</string>
     <string name="send_failed_generic">Verzenden mislukt</string>
+    <string name="files">Bestanden</string>
+    <string name="files_title">Pc-bestanden</string>
+    <string name="from_phone">Van telefoon</string>
+    <string name="from_pc">Van pc</string>
+    <string name="browse_pc">Pc-bestanden bekijken</string>
+    <string name="download_to_phone">Naar telefoon downloaden</string>
+    <string name="insert_path">Pad in terminal invoegen</string>
+    <string name="copy_path">Pad kopiëren</string>
+    <string name="upload_here">Hierheen uploaden</string>
+    <string name="empty_folder">Lege map</string>
+    <string name="transfers">Overdrachten</string>
+    <string name="clear">Wissen</string>
+    <string name="saved_to">Opgeslagen in %1$s</string>
+    <string name="transfer_failed">Mislukt: %1$s</string>
+    <string name="cancelled">Geannuleerd</string>
+    <string name="cancel">Annuleren</string>
+    <string name="downloading">%1$s downloaden</string>
+    <string name="n_files">%1$d bestanden</string>
 </resources>

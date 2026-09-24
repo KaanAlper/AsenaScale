@@ -127,4 +127,22 @@
     <string name="file_too_big">File too large (512 MB max)</string>
     <string name="file_unreadable">Couldn\'t read the file</string>
     <string name="send_failed_generic">Couldn\'t send</string>
+    <string name="files">Files</string>
+    <string name="files_title">PC files</string>
+    <string name="from_phone">From phone</string>
+    <string name="from_pc">From PC</string>
+    <string name="browse_pc">Browse PC files</string>
+    <string name="download_to_phone">Download to phone</string>
+    <string name="insert_path">Insert path in terminal</string>
+    <string name="copy_path">Copy path</string>
+    <string name="upload_here">Upload here</string>
+    <string name="empty_folder">Empty folder</string>
+    <string name="transfers">Transfers</string>
+    <string name="clear">Clear</string>
+    <string name="saved_to">Saved to %1$s</string>
+    <string name="transfer_failed">Failed: %1$s</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="cancel">Cancel</string>
+    <string name="downloading">Downloading %1$s</string>
+    <string name="n_files">%1$d files</string>
 </resources>
