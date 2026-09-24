@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
         val app = App.instance
         setContent {
             AsenaScaleTheme {
-                // "home" | "edit:<id or new>" | "edit:new:<address>" | "term:<id>"
+                // "home" | "edit:<id or new>" | "edit:new:<address>" | "term:<hostId>/<toolId>"
                 var route by rememberSaveable { mutableStateOf("home") }
                 BackHandler(enabled = route != "home") { route = "home" }
 
@@ -46,10 +46,15 @@ class MainActivity : ComponentActivity() {
                     label = "route",
                 ) { r ->
                     when {
-                        r.startsWith("term:") -> TerminalScreen(
-                            hostId = r.removePrefix("term:"),
-                            onBack = { route = "home" },
-                        )
+                        r.startsWith("term:") -> {
+                            val (hostId, toolId) = r.removePrefix("term:").split('/', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+                            TerminalScreen(
+                                hostId = hostId,
+                                toolId = toolId,
+                                onSwitch = { route = "term:$hostId/$it" },
+                                onBack = { route = "home" },
+                            )
+                        }
                         r.startsWith("edit:") -> {
                             val arg = r.removePrefix("edit:")
                             HostEditScreen(
@@ -59,7 +64,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         else -> HomeScreen(
-                            onOpenHost = { route = "term:${it.id}" },
+                            onOpenTerminal = { host, tool -> route = "term:${host.id}/${tool.id}" },
                             onEditHost = { route = "edit:${it.id}" },
                             onNewHost = { address -> route = "edit:new:${address.orEmpty()}" },
                         )

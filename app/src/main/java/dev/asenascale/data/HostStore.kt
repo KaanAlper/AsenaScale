@@ -20,8 +20,6 @@ data class Host(
     val password: String = "",
     /** Typed into the shell right after connecting, e.g. "claude". */
     val startup: String = "",
-    /** Id of this phone's terminal session on the PC app, reused to resume it. */
-    val session: String = "",
 ) {
     val title get() = name.ifBlank { address }
 }
@@ -51,7 +49,6 @@ class HostStore(context: Context) {
                     .put("id", it.id).put("name", it.name).put("address", it.address)
                     .put("port", it.port).put("user", it.user).put("auth", it.auth.name)
                     .put("password", it.password).put("startup", it.startup)
-                    .put("session", it.session)
             )
         }
         prefs.edit().putString("list", arr.toString()).apply()
@@ -70,7 +67,6 @@ class HostStore(context: Context) {
                 auth = runCatching { AuthMode.valueOf(o.optString("auth")) }.getOrDefault(AuthMode.KEY),
                 password = o.optString("password"),
                 startup = o.optString("startup"),
-                session = o.optString("session"),
             )
         }
     }

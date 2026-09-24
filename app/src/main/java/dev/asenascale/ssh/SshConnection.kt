@@ -14,6 +14,8 @@ import com.termux.terminal.TerminalEmulator
 import dev.asenascale.App
 import dev.asenascale.data.AuthMode
 import dev.asenascale.data.Host
+import dev.asenascale.data.Tool
+import dev.asenascale.data.sessionKey
 import dev.asenascale.term.Term
 import dev.asenascale.tailnet.HOST_APP_PORT
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +39,15 @@ sealed interface ConnState {
  * happen on a reader thread and are batched into one main-thread post per
  * burst; writes go through a single-thread executor so the UI never blocks.
  */
-class SshConnection(val host: Host, previous: SshConnection? = null, val attempt: Int = 0) {
+class SshConnection(
+    val host: Host,
+    val tool: Tool,
+    previous: SshConnection? = null,
+    val attempt: Int = 0,
+) {
+    /** Identifies this terminal among the open ones: host + tool. */
+    val key: String = sessionKey(host.id, tool.id)
+
     private val app = App.instance
     private val main = Handler(Looper.getMainLooper())
     private val writer = Executors.newSingleThreadExecutor()
@@ -67,7 +77,7 @@ class SshConnection(val host: Host, previous: SshConnection? = null, val attempt
     val title: StateFlow<String> get() = term.title
 
     /** Id of the terminal session on the PC app (kept across reconnects and app restarts). */
-    val sessionId: String = host.session.ifBlank { "p" + java.util.UUID.randomUUID().toString().replace("-", "").take(12) }
+    val sessionId: String = App.instance.sessionIds.getOrCreate(key)
 
     /** Set when the user leaves on purpose; no automatic reconnect then. */
     @Volatile var userClosed = false
@@ -94,12 +104,15 @@ class SshConnection(val host: Host, previous: SshConnection? = null, val attempt
     init {
         term.sink = { send(it) }
         isHostApp = previous?.isHostApp ?: false
-        if (host.session.isBlank()) {
-            App.instance.hosts.get(host.id)?.let { App.instance.hosts.save(it.copy(session = sessionId)) }
-        }
     }
 
+    /** connect() was called; it runs once. */
+    @Volatile var started = false
+        private set
+
     fun connect() {
+        if (started) return
+        started = true
         _state.value = ConnState.Connecting
         Thread({ runConnect() }, "ssh-${host.title}").start()
     }
@@ -163,7 +176,7 @@ class SshConnection(val host: Host, previous: SshConnection? = null, val attempt
             if (isHostApp) {
                 // The PC app keeps the session alive between connections.
                 ch.setEnv("AS_SESSION", sessionId)
-                ch.setEnv("AS_CMD", host.startup.trim())
+                ch.setEnv("AS_CMD", tool.command)
             }
             val input = ch.inputStream
             shellOut = ch.outputStream
@@ -173,7 +186,7 @@ class SshConnection(val host: Host, previous: SshConnection? = null, val attempt
             everConnected = true
 
             // The PC app starts the command itself (and only once per session).
-            if (!isHostApp && host.startup.isNotBlank()) send((host.startup.trim() + "\r").toByteArray())
+            if (!isHostApp && tool.command.isNotBlank()) send((tool.command + "\r").toByteArray())
             readLoop(input)
             close("Bağlantı kapandı")
         } catch (e: Exception) {

@@ -98,7 +98,7 @@ fun HostEditScreen(host: Host?, suggestedAddress: String?, onDone: () -> Unit) {
             IconButton(onClick = onDone) { Icon(AsIcons.Back, "Geri") }
             Text(if (host == null) "Bilgisayar ekle" else "Düzenle", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             if (host != null) {
-                IconButton(onClick = { app.sessions.disconnect(host.id); app.hosts.delete(host.id); onDone() }) {
+                IconButton(onClick = { app.sessions.disconnectHost(host.id); app.hosts.delete(host.id); onDone() }) {
                     Icon(AsIcons.Trash, "Sil", tint = Pal.red)
                 }
             }

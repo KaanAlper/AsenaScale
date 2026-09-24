@@ -38,6 +38,12 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import dev.asenascale.tailnet.HOST_APP_PORT
+import dev.asenascale.data.Tool
+import dev.asenascale.data.AuthMode
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,7 +68,7 @@ import dev.asenascale.tailnet.TailnetState
 
 @Composable
 fun HomeScreen(
-    onOpenHost: (Host) -> Unit,
+    onOpenTerminal: (Host, Tool) -> Unit,
     onEditHost: (Host) -> Unit,
     onNewHost: (address: String?) -> Unit,
 ) {
@@ -71,6 +77,17 @@ fun HomeScreen(
     val hosts by app.hosts.hosts.collectAsState()
     val open by app.sessions.open.collectAsState()
     var showKey by remember { mutableStateOf(false) }
+    var launcherFor by remember { mutableStateOf<Host?>(null) }
+    val onOpenHost: (Host) -> Unit = { launcherFor = it }
+
+    // PCs running AsenaScale show up by themselves: while this screen is
+    // open, online non-phone devices are knocked on once a minute.
+    LaunchedEffect(ts.running) {
+        while (ts.running) {
+            withContext(Dispatchers.IO) { discoverHostApps() }
+            delay(60_000)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -105,17 +122,16 @@ fun HomeScreen(
         }
         if (hosts.isEmpty()) {
             item {
-                Hint("Aşağıdaki cihazlardan birine dokunarak bilgisayarını ekle.")
+                Hint("AsenaScale'i PC'de çalıştır, burada kendiliğinden görünür. Ya da aşağıdan bir cihaza dokun.")
             }
         }
         items(hosts, key = { it.id }) { host ->
             val peer = ts.peers.firstOrNull { it.matches(host.address) }
-            val conn = open[host.id]
-            val connState = conn?.state?.collectAsState()?.value
+            val openHere = open.values.count { it.host.id == host.id && it.state.collectAsState().value !is ConnState.Closed }
             HostRow(
                 host = host,
                 online = peer?.online,
-                sessionOpen = connState != null && connState !is ConnState.Closed,
+                sessionOpen = openHere > 0,
                 onClick = { onOpenHost(host) },
                 onEdit = { onEditHost(host) },
             )
@@ -135,6 +151,42 @@ fun HomeScreen(
     }
 
     if (showKey) KeyDialog(onDismiss = { showKey = false })
+    launcherFor?.let { host ->
+        LauncherSheet(
+            host = host,
+            onPick = { tool -> launcherFor = null; onOpenTerminal(host, tool) },
+            onEdit = { launcherFor = null; onEditHost(host) },
+            onDismiss = { launcherFor = null },
+        )
+    }
+}
+
+private val checked = HashMap<String, Long>()
+
+/** Adds every online PC that runs the AsenaScale app to the saved hosts. */
+private fun discoverHostApps() {
+    val app = App.instance
+    val now = System.currentTimeMillis()
+    val candidates = app.tailnet.state.value.peers.filter { peer ->
+        peer.online && !peer.os.equals("android", true) && !peer.os.equals("iOS", true) &&
+            app.hosts.hosts.value.none { peer.matches(it.address) } &&
+            (checked[peer.dnsName] ?: 0L) < now - 5 * 60_000
+    }
+    for (peer in candidates) {
+        checked[peer.dnsName] = now
+        val ip = peer.ipv4 ?: continue
+        if (app.tailnet.isHostApp(ip)) {
+            app.hosts.save(
+                Host(
+                    name = peer.shortName.removePrefix("asenascale-"),
+                    address = peer.shortName,
+                    port = HOST_APP_PORT,
+                    user = "pc",
+                    auth = AuthMode.KEY,
+                ),
+            )
+        }
+    }
 }
 
 private fun Peer.matches(address: String): Boolean {

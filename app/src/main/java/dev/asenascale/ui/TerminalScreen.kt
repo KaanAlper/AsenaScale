@@ -15,6 +15,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import dev.asenascale.data.Tools
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +69,7 @@ import dev.asenascale.ssh.Keys
 import dev.asenascale.term.TerminalCanvasView
 
 @Composable
-fun TerminalScreen(hostId: String, onBack: () -> Unit) {
+fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) -> Unit, onBack: () -> Unit) {
     val app = App.instance
     val context = LocalContext.current
     val host = remember(hostId) { app.hosts.get(hostId) }
@@ -73,10 +78,13 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
         return
     }
 
+    val tool = remember(hostId, toolId) { if (toolId.isEmpty()) Tools.default(host) else Tools.find(host, toolId) }
     // The connection can be swapped under us (automatic reconnect); follow it.
-    val first = remember(hostId) { app.sessions.connect(host) }
+    val first = remember(hostId, tool.id) { app.sessions.connect(host, tool) }
     val open by app.sessions.open.collectAsState()
-    val conn = open[hostId] ?: first
+    val conn = open[first.key] ?: first
+    val tabs = open.values.filter { it.host.id == hostId }.sortedBy { it.tool.name }
+    var launcher by remember { mutableStateOf(false) }
     val state by conn.state.collectAsState()
     val title by conn.title.collectAsState()
     val term = remember { TerminalCanvasView(context) }
@@ -91,7 +99,7 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
     LaunchedEffect(state) { if (state is ConnState.Connected) term.showKeyboard() }
     DisposableEffect(Unit) { onDispose { term.connection = null } }
 
-    fun reconnect() = app.sessions.reconnect(host.id)
+    fun reconnect() = app.sessions.reconnect(conn.key)
 
     var selectText by remember { mutableStateOf<String?>(null) }
     term.onLongPress = { selectText = term.copyAllText() }
@@ -198,16 +206,42 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
                     DropdownMenuItem(text = { Text("Yeniden bağlan") }, onClick = { menu = false; reconnect() })
                     DropdownMenuItem(text = { Text("Ayrıl (PC'de çalışmaya devam etsin)") }, onClick = {
                         menu = false
-                        app.sessions.disconnect(host.id)
+                        app.sessions.disconnect(conn.key)
                         onBack()
                     })
                     DropdownMenuItem(text = { Text("Oturumu sonlandır", color = Pal.red) }, onClick = {
                         menu = false
-                        app.sessions.end(host.id)
+                        app.sessions.end(conn.key)
                         onBack()
                     })
                 }
             }
+        }
+
+        // Terminals open on this PC, one per tool; tap to switch, + for more.
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            for (t in tabs) {
+                val active = t.key == conn.key
+                Text(
+                    t.tool.name,
+                    fontSize = 12.sp,
+                    fontFamily = Mono,
+                    color = if (active) Pal.mauve else Pal.subtext,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (active) Pal.mauve.copy(alpha = 0.14f) else Pal.surface0.copy(alpha = 0.5f))
+                        .clickable { if (!active) onSwitch(t.tool.id) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
+            Icon(
+                AsIcons.Plus, "Yeni terminal", tint = Pal.subtext,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { launcher = true }.padding(6.dp).size(16.dp),
+            )
         }
 
         uploading?.let {
@@ -286,6 +320,14 @@ fun TerminalScreen(hostId: String, onBack: () -> Unit) {
 
     if (shots) ScreenshotSheet(conn, onDismiss = { shots = false })
     selectText?.let { SelectTextDialog(it, onDismiss = { selectText = null }) }
+    if (launcher) {
+        LauncherSheet(
+            host = host,
+            onPick = { launcher = false; onSwitch(it.id) },
+            onEdit = { launcher = false },
+            onDismiss = { launcher = false },
+        )
+    }
 }
 
 /** Top-level so it isn't captured by the enclosing ColumnScope overload. */
