@@ -1,0 +1,11 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+/app/libs/tsbridge.aar
+/app/libs/tsbridge-sources.jar
+captures/
+.kotlin/
+/host/target/

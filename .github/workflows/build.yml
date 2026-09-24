@@ -1,0 +1,244 @@
+name: Build
+
+# Every push builds the phone app (universal APK plus one per CPU
+# architecture) and the PC app (AsenaScale for Windows and Linux).
+#   - branch push -> "nightly" pre-release is updated
+#   - tag v*      -> a real GitHub release
+#   - Actions -> "Build" -> Run workflow with "release" = 0.2.0 -> release v0.2.0
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Publish a release with this version (e.g. 0.1.0). Empty = just build."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.v.outputs.number }}
+    steps:
+      - id: v
+        env:
+          RELEASE_INPUT: ${{ github.event.inputs.release }}
+        run: |
+          if [[ -n "$RELEASE_INPUT" ]]; then n="${RELEASE_INPUT#v}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"
+          else n="0.4.${GITHUB_RUN_NUMBER}"; fi
+          # NSIS wants a plain dotted number.
+          echo "number=$(echo "$n" | grep -oE '^[0-9]+(\.[0-9]+){0,2}')" >> "$GITHUB_OUTPUT"
+
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        env:
+          RELEASE_INPUT: ${{ github.event.inputs.release }}
+        run: |
+          if [[ -n "$RELEASE_INPUT" ]]; then
+            echo "VERSION_NAME=${RELEASE_INPUT#v}" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=v${RELEASE_INPUT#v}" >> "$GITHUB_ENV"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION_NAME=0.3.0-nightly.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          fi
+          . "$GITHUB_ENV"
+          echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${RELEASE_TAG:-}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # The Go/Tailscale part takes minutes to build; reuse it until it changes.
+      - name: Restore embedded Tailscale
+        id: tsbridge-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: app/libs/tsbridge.aar
+          key: tsbridge-${{ hashFiles('tsbridge/**', 'scripts/build-tsbridge.sh') }}
+
+      - uses: actions/setup-go@v5
+        if: steps.tsbridge-cache.outputs.cache-hit != 'true'
+        with:
+          go-version-file: tsbridge/go.mod
+          cache-dependency-path: tsbridge/go.sum
+
+      - name: Build embedded Tailscale (gomobile)
+        if: steps.tsbridge-cache.outputs.cache-hit != 'true'
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
+        run: ./scripts/build-tsbridge.sh
+
+      # Saved right away, so a later Gradle failure doesn't throw it away.
+      - name: Save embedded Tailscale
+        if: steps.tsbridge-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: app/libs/tsbridge.aar
+          key: ${{ steps.tsbridge-cache.outputs.cache-primary-key }}
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APKs
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Collect APKs
+        run: |
+          mkdir -p dist
+          for f in app/build/outputs/apk/release/app-*-release.apk; do
+            abi=$(basename "$f" | sed -e 's/^app-//' -e 's/-release\.apk$//')
+            cp "$f" "dist/AsenaScale-Mobile-${abi}.apk"
+          done
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: dist/*.apk
+
+  host:
+    needs: version
+    # Both built on Linux: the embedded Tailscale (Go) is linked in as a
+    # static library, which needs a GNU toolchain (mingw-w64 for Windows).
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-gnu
+            file: asenascale.exe
+          - target: x86_64-unknown-linux-gnu
+            file: asenascale
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # Caches ~/.cargo and host/target: rebuilds take seconds once warm.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: host
+          key: ${{ matrix.target }}
+
+      # Go build cache too, for the embedded Tailscale.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tsbridge/go.mod
+          cache-dependency-path: tsbridge/go.sum
+
+      - name: System libraries
+        run: |
+          sudo apt-get update -q
+          if [ "${{ matrix.target }}" = x86_64-pc-windows-gnu ]; then
+            sudo apt-get install -y -q gcc-mingw-w64-x86-64 nsis
+          else
+            sudo apt-get install -y -q libgtk-3-dev libayatana-appindicator3-dev \
+              libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev libegl-dev
+          fi
+
+      - name: Test
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        working-directory: host
+        run: cargo test --locked
+
+      - name: Build
+        working-directory: host
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          bin="host/target/${{ matrix.target }}/release/${{ matrix.file }}"
+          version="${{ needs.version.outputs.number }}"
+          if [ "${{ matrix.target }}" = x86_64-pc-windows-gnu ]; then
+            # Installer (31 languages, per-user, no admin) + portable exe.
+            makensis -V2 -DVERSION="$version" -DEXE="$PWD/$bin" -DOUT="$PWD/dist/AsenaScale-Setup.exe" host/installer/installer.nsi
+            cp "$bin" dist/AsenaScale-windows-x64-portable.exe
+          else
+            # One AppImage for every distro (Debian, Ubuntu, Arch, Fedora...).
+            host/packaging/build-appimage.sh "$bin" dist/AsenaScale-x86_64.AppImage
+            cp assets/asenascale.png dist/asenascale.png
+          fi
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host-${{ matrix.target }}
+          path: dist/*
+
+  publish:
+    needs: [apk, host]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      VERSION_NAME: ${{ needs.apk.outputs.version }}
+      RELEASE_TAG: ${{ needs.apk.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - run: ls -la dist
+
+      - name: Move nightly tag
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          git tag -f nightly
+          git push -f origin nightly
+
+      - name: Publish nightly
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: AsenaScale nightly
+          prerelease: true
+          body: |
+            Son derleme: `${{ env.VERSION_NAME }}` — ${{ github.sha }} (${{ github.ref_name }})
+
+            **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
+            **PC (Windows):** **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) ya da taşınabilir **AsenaScale-windows-x64-portable.exe**.
+            **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
+          files: dist/*
+
+      - name: Publish release
+        if: env.RELEASE_TAG != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          name: AsenaScale ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          body: |
+            **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
+            **PC (Windows):** **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) ya da taşınabilir **AsenaScale-windows-x64-portable.exe**.
+            **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
+          files: dist/*

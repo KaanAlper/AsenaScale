@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AsenaScale" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/base</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- The app draws its own light and dark themes; no OEM "force dark". -->
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+</resources>

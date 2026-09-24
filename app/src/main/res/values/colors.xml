@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Catppuccin Latte (light) -->
+    <color name="base">#EFF1F5</color>
+    <color name="accent">#8839EF</color>
+</resources>

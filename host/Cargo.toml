@@ -1,0 +1,43 @@
+[package]
+name = "asenascale"
+version = "0.4.0"
+edition = "2021"
+description = "Tray app that lets the AsenaScale phone app into this PC over Tailscale"
+license = "MIT"
+
+[dependencies]
+russh = { version = "0.63", default-features = false, features = ["ring", "flate2"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "process", "io-util", "net"] }
+portable-pty = "0.9"
+xcap = "0.9"
+# JPEG tiles for screen sharing (xcap already brings the image crate).
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
+# Mouse and keyboard for screen sharing; pure-Rust X11 backend on Linux.
+enigo = { version = "0.6", default-features = false, features = ["x11rb"] }
+tray-icon = { version = "0.25", default-features = false, features = ["libappindicator", "muda-common-controls-v6"] }
+tao = "0.35"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "6"
+rand = { version = "0.10", features = ["thread_rng"] }
+anyhow = "1"
+vt100 = "0.16"
+log = "0.4"
+env_logger = "0.11"
+
+[build-dependencies]
+embed-resource = "3"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.60", features = ["Win32_Foundation", "Win32_Globalization", "Win32_System_Console", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell"] }
+
+[target.'cfg(not(windows))'.dependencies]
+# GTK dialogs (GTK is already there for the tray) instead of the D-Bus portal stack.
+rfd = { version = "0.17", default-features = false, features = ["gtk3"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

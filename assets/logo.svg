@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- AsenaScale: an "A" drawn like a terminal prompt, a chevron with a floating cursor for its bar. -->
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="#1E1E2E"/>
+  <path d="M70 190 L128 62 L186 190" fill="none" stroke="#CBA6F7" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M116 158 H140" fill="none" stroke="#CBA6F7" stroke-width="20" stroke-linecap="round"/>
+</svg>

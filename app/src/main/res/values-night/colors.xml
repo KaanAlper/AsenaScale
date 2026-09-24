@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Catppuccin Mocha (dark) -->
+    <color name="base">#1E1E2E</color>
+    <color name="accent">#CBA6F7</color>
+</resources>
