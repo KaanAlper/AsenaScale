@@ -150,4 +150,5 @@
     <string name="quality_high">Tajam</string>
     <string name="fit">Sesuaikan layar</string>
     <string name="keyboard">Keyboard</string>
+    <string name="running_on_pc">Berjalan di PC</string>
 </resources>

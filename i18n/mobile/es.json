@@ -147,5 +147,6 @@
   "quality_low": "Ahorro",
   "quality_high": "Nítido",
   "fit": "Ajustar a la pantalla",
-  "keyboard": "Teclado"
+  "keyboard": "Teclado",
+  "running_on_pc": "En ejecución en el PC"
 }

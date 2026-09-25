@@ -147,5 +147,6 @@
   "quality_low": "Éco",
   "quality_high": "Net",
   "fit": "Ajuster à l'écran",
-  "keyboard": "Clavier"
+  "keyboard": "Clavier",
+  "running_on_pc": "En cours sur le PC"
 }

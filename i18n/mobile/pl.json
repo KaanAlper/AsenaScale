@@ -147,5 +147,6 @@
   "quality_low": "Oszczędny",
   "quality_high": "Ostry",
   "fit": "Dopasuj do ekranu",
-  "keyboard": "Klawiatura"
+  "keyboard": "Klawiatura",
+  "running_on_pc": "Działa na komputerze"
 }

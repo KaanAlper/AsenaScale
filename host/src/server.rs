@@ -266,7 +266,7 @@ impl russh::server::Handler for Conn {
             Some(t) => Ok(t),
             None => {
                 let cmd = env.get("AS_CMD").cloned().unwrap_or_default();
-                self.state.sessions.create(&id, &cmd, pty, self.state.on_change.clone())
+                self.state.sessions.create(&id, &cmd, None, pty, self.state.on_change.clone())
             }
         };
         match term {
@@ -454,18 +454,19 @@ async fn finish(handle: &Handle, channel: ChannelId, out: Vec<u8>, err: String, 
 
 fn builtin(args: &[String], sessions: &Sessions) -> anyhow::Result<Vec<u8>> {
     match args.first().map(String::as_str) {
-        // "session<TAB>id<TAB>attached<TAB>created<TAB>command<TAB>title"
+        // "session<TAB>id<TAB>attached<TAB>created<TAB>command<TAB>title<TAB>cwd"
         Some("sessions") => Ok(sessions
             .list()
             .iter()
             .map(|s| {
                 format!(
-                    "session\t{}\t{}\t{}\t{}\t{}\n",
+                    "session\t{}\t{}\t{}\t{}\t{}\t{}\n",
                     s.id,
                     s.attached(),
                     s.created,
                     s.command.replace(['\t', '\n'], " "),
-                    s.title().replace(['\t', '\n'], " ")
+                    s.title().replace(['\t', '\n'], " "),
+                    s.cwd.replace(['\t', '\n'], " ")
                 )
             })
             .collect::<String>()

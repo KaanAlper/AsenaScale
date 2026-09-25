@@ -20,6 +20,8 @@ class App : Application() {
         private set
     lateinit var transfers: Transfers
         private set
+    /** Labels of PC sessions joined from the launcher, by tool id. */
+    val joinedNames = HashMap<String, String>()
     /** Last folder open in the PC file browser, per PC. */
     val lastPcFolder = HashMap<String, String>()
 

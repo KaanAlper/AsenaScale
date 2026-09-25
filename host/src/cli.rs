@@ -21,7 +21,12 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   disconnect          take it off the tailnet (phones can't reach it until connect)
   login | logout      Tailscale account on this PC
   ping DEVICE         Tailscale round trip to a device (name or IP)
-  sessions            terminal sessions kept for the phone
+  claude [ARGS]       start Claude Code here, in this folder, as a shared
+                      session: the phone can join it live (and vice versa)
+  new [COMMAND]       the same with any command (default: a shell)
+  attach [ID]         join a running session (one the phone started, too);
+                      Ctrl+] leaves it running
+  sessions            terminal sessions (IDs for attach)
   kill ID|all         end a terminal session
   phones              phones allowed on this PC
   revoke N|NAME|all   forget an allowed phone (it will be asked again)
@@ -60,6 +65,39 @@ pub fn run(args: &[String]) -> i32 {
                 1
             }
         }
+        "attach" | "a" | "claude" | "new" => {
+            if ask(&["ping-app".into()]).is_err() {
+                start_app();
+                if !wait_running() {
+                    eprintln!("AsenaScale didn't start; see: asenascale log");
+                    return 1;
+                }
+            }
+            let (id, command) = match cmd {
+                "claude" => (None, Some(std::iter::once("claude".to_string()).chain(args[1..].iter().cloned()).collect::<Vec<_>>().join(" "))),
+                "new" => (None, Some(args[1..].join(" "))),
+                _ => match args.get(1) {
+                    Some(id) => (Some(id.clone()), None),
+                    None => match only_session() {
+                        Ok(id) => (Some(id), None),
+                        Err(msg) => {
+                            eprint!("{msg}");
+                            return 1;
+                        }
+                    },
+                },
+            };
+            match term::attach(id, command) {
+                Ok(msg) => {
+                    eprintln!("{msg}");
+                    0
+                }
+                Err(e) => {
+                    eprintln!("{e}");
+                    1
+                }
+            }
+        }
         "up" => run(&["connect".into()]),
         "down" => run(&["disconnect".into()]),
         "list" | "ls" => run(&["devices".into()]),
@@ -95,6 +133,20 @@ pub fn run(args: &[String]) -> i32 {
                     1
                 }
             }
+        }
+    }
+}
+
+/// The session to join when none was named: the only one, else a list.
+fn only_session() -> Result<String, String> {
+    let (_, json) = ask(&["sessions".into(), "--json".into()]).map_err(|e| format!("{e}\n"))?;
+    let v: Vec<serde_json::Value> = serde_json::from_str(&json).unwrap_or_default();
+    match v.len() {
+        0 => Err("no sessions yet; start one with: asenascale claude\n".into()),
+        1 => Ok(v[0]["id"].as_str().unwrap_or_default().to_string()),
+        _ => {
+            let (_, table) = ask(&["sessions".into()]).map_err(|e| format!("{e}\n"))?;
+            Err(format!("{table}\nwhich one? asenascale attach ID\n"))
         }
     }
 }
@@ -180,14 +232,314 @@ fn log(args: &[String]) -> i32 {
     }
 }
 
-/// The app is a GUI program on Windows; borrow the terminal it was started from.
+/// The app is a GUI program on Windows; borrow the terminal it was started
+/// from. A GUI process gets no standard handles from a console, so they
+/// are pointed at the console here (unless redirected to a file or pipe).
 #[cfg(windows)]
 fn attach_console() {
-    use windows_sys::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
+    use windows_sys::Win32::System::Console::{
+        AttachConsole, GetStdHandle, SetStdHandle, ATTACH_PARENT_PROCESS, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+    };
     unsafe {
-        AttachConsole(ATTACH_PARENT_PROCESS);
+        if AttachConsole(ATTACH_PARENT_PROCESS) == 0 {
+            return;
+        }
+        for (which, name) in [(STD_OUTPUT_HANDLE, "CONOUT$"), (STD_ERROR_HANDLE, "CONOUT$"), (STD_INPUT_HANDLE, "CONIN$")] {
+            let h = GetStdHandle(which);
+            if h.is_null() || h == windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE {
+                if let Some(c) = term::open_console(name) {
+                    SetStdHandle(which, c);
+                }
+            }
+        }
     }
 }
 
 #[cfg(not(windows))]
 fn attach_console() {}
+
+/// A terminal on this PC joined to a session: raw keys in, output out.
+mod term {
+    use std::io::{BufRead, BufReader, Read, Write};
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    use crate::control::Endpoint;
+
+    const DETACH: u8 = 0x1d; // Ctrl+]
+
+    pub fn attach(id: Option<String>, command: Option<String>) -> Result<String, String> {
+        let ep = Endpoint::load().ok_or("AsenaScale isn't running")?;
+        let mut s = TcpStream::connect(("127.0.0.1", ep.port)).map_err(|e| e.to_string())?;
+        s.set_nodelay(true).ok();
+        let (cols, rows) = size();
+        let b64 = |v: &str| {
+            use std::fmt::Write as _;
+            let a = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+            let mut out = String::new();
+            for c in v.as_bytes().chunks(3) {
+                let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+                for i in 0..=c.len() {
+                    let _ = out.write_char(a[(n >> (18 - 6 * i) & 63) as usize] as char);
+                }
+            }
+            out
+        };
+        let cwd = std::env::current_dir().map(|d| d.display().to_string()).unwrap_or_default();
+        let line = match (&id, &command) {
+            (Some(id), _) => format!("{} attach {id} {cols} {rows} - -\n", ep.token),
+            (None, cmd) => {
+                let cmd = cmd.clone().unwrap_or_default();
+                let cmd = if cmd.trim().is_empty() { "-".to_string() } else { b64(&cmd) };
+                format!("{} attach - {cols} {rows} {} {cmd}\n", ep.token, b64(&cwd))
+            }
+        };
+        s.write_all(line.as_bytes()).map_err(|e| e.to_string())?;
+        let mut reader = BufReader::new(s.try_clone().map_err(|e| e.to_string())?);
+        let mut first = String::new();
+        reader.read_line(&mut first).map_err(|e| e.to_string())?;
+        let first = first.trim().to_string();
+        if !first.starts_with("0 ") {
+            let mut msg = String::new();
+            let _ = reader.read_to_string(&mut msg);
+            return Err(msg.trim().to_string());
+        }
+        let id = first[2..].to_string();
+
+        let raw = Raw::enter().map_err(|e| format!("not a terminal: {e}"))?;
+        // Keys -> session.
+        let mut keys = s.try_clone().map_err(|e| e.to_string())?;
+        std::thread::spawn(move || {
+            let mut buf = [0u8; 4096];
+            loop {
+                let n = match read_input(&mut buf) {
+                    Some(n) if n > 0 => n,
+                    _ => break,
+                };
+                let data = &buf[..n];
+                if let Some(i) = data.iter().position(|&b| b == DETACH) {
+                    let _ = send(&mut keys, &data[..i]);
+                    break;
+                }
+                if send(&mut keys, data).is_err() {
+                    break;
+                }
+            }
+            let _ = keys.shutdown(std::net::Shutdown::Both);
+        });
+        // Window size -> session (Windows has no resize signal, so poll).
+        let mut sizes = s.try_clone().map_err(|e| e.to_string())?;
+        std::thread::spawn(move || {
+            let mut last = size();
+            loop {
+                std::thread::sleep(Duration::from_millis(400));
+                let now = size();
+                if now != last {
+                    last = now;
+                    let mut f = vec![b'r'];
+                    f.extend_from_slice(&now.0.to_be_bytes());
+                    f.extend_from_slice(&now.1.to_be_bytes());
+                    if sizes.write_all(&f).is_err() {
+                        break;
+                    }
+                }
+            }
+        });
+        // Session -> screen.
+        let mut buf = [0u8; 16 * 1024];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) | Err(_) => break,
+                Ok(n) => write_output(&buf[..n]),
+            }
+        }
+        drop(raw);
+        let alive = {
+            let ep = Endpoint::load();
+            ep.and_then(|ep| {
+                let mut c = TcpStream::connect(("127.0.0.1", ep.port)).ok()?;
+                c.write_all(format!("{} sessions --json\n", ep.token).as_bytes()).ok()?;
+                let mut t = String::new();
+                c.read_to_string(&mut t).ok()?;
+                Some(t.contains(&format!("\"{id}\"")))
+            })
+            .unwrap_or(false)
+        };
+        Ok(if alive {
+            format!("\r\n[left session {id}; it keeps running: asenascale attach {id}]")
+        } else {
+            format!("\r\n[session {id} ended]")
+        })
+    }
+
+    fn send(s: &mut TcpStream, data: &[u8]) -> std::io::Result<()> {
+        if data.is_empty() {
+            return Ok(());
+        }
+        let mut f = Vec::with_capacity(data.len() + 5);
+        f.push(b'd');
+        f.extend_from_slice(&(data.len() as u32).to_be_bytes());
+        f.extend_from_slice(data);
+        s.write_all(&f)
+    }
+
+    // --- Linux / macOS ---------------------------------------------------------
+
+    #[cfg(not(windows))]
+    pub struct Raw(libc::termios);
+
+    #[cfg(not(windows))]
+    impl Raw {
+        pub fn enter() -> std::io::Result<Raw> {
+            unsafe {
+                let mut t: libc::termios = std::mem::zeroed();
+                if libc::tcgetattr(0, &mut t) != 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                let old = t;
+                libc::cfmakeraw(&mut t);
+                libc::tcsetattr(0, libc::TCSANOW, &t);
+                Ok(Raw(old))
+            }
+        }
+    }
+
+    #[cfg(not(windows))]
+    impl Drop for Raw {
+        fn drop(&mut self) {
+            unsafe {
+                libc::tcsetattr(0, libc::TCSANOW, &self.0);
+            }
+        }
+    }
+
+    #[cfg(not(windows))]
+    fn size() -> (u16, u16) {
+        unsafe {
+            let mut w: libc::winsize = std::mem::zeroed();
+            if libc::ioctl(1, libc::TIOCGWINSZ, &mut w) == 0 && w.ws_col > 0 {
+                return (w.ws_col, w.ws_row);
+            }
+        }
+        (80, 24)
+    }
+
+    #[cfg(not(windows))]
+    fn read_input(buf: &mut [u8]) -> Option<usize> {
+        std::io::stdin().lock().read(buf).ok()
+    }
+
+    #[cfg(not(windows))]
+    fn write_output(data: &[u8]) {
+        let mut o = std::io::stdout().lock();
+        let _ = o.write_all(data);
+        let _ = o.flush();
+    }
+
+    // --- Windows ---------------------------------------------------------------
+
+    #[cfg(windows)]
+    use windows_sys::Win32::Foundation::HANDLE;
+
+    #[cfg(windows)]
+    pub fn open_console(name: &str) -> Option<HANDLE> {
+        use windows_sys::Win32::Foundation::{GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE};
+        use windows_sys::Win32::Storage::FileSystem::{CreateFileW, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING};
+        let w: Vec<u16> = name.encode_utf16().chain(std::iter::once(0)).collect();
+        let h = unsafe {
+            CreateFileW(w.as_ptr(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, std::ptr::null(), OPEN_EXISTING, 0, std::ptr::null_mut())
+        };
+        (h != INVALID_HANDLE_VALUE && !h.is_null()).then_some(h)
+    }
+
+    #[cfg(windows)]
+    fn handles() -> (HANDLE, HANDLE) {
+        use windows_sys::Win32::System::Console::{GetStdHandle, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE};
+        unsafe { (GetStdHandle(STD_INPUT_HANDLE), GetStdHandle(STD_OUTPUT_HANDLE)) }
+    }
+
+    #[cfg(windows)]
+    pub struct Raw {
+        in_mode: u32,
+        out_mode: u32,
+        in_cp: u32,
+        out_cp: u32,
+    }
+
+    #[cfg(windows)]
+    impl Raw {
+        pub fn enter() -> std::io::Result<Raw> {
+            use windows_sys::Win32::System::Console::*;
+            let (i, o) = handles();
+            unsafe {
+                let (mut in_mode, mut out_mode) = (0u32, 0u32);
+                if GetConsoleMode(i, &mut in_mode) == 0 || GetConsoleMode(o, &mut out_mode) == 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                let raw = Raw { in_mode, out_mode, in_cp: GetConsoleCP(), out_cp: GetConsoleOutputCP() };
+                // Keys arrive as VT sequences (arrows, etc.), nothing cooked.
+                SetConsoleMode(
+                    i,
+                    (in_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_QUICK_EDIT_MODE))
+                        | ENABLE_VIRTUAL_TERMINAL_INPUT
+                        | ENABLE_EXTENDED_FLAGS,
+                );
+                SetConsoleMode(o, out_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT | DISABLE_NEWLINE_AUTO_RETURN);
+                SetConsoleCP(65001);
+                SetConsoleOutputCP(65001);
+                Ok(raw)
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    impl Drop for Raw {
+        fn drop(&mut self) {
+            use windows_sys::Win32::System::Console::*;
+            let (i, o) = handles();
+            unsafe {
+                SetConsoleMode(i, self.in_mode);
+                SetConsoleMode(o, self.out_mode);
+                SetConsoleCP(self.in_cp);
+                SetConsoleOutputCP(self.out_cp);
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    fn size() -> (u16, u16) {
+        use windows_sys::Win32::System::Console::{GetConsoleScreenBufferInfo, CONSOLE_SCREEN_BUFFER_INFO};
+        unsafe {
+            let mut info: CONSOLE_SCREEN_BUFFER_INFO = std::mem::zeroed();
+            if GetConsoleScreenBufferInfo(handles().1, &mut info) != 0 {
+                let w = info.srWindow;
+                return ((w.Right - w.Left + 1).max(10) as u16, (w.Bottom - w.Top + 1).max(4) as u16);
+            }
+        }
+        (80, 24)
+    }
+
+    #[cfg(windows)]
+    fn read_input(buf: &mut [u8]) -> Option<usize> {
+        use windows_sys::Win32::Storage::FileSystem::ReadFile;
+        let mut n = 0u32;
+        let ok = unsafe { ReadFile(handles().0, buf.as_mut_ptr(), buf.len() as u32, &mut n, std::ptr::null_mut()) };
+        (ok != 0).then_some(n as usize)
+    }
+
+    #[cfg(windows)]
+    fn write_output(data: &[u8]) {
+        use windows_sys::Win32::Storage::FileSystem::WriteFile;
+        let mut off = 0;
+        while off < data.len() {
+            let mut n = 0u32;
+            let ok = unsafe {
+                WriteFile(handles().1, data[off..].as_ptr(), (data.len() - off) as u32, &mut n, std::ptr::null_mut())
+            };
+            if ok == 0 || n == 0 {
+                break;
+            }
+            off += n as usize;
+        }
+    }
+}

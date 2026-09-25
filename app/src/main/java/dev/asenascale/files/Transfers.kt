@@ -124,6 +124,16 @@ class Transfers(private val context: Context) {
         }
     }
 
+    /** Runs a PC-app command over the host's link (no terminal needed). */
+    fun run(host: Host, command: String, timeoutMs: Long = 15_000): dev.asenascale.ssh.ExecResult {
+        val link = link(host)
+        try {
+            return link.exec(0, command, timeoutMs = timeoutMs)
+        } finally {
+            release(host.id)
+        }
+    }
+
     fun active(hostId: String) = _list.value.count { it.hostId == hostId && it.status.value == Status.Running }
 
     private fun add(t: Transfer): Transfer {

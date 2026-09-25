@@ -150,4 +150,5 @@
     <string name="quality_high">साफ़</string>
     <string name="fit">स्क्रीन में फ़िट करें</string>
     <string name="keyboard">कीबोर्ड</string>
+    <string name="running_on_pc">PC पर चल रहे</string>
 </resources>

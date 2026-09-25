@@ -157,6 +157,7 @@ dependencies = [
  "enigo",
  "env_logger",
  "image",
+ "libc",
  "log",
  "portable-pty",
  "rand",

@@ -150,4 +150,5 @@
     <string name="quality_high">선명</string>
     <string name="fit">화면에 맞추기</string>
     <string name="keyboard">키보드</string>
+    <string name="running_on_pc">PC에서 실행 중</string>
 </resources>

@@ -147,5 +147,6 @@
   "quality_low": "Saver",
   "quality_high": "Sharp",
   "fit": "Fit to screen",
-  "keyboard": "Keyboard"
+  "keyboard": "Keyboard",
+  "running_on_pc": "Running on the PC"
 }

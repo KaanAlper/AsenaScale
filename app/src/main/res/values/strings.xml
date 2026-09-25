@@ -151,4 +151,5 @@
     <string name="quality_high">Sharp</string>
     <string name="fit">Fit to screen</string>
     <string name="keyboard">Keyboard</string>
+    <string name="running_on_pc">Running on the PC</string>
 </resources>

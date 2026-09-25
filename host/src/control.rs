@@ -71,6 +71,8 @@ pub struct Ctx {
     pub state: Arc<State>,
     pub ts: Arc<Mutex<tailnet::Status>>,
     pub net: Arc<Net>,
+    /// The server's runtime (sessions spawn their readers on it).
+    pub rt: tokio::runtime::Handle,
     pub quit: Box<dyn Fn() + Send + Sync>,
 }
 
@@ -110,12 +112,16 @@ fn write_private(path: &std::path::Path, data: &[u8]) -> Result<()> {
 fn handle(conn: TcpStream, ctx: &Ctx, token: &str) -> Result<()> {
     conn.set_read_timeout(Some(Duration::from_secs(5)))?;
     let mut line = String::new();
-    BufReader::new(&conn).take(64 * 1024).read_line(&mut line)?;
+    let mut reader = BufReader::new(conn.try_clone()?);
+    (&mut reader).take(64 * 1024).read_line(&mut line)?;
     let mut words = line.split_whitespace();
     if words.next() != Some(token) {
         return Ok(());
     }
     let args: Vec<String> = words.map(str::to_string).collect();
+    if args.first().map(String::as_str) == Some("attach") {
+        return attach(conn, reader, ctx, &args);
+    }
     let (code, text) = match command(ctx, &args) {
         Ok(text) => (0, text),
         Err(e) => (1, format!("{e:#}\n")),
@@ -126,6 +132,91 @@ fn handle(conn: TcpStream, ctx: &Ctx, token: &str) -> Result<()> {
 }
 
 use std::io::Read as _;
+
+/// `attach ID|- COLS ROWS CWD|- CMD|-` (CWD and CMD base64url): joins a
+/// session, or starts one ("-"), and then streams it. The terminal's keys
+/// come in frames ('d' u32-length data, 'r' u16 cols u16 rows); output goes
+/// back raw until the session ends or the terminal leaves.
+fn attach(conn: TcpStream, mut reader: BufReader<TcpStream>, ctx: &Ctx, args: &[String]) -> Result<()> {
+    conn.set_read_timeout(None)?;
+    let arg = |i: usize| args.get(i).map(String::as_str).unwrap_or("-");
+    let num = |i: usize, d: u16| arg(i).parse::<u16>().unwrap_or(d);
+    let size = portable_pty::PtySize { cols: num(2, 80).clamp(10, 1000), rows: num(3, 24).clamp(4, 500), pixel_width: 0, pixel_height: 0 };
+    let decode = |i: usize| (arg(i) != "-").then(|| crate::files::decode_path(arg(i)).ok()).flatten();
+    let mut w = &conn;
+    let session = if arg(1) == "-" {
+        let id = format!("pc{:08x}", rand::random::<u32>());
+        let cmd = decode(5).map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+        let _rt = ctx.rt.enter();
+        match ctx.state.sessions.create(&id, &cmd, decode(4), size, ctx.state.on_change.clone()) {
+            Ok(s) => s,
+            Err(e) => {
+                w.write_all(format!("1\n{e:#}\n").as_bytes())?;
+                return Ok(());
+            }
+        }
+    } else {
+        match ctx.state.sessions.get(arg(1)) {
+            Some(s) => s,
+            None => {
+                w.write_all(format!("1\nno session {} (asenascale sessions)\n", arg(1)).as_bytes())?;
+                return Ok(());
+            }
+        }
+    };
+    w.write_all(format!("0 {}\n", session.id).as_bytes())?;
+    let (client, rx) = session.attach_local(size);
+    (ctx.state.on_change)();
+
+    // Output to the terminal on its own thread.
+    let out = conn.try_clone()?;
+    let pump = std::thread::spawn(move || {
+        let mut out = out;
+        while let Ok(bytes) = rx.recv() {
+            if out.write_all(&bytes).is_err() {
+                break;
+            }
+        }
+        let _ = out.shutdown(std::net::Shutdown::Both);
+    });
+
+    // Keys and resizes from the terminal.
+    loop {
+        let mut kind = [0u8; 1];
+        if reader.read_exact(&mut kind).is_err() {
+            break;
+        }
+        match kind[0] {
+            b'd' => {
+                let mut len = [0u8; 4];
+                if reader.read_exact(&mut len).is_err() {
+                    break;
+                }
+                let len = u32::from_be_bytes(len).min(1 << 20) as usize;
+                let mut data = vec![0u8; len];
+                if reader.read_exact(&mut data).is_err() {
+                    break;
+                }
+                session.write(&data);
+            }
+            b'r' => {
+                let mut b = [0u8; 4];
+                if reader.read_exact(&mut b).is_err() {
+                    break;
+                }
+                let cols = u16::from_be_bytes([b[0], b[1]]).clamp(10, 1000);
+                let rows = u16::from_be_bytes([b[2], b[3]]).clamp(4, 500);
+                session.resize(portable_pty::PtySize { cols, rows, pixel_width: 0, pixel_height: 0 });
+            }
+            _ => break,
+        }
+    }
+    session.detach(client);
+    let _ = conn.shutdown(std::net::Shutdown::Both);
+    let _ = pump.join();
+    (ctx.state.on_change)();
+    Ok(())
+}
 
 fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
     let arg = |i: usize| args.get(i).map(String::as_str).unwrap_or("");
@@ -209,16 +300,17 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
             if json {
                 let v: Vec<_> = list
                     .iter()
-                    .map(|s| serde_json::json!({"id": s.id, "command": s.command, "title": s.title(), "attached": s.attached(), "created": s.created}))
+                    .map(|s| serde_json::json!({"id": s.id, "command": s.command, "cwd": s.cwd, "title": s.title(), "attached": s.attached(), "created": s.created}))
                     .collect();
                 return Ok(serde_json::to_string_pretty(&v)? + "\n");
             }
             if list.is_empty() {
                 return Ok("no terminal sessions\n".into());
             }
-            let mut rows = vec![vec!["ID".into(), "PHONES".into(), "AGE".into(), "COMMAND".into(), "TITLE".into()]];
+            let mut rows = vec![vec!["ID".into(), "VIEWERS".into(), "AGE".into(), "COMMAND".into(), "FOLDER".into(), "TITLE".into()]];
             for s in &list {
-                rows.push(vec![s.id.clone(), s.attached().to_string(), ago(s.created), s.command.clone(), s.title()]);
+                let cmd = if s.command.is_empty() { "shell".to_string() } else { s.command.clone() };
+                rows.push(vec![s.id.clone(), s.attached().to_string(), ago(s.created), cmd, s.cwd.clone(), s.title()]);
             }
             Ok(table(&rows))
         }

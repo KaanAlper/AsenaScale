@@ -150,4 +150,5 @@
     <string name="quality_high">Net</string>
     <string name="fit">Ajuster à l\'écran</string>
     <string name="keyboard">Clavier</string>
+    <string name="running_on_pc">En cours sur le PC</string>
 </resources>

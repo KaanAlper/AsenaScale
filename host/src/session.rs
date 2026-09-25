@@ -30,15 +30,19 @@ impl vt100::Callbacks for Title {
     }
 }
 
-struct Client {
-    handle: Handle,
-    channel: ChannelId,
+/// Where a session's output goes: a phone (SSH channel) or a terminal on
+/// the PC itself (`asenascale attach`).
+enum Client {
+    Ssh { handle: Handle, channel: ChannelId },
+    Local(std::sync::mpsc::Sender<Vec<u8>>),
 }
 
 pub struct Session {
     pub id: String,
     pub command: String,
     pub created: u64,
+    /// Folder it started in.
+    pub cwd: String,
     writer: Mutex<Box<dyn Write + Send>>,
     master: Mutex<Box<dyn MasterPty + Send>>,
     killer: Mutex<Box<dyn ChildKiller + Send + Sync>>,
@@ -95,8 +99,19 @@ impl Session {
         let snap = self.snapshot();
         let _ = handle.data(channel, snap).await;
         let id = NEXT_CLIENT.fetch_add(1, Ordering::Relaxed);
-        self.clients.lock().unwrap().insert(id, Client { handle, channel });
+        self.clients.lock().unwrap().insert(id, Client::Ssh { handle, channel });
         id
+    }
+
+    /// Adds a terminal on this PC; output (starting with the current
+    /// screen) arrives on the returned receiver until the session ends.
+    pub fn attach_local(&self, size: PtySize) -> (u64, std::sync::mpsc::Receiver<Vec<u8>>) {
+        self.resize(size);
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _ = tx.send(self.snapshot());
+        let id = NEXT_CLIENT.fetch_add(1, Ordering::Relaxed);
+        self.clients.lock().unwrap().insert(id, Client::Local(tx));
+        (id, rx)
     }
 
     pub fn detach(&self, client: u64) {
@@ -132,11 +147,17 @@ impl Sessions {
         self: &Arc<Self>,
         id: &str,
         command: &str,
+        cwd: Option<std::path::PathBuf>,
         size: PtySize,
         on_change: Arc<dyn Fn() + Send + Sync>,
     ) -> anyhow::Result<Arc<Session>> {
         let pair = native_pty_system().openpty(size)?;
-        let mut child = pair.slave.spawn_command(shell_command())?;
+        let cwd = cwd.filter(|d| d.is_dir()).or_else(dirs::home_dir);
+        let mut cmd = shell_command();
+        if let Some(d) = &cwd {
+            cmd.cwd(d);
+        }
+        let mut child = pair.slave.spawn_command(cmd)?;
         drop(pair.slave);
         let killer = child.clone_killer();
         let mut reader = pair.master.try_clone_reader()?;
@@ -149,6 +170,7 @@ impl Sessions {
             id: id.to_string(),
             command: command.to_string(),
             created: SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+            cwd: cwd.map(|d| d.display().to_string()).unwrap_or_default(),
             writer: Mutex::new(writer),
             master: Mutex::new(pair.master),
             killer: Mutex::new(killer),
@@ -191,12 +213,25 @@ impl Sessions {
                 }
                 let bytes = &owned[..];
                 // Fan out to every attached phone; drop the ones that are gone.
-                let clients: Vec<(u64, Handle, ChannelId)> =
-                    s.clients.lock().unwrap().iter().map(|(k, c)| (*k, c.handle.clone(), c.channel)).collect();
-                for (k, h, ch) in clients {
-                    if rt.block_on(h.data(ch, bytes.to_vec())).is_err() {
-                        s.detach(k);
+                let mut ssh: Vec<(u64, Handle, ChannelId)> = Vec::new();
+                let mut gone: Vec<u64> = Vec::new();
+                for (k, c) in s.clients.lock().unwrap().iter() {
+                    match c {
+                        Client::Ssh { handle, channel } => ssh.push((*k, handle.clone(), *channel)),
+                        Client::Local(tx) => {
+                            if tx.send(bytes.to_vec()).is_err() {
+                                gone.push(*k);
+                            }
+                        }
                     }
+                }
+                for (k, h, ch) in ssh {
+                    if rt.block_on(h.data(ch, bytes.to_vec())).is_err() {
+                        gone.push(k);
+                    }
+                }
+                for k in gone {
+                    s.detach(k);
                 }
             }
             let code = child.wait().map(|st| st.exit_code()).unwrap_or(1);
@@ -204,9 +239,12 @@ impl Sessions {
             let clients: Vec<Client> = s.clients.lock().unwrap().drain().map(|(_, c)| c).collect();
             rt.block_on(async {
                 for c in clients {
-                    let _ = c.handle.exit_status_request(c.channel, code).await;
-                    let _ = c.handle.eof(c.channel).await;
-                    let _ = c.handle.close(c.channel).await;
+                    // Local terminals notice when their sender is dropped.
+                    if let Client::Ssh { handle, channel } = c {
+                        let _ = handle.exit_status_request(channel, code).await;
+                        let _ = handle.eof(channel).await;
+                        let _ = handle.close(channel).await;
+                    }
                 }
             });
             on_change();
@@ -234,9 +272,6 @@ fn shell_command() -> CommandBuilder {
     };
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
-    if let Some(home) = dirs::home_dir() {
-        cmd.cwd(home);
-    }
     cmd
 }
 

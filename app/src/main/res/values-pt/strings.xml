@@ -150,4 +150,5 @@
     <string name="quality_high">Nítido</string>
     <string name="fit">Ajustar à tela</string>
     <string name="keyboard">Teclado</string>
+    <string name="running_on_pc">Rodando no PC</string>
 </resources>

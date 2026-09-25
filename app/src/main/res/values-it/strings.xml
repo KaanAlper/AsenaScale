@@ -150,4 +150,5 @@
     <string name="quality_high">Nitido</string>
     <string name="fit">Adatta allo schermo</string>
     <string name="keyboard">Tastiera</string>
+    <string name="running_on_pc">In esecuzione sul PC</string>
 </resources>

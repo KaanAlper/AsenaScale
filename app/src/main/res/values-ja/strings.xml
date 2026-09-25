@@ -150,4 +150,5 @@
     <string name="quality_high">高画質</string>
     <string name="fit">画面に合わせる</string>
     <string name="keyboard">キーボード</string>
+    <string name="running_on_pc">PC で実行中</string>
 </resources>

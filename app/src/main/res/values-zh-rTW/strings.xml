@@ -150,4 +150,5 @@
     <string name="quality_high">清晰</string>
     <string name="fit">符合螢幕</string>
     <string name="keyboard">鍵盤</string>
+    <string name="running_on_pc">電腦上正在執行</string>
 </resources>

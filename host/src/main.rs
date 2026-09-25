@@ -52,13 +52,13 @@ fn main() {
         let _ = changed.send_event(UserEvent::Changed);
     }));
 
-    if let Err(e) = start_server(state.clone()) {
-        approve::info(
-            "AsenaScale",
-            &tf("start_failed", &[("e", &format!("{e:#}"))]),
-        );
-        return;
-    }
+    let rt = match start_server(state.clone()) {
+        Ok(rt) => rt,
+        Err(e) => {
+            approve::info("AsenaScale", &tf("start_failed", &[("e", &format!("{e:#}"))]));
+            return;
+        }
+    };
 
     if autostart::first_run() {
         autostart::set(true);
@@ -84,6 +84,7 @@ fn main() {
             state: state.clone(),
             ts: ts.clone(),
             net: net.clone(),
+            rt,
             quit: Box::new(move || {
                 let _ = quit.send_event(UserEvent::Quit);
             }),
@@ -247,7 +248,7 @@ fn main() {
 
 /// Runs the SSH server on its own Tokio runtime thread. Fails fast if the
 /// port is taken (usually: already running).
-fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
+fn start_server(state: Arc<server::State>) -> anyhow::Result<tokio::runtime::Handle> {
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
     // Loopback only: the tailnet reaches it through the embedded node.
     let listener = rt.block_on(tokio::net::TcpListener::bind(("127.0.0.1", PORT)))?;
@@ -263,6 +264,7 @@ fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
         nodelay: true,
         ..Default::default()
     });
+    let handle = rt.handle().clone();
     std::thread::spawn(move || {
         rt.block_on(async move {
             use russh::server::Server as _;
@@ -273,7 +275,7 @@ fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
         });
     });
     log::info!("listening on 127.0.0.1:{PORT}");
-    Ok(())
+    Ok(handle)
 }
 
 /// Starts the embedded node, forwards its port to the local server, and

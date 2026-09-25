@@ -46,12 +46,21 @@ asenascale ip [-4|-6]        bu PC'nin Tailscale IP'si
 asenascale connect           tailnet'e bağlan (gerekirse giriş linki verir)
 asenascale disconnect        tailnet'ten çık (telefon connect'e kadar ulaşamaz)
 asenascale ping CİHAZ        Tailscale üzerinden gecikme
+asenascale claude             bu klasörde Claude'u ortak oturumda aç: telefon canlı katılır
+asenascale new [KOMUT]        aynısı, herhangi bir komutla (boş: kabuk)
+asenascale attach [ID]        çalışan oturuma katıl (telefonun başlattığına da); Ctrl+] ayrılır
 asenascale sessions | kill ID|all
 asenascale phones | revoke N|AD|all
 asenascale log [-f] [-n N]   günlük (-f: canlı izle; telefon bağlandı/ayrıldı dahil)
 asenascale start | quit | login | logout | version
 ```
 `status`, `devices` ve `sessions` için `--json` eklenebilir.
+
+**PC'de açık Claude'a telefondan bağlanmak:** Windows başka bir programın sıradan bir terminal
+penceresine girmesine izin vermediği için Claude'u PC'de `asenascale claude` ile aç (normal
+`claude` gibi, o klasörde çalışır). Telefonda PC'ye dokununca başlatıcıda *PC'de çalışanlar*
+altında görünür; dokun, aynı terminale katıl. İkisi aynı anda yazabilir, ikisi de aynı ekranı
+görür. Tersi: telefonda başlattığın oturuma PC'den `asenascale attach` ile gir.
 
 ### İlk bağlantı
 PC uygulaması ilk açılışta tarayıcıda Tailscale girişini açar (telefondakiyle **aynı hesap**).

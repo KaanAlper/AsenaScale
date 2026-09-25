@@ -150,4 +150,5 @@
     <string name="quality_high">Scharf</string>
     <string name="fit">An Bildschirm anpassen</string>
     <string name="keyboard">Tastatur</string>
+    <string name="running_on_pc">Läuft auf dem PC</string>
 </resources>

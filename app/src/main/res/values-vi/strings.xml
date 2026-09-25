@@ -150,4 +150,5 @@
     <string name="quality_high">Nét</string>
     <string name="fit">Vừa màn hình</string>
     <string name="keyboard">Bàn phím</string>
+    <string name="running_on_pc">Đang chạy trên PC</string>
 </resources>

@@ -150,4 +150,5 @@
     <string name="quality_high">Чітко</string>
     <string name="fit">Вписати в екран</string>
     <string name="keyboard">Клавіатура</string>
+    <string name="running_on_pc">Запущено на ПК</string>
 </resources>
