@@ -23,6 +23,7 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   ping DEVICE         Tailscale round trip to a device (name or IP)
   claude [ARGS]       start Claude Code here, in this folder, as a shared
                       session: the phone can join it live (and vice versa)
+  codex | gemini | grok [ARGS]   the same for those CLIs
   new [COMMAND]       the same with any command (default: a shell)
   attach [ID]         join a running session (one the phone started, too);
                       Ctrl+] leaves it running
@@ -65,7 +66,7 @@ pub fn run(args: &[String]) -> i32 {
                 1
             }
         }
-        "attach" | "a" | "claude" | "new" => {
+        "attach" | "a" | "claude" | "codex" | "gemini" | "grok" | "new" => {
             if ask(&["ping-app".into()]).is_err() {
                 start_app();
                 if !wait_running() {
@@ -74,7 +75,7 @@ pub fn run(args: &[String]) -> i32 {
                 }
             }
             let (id, command) = match cmd {
-                "claude" => (None, Some(std::iter::once("claude".to_string()).chain(args[1..].iter().cloned()).collect::<Vec<_>>().join(" "))),
+                "claude" | "codex" | "gemini" | "grok" => (None, Some(std::iter::once(cmd.to_string()).chain(args[1..].iter().cloned()).collect::<Vec<_>>().join(" "))),
                 "new" => (None, Some(args[1..].join(" "))),
                 _ => match args.get(1) {
                     Some(id) => (Some(id.clone()), None),

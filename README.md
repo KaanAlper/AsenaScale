@@ -47,6 +47,7 @@ asenascale connect           tailnet'e bağlan (gerekirse giriş linki verir)
 asenascale disconnect        tailnet'ten çık (telefon connect'e kadar ulaşamaz)
 asenascale ping CİHAZ        Tailscale üzerinden gecikme
 asenascale claude             bu klasörde Claude'u ortak oturumda aç: telefon canlı katılır
+asenascale codex|gemini|grok  aynısı, o araçlarla
 asenascale new [KOMUT]        aynısı, herhangi bir komutla (boş: kabuk)
 asenascale attach [ID]        çalışan oturuma katıl (telefonun başlattığına da); Ctrl+] ayrılır
 asenascale sessions | kill ID|all
