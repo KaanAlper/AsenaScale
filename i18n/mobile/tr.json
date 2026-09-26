@@ -143,7 +143,7 @@
   "downloading": "İndiriliyor: %1$s",
   "n_files": "%1$d dosya",
   "screen_share": "Ekran paylaşımı",
-  "screen_hint": "Dokun: tıkla · Basılı tut: sağ tık · Sürükle: kaydır · İki parmak: yakınlaştır",
+  "screen_hint": "Dokun: tıkla · Basılı tut: sağ tık · İki parmak aynı yöne: kaydır · İki parmak aç/kapa: yakınlaştır · Tek parmak: yakındayken gezin",
   "quality_low": "Tasarruf",
   "quality_high": "Net",
   "fit": "Ekrana sığdır",

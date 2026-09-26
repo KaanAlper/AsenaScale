@@ -145,7 +145,7 @@
     <string name="downloading">Pobieranie %1$s</string>
     <string name="n_files">Pliki: %1$d</string>
     <string name="screen_share">Udostępnianie ekranu</string>
-    <string name="screen_hint">Dotknij: klik · Przytrzymaj: prawy klik · Przeciągnij: przewijanie · Dwa palce: powiększenie</string>
+    <string name="screen_hint">Dotknij: klik · Przytrzymaj: prawy klik · Dwa palce w tę samą stronę: przewijanie · Szczypanie: zoom · Jeden palec: przesuwanie (po powiększeniu)</string>
     <string name="quality_low">Oszczędny</string>
     <string name="quality_high">Ostry</string>
     <string name="fit">Dopasuj do ekranu</string>

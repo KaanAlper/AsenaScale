@@ -145,7 +145,7 @@
     <string name="downloading">%1$s downloaden</string>
     <string name="n_files">%1$d bestanden</string>
     <string name="screen_share">Scherm delen</string>
-    <string name="screen_hint">Tik: klik · Lang drukken: rechtsklik · Slepen: scrollen · Twee vingers: zoomen</string>
+    <string name="screen_hint">Tik: klik · Lang drukken: rechtsklik · Twee vingers dezelfde kant: scrollen · Knijpen: zoom · Eén vinger: verschuiven (ingezoomd)</string>
     <string name="quality_low">Zuinig</string>
     <string name="quality_high">Scherp</string>
     <string name="fit">Aan scherm aanpassen</string>

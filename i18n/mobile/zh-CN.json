@@ -143,7 +143,7 @@
   "downloading": "正在下载 %1$s",
   "n_files": "%1$d 个文件",
   "screen_share": "屏幕共享",
-  "screen_hint": "点按：单击 · 长按：右键 · 拖动：滚动 · 双指：缩放",
+  "screen_hint": "点按：单击 · 长按：右键 · 双指同向：滚动 · 双指开合：缩放 · 单指：放大时移动",
   "quality_low": "省流",
   "quality_high": "清晰",
   "fit": "适应屏幕",

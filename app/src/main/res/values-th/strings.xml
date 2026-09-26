@@ -145,7 +145,7 @@
     <string name="downloading">กำลังดาวน์โหลด %1$s</string>
     <string name="n_files">%1$d ไฟล์</string>
     <string name="screen_share">แชร์หน้าจอ</string>
-    <string name="screen_hint">แตะ: คลิก · กดค้าง: คลิกขวา · ลาก: เลื่อน · สองนิ้ว: ซูม</string>
+    <string name="screen_hint">แตะ: คลิก · กดค้าง: คลิกขวา · สองนิ้วทิศเดียวกัน: เลื่อน · หนีบ: ซูม · นิ้วเดียว: เลื่อนภาพเมื่อซูม</string>
     <string name="quality_low">ประหยัด</string>
     <string name="quality_high">คมชัด</string>
     <string name="fit">พอดีหน้าจอ</string>

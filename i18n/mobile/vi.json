@@ -143,7 +143,7 @@
   "downloading": "Đang tải %1$s",
   "n_files": "%1$d tệp",
   "screen_share": "Chia sẻ màn hình",
-  "screen_hint": "Chạm: nhấp · Nhấn giữ: nhấp phải · Kéo: cuộn · Hai ngón: thu phóng",
+  "screen_hint": "Chạm: nhấp · Nhấn giữ: nhấp phải · Hai ngón cùng hướng: cuộn · Chụm: thu phóng · Một ngón: di chuyển khi phóng to",
   "quality_low": "Tiết kiệm",
   "quality_high": "Nét",
   "fit": "Vừa màn hình",

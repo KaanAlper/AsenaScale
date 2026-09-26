@@ -145,7 +145,7 @@
     <string name="downloading">جارٍ تنزيل %1$s</string>
     <string name="n_files">الملفات: %1$d</string>
     <string name="screen_share">مشاركة الشاشة</string>
-    <string name="screen_hint">نقرة: نقر · ضغط مطوّل: نقر يمين · سحب: تمرير · إصبعان: تكبير</string>
+    <string name="screen_hint">نقرة: نقر · ضغط مطوّل: نقر يمين · إصبعان بنفس الاتجاه: تمرير · قرص: تكبير · إصبع واحد: تحريك عند التكبير</string>
     <string name="quality_low">توفير</string>
     <string name="quality_high">واضح</string>
     <string name="fit">ملاءمة الشاشة</string>

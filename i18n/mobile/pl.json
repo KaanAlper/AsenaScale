@@ -143,7 +143,7 @@
   "downloading": "Pobieranie %1$s",
   "n_files": "Pliki: %1$d",
   "screen_share": "Udostępnianie ekranu",
-  "screen_hint": "Dotknij: klik · Przytrzymaj: prawy klik · Przeciągnij: przewijanie · Dwa palce: powiększenie",
+  "screen_hint": "Dotknij: klik · Przytrzymaj: prawy klik · Dwa palce w tę samą stronę: przewijanie · Szczypanie: zoom · Jeden palec: przesuwanie (po powiększeniu)",
   "quality_low": "Oszczędny",
   "quality_high": "Ostry",
   "fit": "Dopasuj do ekranu",

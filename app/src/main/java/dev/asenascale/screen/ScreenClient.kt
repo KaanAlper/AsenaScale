@@ -125,11 +125,51 @@ class ScreenClient(private val host: Host, monitor: Int) {
     fun click(x: Float, y: Float, button: Char = 'l', count: Int = 1) = send("c ${x.toInt()} ${y.toInt()} $button $count")
     fun move(x: Float, y: Float) = send("m ${x.toInt()} ${y.toInt()}")
     fun scroll(lines: Int) = send("w $lines")
-    fun key(combo: String) = send("k $combo")
+    fun scrollSideways(columns: Int) = send("h $columns")
+    /** A key combination exactly as given, ignoring the sticky modifiers. */
+    fun sendRaw(combo: String) = send("k $combo")
+
+    /** Sticky modifier keys of the extra row: off, for the next key, or locked. */
+    enum class Mod { OFF, ONCE, LOCKED }
+
+    val mods = androidx.compose.runtime.mutableStateMapOf(
+        "ctrl" to Mod.OFF, "alt" to Mod.OFF, "shift" to Mod.OFF, "win" to Mod.OFF,
+    )
+
+    /** Sends [combo] ("enter", "f4", "r"...) with the active modifiers held. */
+    fun key(combo: String) {
+        val held = mods.filterValues { it != Mod.OFF }.keys.sortedBy { order.indexOf(it) }
+        send("k " + (held + combo).joinToString("+"))
+        for (m in held) if (mods[m] == Mod.ONCE) mods[m] = Mod.OFF
+    }
+
+    /** Tap on a modifier: arm it; tapped again while armed, send it alone (Win = Start menu). */
+    fun tapMod(m: String) {
+        when (mods[m]) {
+            Mod.OFF -> mods[m] = Mod.ONCE
+            Mod.ONCE -> {
+                mods[m] = Mod.OFF
+                key(m)
+            }
+            else -> mods[m] = Mod.OFF
+        }
+    }
+
+    /** Long press on a modifier: keep it held until tapped again. */
+    fun lockMod(m: String) {
+        mods[m] = if (mods[m] == Mod.LOCKED) Mod.OFF else Mod.LOCKED
+    }
+
+    private val order = listOf("ctrl", "alt", "shift", "win")
     fun monitor(i: Int) = send("o $i")
     fun quality(q: Int, maxWidth: Int) = send("q $q $maxWidth")
     fun type(text: String) {
         if (text.isEmpty()) return
+        // With a modifier armed, a typed letter is a shortcut (Win+R, Ctrl+C).
+        if (mods.values.any { it != Mod.OFF }) {
+            for (ch in text) if (!ch.isWhitespace()) key(ch.lowercase()) else key("space")
+            return
+        }
         send("t " + Base64.encodeToString(text.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP))
     }
 

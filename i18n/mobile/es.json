@@ -143,7 +143,7 @@
   "downloading": "Descargando %1$s",
   "n_files": "%1$d archivos",
   "screen_share": "Compartir pantalla",
-  "screen_hint": "Tocar: clic · Mantener: clic derecho · Arrastrar: desplazar · Dos dedos: zoom",
+  "screen_hint": "Tocar: clic · Mantener: clic derecho · Dos dedos igual: desplazar · Pellizcar: zoom · Un dedo: mover (con zoom)",
   "quality_low": "Ahorro",
   "quality_high": "Nítido",
   "fit": "Ajustar a la pantalla",

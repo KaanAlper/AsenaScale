@@ -143,7 +143,7 @@
   "downloading": "Lade %1$s herunter",
   "n_files": "%1$d Dateien",
   "screen_share": "Bildschirmfreigabe",
-  "screen_hint": "Tippen: Klick · Lang drücken: Rechtsklick · Ziehen: Scrollen · Zwei Finger: Zoom",
+  "screen_hint": "Tippen: Klick · Lang drücken: Rechtsklick · Zwei Finger gleich: scrollen · Spreizen: Zoom · Ein Finger: verschieben (gezoomt)",
   "quality_low": "Sparsam",
   "quality_high": "Scharf",
   "fit": "An Bildschirm anpassen",

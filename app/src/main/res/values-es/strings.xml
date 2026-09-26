@@ -145,7 +145,7 @@
     <string name="downloading">Descargando %1$s</string>
     <string name="n_files">%1$d archivos</string>
     <string name="screen_share">Compartir pantalla</string>
-    <string name="screen_hint">Tocar: clic · Mantener: clic derecho · Arrastrar: desplazar · Dos dedos: zoom</string>
+    <string name="screen_hint">Tocar: clic · Mantener: clic derecho · Dos dedos igual: desplazar · Pellizcar: zoom · Un dedo: mover (con zoom)</string>
     <string name="quality_low">Ahorro</string>
     <string name="quality_high">Nítido</string>
     <string name="fit">Ajustar a la pantalla</string>

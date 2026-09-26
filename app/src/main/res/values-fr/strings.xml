@@ -145,7 +145,7 @@
     <string name="downloading">Téléchargement de %1$s</string>
     <string name="n_files">%1$d fichiers</string>
     <string name="screen_share">Partage d\'écran</string>
-    <string name="screen_hint">Toucher : clic · Appui long : clic droit · Glisser : défiler · Deux doigts : zoom</string>
+    <string name="screen_hint">Toucher : clic · Appui long : clic droit · Deux doigts même sens : défiler · Pincer : zoom · Un doigt : déplacer (zoomé)</string>
     <string name="quality_low">Éco</string>
     <string name="quality_high">Net</string>
     <string name="fit">Ajuster à l\'écran</string>

@@ -143,7 +143,7 @@
   "downloading": "Mengunduh %1$s",
   "n_files": "%1$d berkas",
   "screen_share": "Berbagi layar",
-  "screen_hint": "Ketuk: klik · Tekan lama: klik kanan · Seret: gulir · Dua jari: zoom",
+  "screen_hint": "Ketuk: klik · Tekan lama: klik kanan · Dua jari searah: gulir · Cubit: zoom · Satu jari: geser saat zoom",
   "quality_low": "Hemat",
   "quality_high": "Tajam",
   "fit": "Sesuaikan layar",

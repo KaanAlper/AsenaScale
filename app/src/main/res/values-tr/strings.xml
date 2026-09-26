@@ -145,7 +145,7 @@
     <string name="downloading">İndiriliyor: %1$s</string>
     <string name="n_files">%1$d dosya</string>
     <string name="screen_share">Ekran paylaşımı</string>
-    <string name="screen_hint">Dokun: tıkla · Basılı tut: sağ tık · Sürükle: kaydır · İki parmak: yakınlaştır</string>
+    <string name="screen_hint">Dokun: tıkla · Basılı tut: sağ tık · İki parmak aynı yöne: kaydır · İki parmak aç/kapa: yakınlaştır · Tek parmak: yakındayken gezin</string>
     <string name="quality_low">Tasarruf</string>
     <string name="quality_high">Net</string>
     <string name="fit">Ekrana sığdır</string>

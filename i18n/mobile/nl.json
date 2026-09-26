@@ -143,7 +143,7 @@
   "downloading": "%1$s downloaden",
   "n_files": "%1$d bestanden",
   "screen_share": "Scherm delen",
-  "screen_hint": "Tik: klik · Lang drukken: rechtsklik · Slepen: scrollen · Twee vingers: zoomen",
+  "screen_hint": "Tik: klik · Lang drukken: rechtsklik · Twee vingers dezelfde kant: scrollen · Knijpen: zoom · Eén vinger: verschuiven (ingezoomd)",
   "quality_low": "Zuinig",
   "quality_high": "Scherp",
   "fit": "Aan scherm aanpassen",
