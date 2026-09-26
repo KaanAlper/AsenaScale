@@ -149,5 +149,12 @@
   "fit": "พอดีหน้าจอ",
   "keyboard": "แป้นพิมพ์",
   "running_on_pc": "กำลังทำงานบนพีซี",
-  "release_keys": "ปล่อยปุ่ม"
+  "release_keys": "ปล่อยปุ่ม",
+  "update_ready": "เวอร์ชัน %1$s พร้อมแล้ว",
+  "update_downloading": "กำลังดาวน์โหลดเวอร์ชัน %1$s…",
+  "update_install": "ติดตั้ง",
+  "check_updates": "ตรวจหาอัปเดต",
+  "up_to_date": "เป็นเวอร์ชันล่าสุด",
+  "update_checking": "กำลังตรวจสอบ…",
+  "update_failed": "ตรวจสอบไม่สำเร็จ: %1$s"
 }

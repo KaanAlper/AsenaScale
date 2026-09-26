@@ -149,5 +149,12 @@
   "fit": "Aan scherm aanpassen",
   "keyboard": "Toetsenbord",
   "running_on_pc": "Draait op de pc",
-  "release_keys": "Toetsen loslaten"
+  "release_keys": "Toetsen loslaten",
+  "update_ready": "Versie %1$s staat klaar",
+  "update_downloading": "Versie %1$s downloaden…",
+  "update_install": "Installeren",
+  "check_updates": "Controleren op updates",
+  "up_to_date": "Up-to-date",
+  "update_checking": "Controleren…",
+  "update_failed": "Controle mislukt: %1$s"
 }

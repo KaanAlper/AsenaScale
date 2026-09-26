@@ -149,5 +149,12 @@
   "fit": "Vừa màn hình",
   "keyboard": "Bàn phím",
   "running_on_pc": "Đang chạy trên PC",
-  "release_keys": "Nhả phím"
+  "release_keys": "Nhả phím",
+  "update_ready": "Phiên bản %1$s đã sẵn sàng",
+  "update_downloading": "Đang tải phiên bản %1$s…",
+  "update_install": "Cài đặt",
+  "check_updates": "Kiểm tra cập nhật",
+  "up_to_date": "Đã mới nhất",
+  "update_checking": "Đang kiểm tra…",
+  "update_failed": "Kiểm tra thất bại: %1$s"
 }

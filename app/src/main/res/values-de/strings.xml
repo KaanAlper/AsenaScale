@@ -152,4 +152,11 @@
     <string name="keyboard">Tastatur</string>
     <string name="running_on_pc">Läuft auf dem PC</string>
     <string name="release_keys">Gehaltene Tasten loslassen</string>
+    <string name="update_ready">Version %1$s ist bereit</string>
+    <string name="update_downloading">Lade Version %1$s…</string>
+    <string name="update_install">Installieren</string>
+    <string name="check_updates">Nach Updates suchen</string>
+    <string name="up_to_date">Aktuell</string>
+    <string name="update_checking">Suche…</string>
+    <string name="update_failed">Update-Prüfung fehlgeschlagen: %1$s</string>
 </resources>

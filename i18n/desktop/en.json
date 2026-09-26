@@ -23,5 +23,9 @@
   "request_body": "{device}\nwants to connect to this computer with AsenaScale.\n\nIf you allow it, this phone can use the terminal and take screenshots. You won't be asked again.\n\nKey: {key}\n\nAllow it?",
   "ts_off": "Tailscale: off",
   "ts_connect": "Connect to Tailscale",
-  "ts_disconnect": "Disconnect from Tailscale"
+  "ts_disconnect": "Disconnect from Tailscale",
+  "check_updates": "Check for updates",
+  "update_to": "Update to {v}",
+  "up_to_date": "AsenaScale is up to date ({v}).",
+  "update_failed": "Update failed: {e}"
 }

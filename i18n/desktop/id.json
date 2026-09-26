@@ -23,5 +23,9 @@
   "request_body": "{device}\ningin terhubung ke komputer ini dengan AsenaScale.\n\nJika diizinkan, ponsel ini bisa memakai terminal dan mengambil tangkapan layar. Tidak akan ditanya lagi.\n\nKunci: {key}\n\nIzinkan?",
   "ts_off": "Tailscale: mati",
   "ts_connect": "Hubungkan ke Tailscale",
-  "ts_disconnect": "Putuskan dari Tailscale"
+  "ts_disconnect": "Putuskan dari Tailscale",
+  "check_updates": "Periksa pembaruan",
+  "update_to": "Perbarui ke {v}",
+  "up_to_date": "AsenaScale sudah terbaru ({v}).",
+  "update_failed": "Pembaruan gagal: {e}"
 }

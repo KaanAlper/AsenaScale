@@ -152,4 +152,11 @@
     <string name="keyboard">Toetsenbord</string>
     <string name="running_on_pc">Draait op de pc</string>
     <string name="release_keys">Toetsen loslaten</string>
+    <string name="update_ready">Versie %1$s staat klaar</string>
+    <string name="update_downloading">Versie %1$s downloaden…</string>
+    <string name="update_install">Installeren</string>
+    <string name="check_updates">Controleren op updates</string>
+    <string name="up_to_date">Up-to-date</string>
+    <string name="update_checking">Controleren…</string>
+    <string name="update_failed">Controle mislukt: %1$s</string>
 </resources>

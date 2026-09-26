@@ -149,5 +149,12 @@
   "fit": "符合螢幕",
   "keyboard": "鍵盤",
   "running_on_pc": "電腦上正在執行",
-  "release_keys": "放開按鍵"
+  "release_keys": "放開按鍵",
+  "update_ready": "版本 %1$s 已就緒",
+  "update_downloading": "正在下載版本 %1$s…",
+  "update_install": "安裝",
+  "check_updates": "檢查更新",
+  "up_to_date": "已是最新",
+  "update_checking": "檢查中…",
+  "update_failed": "檢查失敗：%1$s"
 }

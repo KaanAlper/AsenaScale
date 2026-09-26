@@ -152,4 +152,11 @@
     <string name="keyboard">Клавиатура</string>
     <string name="running_on_pc">Запущено на ПК</string>
     <string name="release_keys">Отпустить клавиши</string>
+    <string name="update_ready">Версия %1$s готова</string>
+    <string name="update_downloading">Загрузка версии %1$s…</string>
+    <string name="update_install">Установить</string>
+    <string name="check_updates">Проверить обновления</string>
+    <string name="up_to_date">Актуально</string>
+    <string name="update_checking">Проверка…</string>
+    <string name="update_failed">Не удалось проверить: %1$s</string>
 </resources>

@@ -23,5 +23,9 @@
   "request_body": "{device}\nchce połączyć się z tym komputerem przez AsenaScale.\n\nJeśli zezwolisz, ten telefon będzie mógł używać terminala i robić zrzuty ekranu. Pytanie nie pojawi się ponownie.\n\nKlucz: {key}\n\nZezwolić?",
   "ts_off": "Tailscale: wyłączony",
   "ts_connect": "Połącz z Tailscale",
-  "ts_disconnect": "Rozłącz z Tailscale"
+  "ts_disconnect": "Rozłącz z Tailscale",
+  "check_updates": "Sprawdź aktualizacje",
+  "update_to": "Zaktualizuj do {v}",
+  "up_to_date": "AsenaScale jest aktualny ({v}).",
+  "update_failed": "Aktualizacja nie powiodła się: {e}"
 }

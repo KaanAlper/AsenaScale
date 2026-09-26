@@ -34,6 +34,7 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   log [-f] [-n N]     the app's log (-f: keep following)
   start               start the tray app in the background
   quit                stop the tray app
+  update              install the latest release now (sessions are closed)
   version
 
 Add --json to status, devices or sessions for machine-readable output.
@@ -48,10 +49,44 @@ pub fn run(args: &[String]) -> i32 {
             0
         }
         "version" | "-V" | "--version" => {
-            println!("asenascale {}", env!("CARGO_PKG_VERSION"));
+            println!("asenascale {}", env!("AS_VERSION"));
             0
         }
         "log" | "logs" => log(&args[1..]),
+        "update" | "upgrade" => {
+            match crate::update::available() {
+                Ok(None) => {
+                    println!("up to date ({})", crate::update::current());
+                    0
+                }
+                Ok(Some(v)) => {
+                    println!("updating {} -> {v}...", crate::update::current());
+                    match crate::update::apply(&v) {
+                        Ok(()) => {
+                            // Windows: the installer restarts the app. Linux: restart it here.
+                            #[cfg(not(windows))]
+                            {
+                                let was_running = ask(&["quit".into()]).is_ok();
+                                if was_running {
+                                    std::thread::sleep(Duration::from_millis(800));
+                                    start_app();
+                                }
+                            }
+                            println!("done");
+                            0
+                        }
+                        Err(e) => {
+                            eprintln!("update failed: {e:#}");
+                            1
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("can't check for updates: {e:#}");
+                    1
+                }
+            }
+        }
         "start" => {
             if ask(&["ping-app".into()]).is_ok() {
                 println!("already running");

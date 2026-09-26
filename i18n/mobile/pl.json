@@ -149,5 +149,12 @@
   "fit": "Dopasuj do ekranu",
   "keyboard": "Klawiatura",
   "running_on_pc": "Działa na komputerze",
-  "release_keys": "Puść klawisze"
+  "release_keys": "Puść klawisze",
+  "update_ready": "Wersja %1$s jest gotowa",
+  "update_downloading": "Pobieranie wersji %1$s…",
+  "update_install": "Zainstaluj",
+  "check_updates": "Sprawdź aktualizacje",
+  "up_to_date": "Aktualna",
+  "update_checking": "Sprawdzanie…",
+  "update_failed": "Sprawdzanie nie powiodło się: %1$s"
 }

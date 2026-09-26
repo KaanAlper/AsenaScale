@@ -149,5 +149,12 @@
   "fit": "ملاءمة الشاشة",
   "keyboard": "لوحة المفاتيح",
   "running_on_pc": "قيد التشغيل على الكمبيوتر",
-  "release_keys": "تحرير المفاتيح"
+  "release_keys": "تحرير المفاتيح",
+  "update_ready": "الإصدار %1$s جاهز",
+  "update_downloading": "جارٍ تنزيل الإصدار %1$s…",
+  "update_install": "تثبيت",
+  "check_updates": "التحقق من التحديثات",
+  "up_to_date": "محدَّث",
+  "update_checking": "جارٍ التحقق…",
+  "update_failed": "فشل التحقق: %1$s"
 }

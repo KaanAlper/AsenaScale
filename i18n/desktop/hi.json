@@ -23,5 +23,9 @@
   "request_body": "{device}\nAsenaScale से इस कंप्यूटर से कनेक्ट होना चाहता है।\n\nअनुमति देने पर यह फ़ोन टर्मिनल इस्तेमाल कर सकेगा और स्क्रीनशॉट ले सकेगा। दोबारा नहीं पूछा जाएगा।\n\nकुंजी: {key}\n\nअनुमति दें?",
   "ts_off": "Tailscale: बंद",
   "ts_connect": "Tailscale से कनेक्ट करें",
-  "ts_disconnect": "Tailscale से डिस्कनेक्ट करें"
+  "ts_disconnect": "Tailscale से डिस्कनेक्ट करें",
+  "check_updates": "अपडेट जाँचें",
+  "update_to": "{v} पर अपडेट करें",
+  "up_to_date": "AsenaScale अप टू डेट है ({v})।",
+  "update_failed": "अपडेट विफल: {e}"
 }

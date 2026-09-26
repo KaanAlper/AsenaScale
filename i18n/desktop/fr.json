@@ -23,5 +23,9 @@
   "request_body": "{device}\nveut se connecter à cet ordinateur avec AsenaScale.\n\nSi vous l'autorisez, ce téléphone pourra utiliser le terminal et faire des captures d'écran. La question ne sera plus posée.\n\nClé : {key}\n\nAutoriser ?",
   "ts_off": "Tailscale : désactivé",
   "ts_connect": "Se connecter à Tailscale",
-  "ts_disconnect": "Se déconnecter de Tailscale"
+  "ts_disconnect": "Se déconnecter de Tailscale",
+  "check_updates": "Rechercher des mises à jour",
+  "update_to": "Mettre à jour vers {v}",
+  "up_to_date": "AsenaScale est à jour ({v}).",
+  "update_failed": "Échec de la mise à jour : {e}"
 }

@@ -152,4 +152,11 @@
     <string name="keyboard">कीबोर्ड</string>
     <string name="running_on_pc">PC पर चल रहे</string>
     <string name="release_keys">कुंजियाँ छोड़ें</string>
+    <string name="update_ready">संस्करण %1$s तैयार है</string>
+    <string name="update_downloading">संस्करण %1$s डाउनलोड हो रहा है…</string>
+    <string name="update_install">इंस्टॉल करें</string>
+    <string name="check_updates">अपडेट जाँचें</string>
+    <string name="up_to_date">अप टू डेट</string>
+    <string name="update_checking">जाँच हो रही है…</string>
+    <string name="update_failed">जाँच विफल: %1$s</string>
 </resources>

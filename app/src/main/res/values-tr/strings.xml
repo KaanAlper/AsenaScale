@@ -152,4 +152,11 @@
     <string name="keyboard">Klavye</string>
     <string name="running_on_pc">PC\'de çalışanlar</string>
     <string name="release_keys">Basılı tuşları bırak</string>
+    <string name="update_ready">%1$s sürümü hazır</string>
+    <string name="update_downloading">%1$s sürümü indiriliyor…</string>
+    <string name="update_install">Kur</string>
+    <string name="check_updates">Güncellemeleri denetle</string>
+    <string name="up_to_date">Güncel</string>
+    <string name="update_checking">Denetleniyor…</string>
+    <string name="update_failed">Güncelleme denetlenemedi: %1$s</string>
 </resources>

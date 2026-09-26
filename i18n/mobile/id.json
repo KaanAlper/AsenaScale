@@ -149,5 +149,12 @@
   "fit": "Sesuaikan layar",
   "keyboard": "Keyboard",
   "running_on_pc": "Berjalan di PC",
-  "release_keys": "Lepaskan tombol"
+  "release_keys": "Lepaskan tombol",
+  "update_ready": "Versi %1$s siap",
+  "update_downloading": "Mengunduh versi %1$s…",
+  "update_install": "Pasang",
+  "check_updates": "Periksa pembaruan",
+  "up_to_date": "Terbaru",
+  "update_checking": "Memeriksa…",
+  "update_failed": "Pemeriksaan gagal: %1$s"
 }

@@ -149,5 +149,12 @@
   "fit": "画面に合わせる",
   "keyboard": "キーボード",
   "running_on_pc": "PC で実行中",
-  "release_keys": "キーを離す"
+  "release_keys": "キーを離す",
+  "update_ready": "バージョン %1$s の準備ができました",
+  "update_downloading": "バージョン %1$s をダウンロード中…",
+  "update_install": "インストール",
+  "check_updates": "アップデートを確認",
+  "up_to_date": "最新です",
+  "update_checking": "確認中…",
+  "update_failed": "確認に失敗しました: %1$s"
 }

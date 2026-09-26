@@ -149,5 +149,12 @@
   "fit": "Вписати в екран",
   "keyboard": "Клавіатура",
   "running_on_pc": "Запущено на ПК",
-  "release_keys": "Відпустити клавіші"
+  "release_keys": "Відпустити клавіші",
+  "update_ready": "Версія %1$s готова",
+  "update_downloading": "Завантаження версії %1$s…",
+  "update_install": "Встановити",
+  "check_updates": "Перевірити оновлення",
+  "up_to_date": "Актуально",
+  "update_checking": "Перевірка…",
+  "update_failed": "Не вдалося перевірити: %1$s"
 }

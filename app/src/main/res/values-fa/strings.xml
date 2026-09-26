@@ -152,4 +152,11 @@
     <string name="keyboard">صفحه‌کلید</string>
     <string name="running_on_pc">در حال اجرا روی رایانه</string>
     <string name="release_keys">رها کردن کلیدها</string>
+    <string name="update_ready">نسخهٔ %1$s آماده است</string>
+    <string name="update_downloading">در حال دانلود نسخهٔ %1$s…</string>
+    <string name="update_install">نصب</string>
+    <string name="check_updates">بررسی به‌روزرسانی</string>
+    <string name="up_to_date">به‌روز</string>
+    <string name="update_checking">در حال بررسی…</string>
+    <string name="update_failed">بررسی ناموفق: %1$s</string>
 </resources>

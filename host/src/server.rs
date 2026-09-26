@@ -21,7 +21,7 @@ use crate::approve;
 use crate::session::{Session, Sessions};
 use crate::store::Devices;
 
-pub const SERVER_ID: &str = concat!("SSH-2.0-AsenaScale_", env!("CARGO_PKG_VERSION"));
+pub const SERVER_ID: &str = concat!("SSH-2.0-AsenaScale_", env!("AS_VERSION"));
 
 /// Shared between connections and the tray.
 pub struct State {

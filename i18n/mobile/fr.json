@@ -149,5 +149,12 @@
   "fit": "Ajuster à l'écran",
   "keyboard": "Clavier",
   "running_on_pc": "En cours sur le PC",
-  "release_keys": "Relâcher les touches"
+  "release_keys": "Relâcher les touches",
+  "update_ready": "La version %1$s est prête",
+  "update_downloading": "Téléchargement de la version %1$s…",
+  "update_install": "Installer",
+  "check_updates": "Rechercher des mises à jour",
+  "up_to_date": "À jour",
+  "update_checking": "Vérification…",
+  "update_failed": "Échec de la vérification : %1$s"
 }

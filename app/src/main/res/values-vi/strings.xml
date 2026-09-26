@@ -152,4 +152,11 @@
     <string name="keyboard">Bàn phím</string>
     <string name="running_on_pc">Đang chạy trên PC</string>
     <string name="release_keys">Nhả phím</string>
+    <string name="update_ready">Phiên bản %1$s đã sẵn sàng</string>
+    <string name="update_downloading">Đang tải phiên bản %1$s…</string>
+    <string name="update_install">Cài đặt</string>
+    <string name="check_updates">Kiểm tra cập nhật</string>
+    <string name="up_to_date">Đã mới nhất</string>
+    <string name="update_checking">Đang kiểm tra…</string>
+    <string name="update_failed">Kiểm tra thất bại: %1$s</string>
 </resources>

@@ -41,6 +41,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.LinearProgressIndicator
+import dev.asenascale.update.Updater
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
@@ -86,6 +88,14 @@ fun HomeScreen(
     val onOpenHost: (Host) -> Unit = { launcherFor = it }
     val scope = rememberCoroutineScope()
 
+    // A newer release: downloaded in the background, then Android's install
+    // screen opens by itself (once per version).
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        val ready = withContext(Dispatchers.IO) { Updater.checkAndDownload(context, force = false) }
+        if (ready && Updater.shouldAutoOffer(context)) Updater.install(context)
+    }
+
     // PCs running AsenaScale show up by themselves: while this screen is
     // open, online non-phone devices are knocked on once a minute.
     LaunchedEffect(ts.running) {
@@ -118,6 +128,7 @@ fun HomeScreen(
         }
 
         item { TailscaleCard(ts) }
+        item { UpdateBanner() }
 
         item {
             SectionHeader(stringResource(R.string.section_computers)) {
@@ -161,6 +172,7 @@ fun HomeScreen(
                 PeerRow(peer, saved = false) { deviceFor = peer }
             }
         }
+        item { VersionLine() }
         item { Spacer(Modifier.height(24.dp)) }
     }
 
@@ -493,5 +505,75 @@ private fun KeyDialog(onDismiss: () -> Unit) {
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = Pal.subtext) } },
+    )
+}
+
+@Composable
+private fun UpdateBanner() {
+    val context = LocalContext.current
+    val status by Updater.status.collectAsState()
+    val (text, fraction) = when (val st = status) {
+        is Updater.Status.Downloading -> stringResource(R.string.update_downloading, st.version) to st.fraction
+        is Updater.Status.Ready -> stringResource(R.string.update_ready, st.version) to null
+        else -> return
+    }
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Pal.mauve.copy(alpha = 0.12f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(start = 18.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(AsIcons.Download, null, tint = Pal.mauve, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(text, modifier = Modifier.weight(1f), fontSize = 14.sp)
+                if (status is Updater.Status.Ready) {
+                    TextButton(onClick = { Updater.install(context) }) {
+                        Text(stringResource(R.string.update_install), color = Pal.mauve)
+                    }
+                }
+            }
+            fraction?.let {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { it },
+                    modifier = Modifier.fillMaxWidth().padding(end = 10.dp).height(3.dp),
+                    color = Pal.mauve,
+                    trackColor = Pal.surface0,
+                    drawStopIndicator = {},
+                )
+            }
+        }
+    }
+}
+
+/** App version, and a manual update check. */
+@Composable
+private fun VersionLine() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val status by Updater.status.collectAsState()
+    val note = when (val st = status) {
+        Updater.Status.Checking -> stringResource(R.string.update_checking)
+        Updater.Status.UpToDate -> stringResource(R.string.up_to_date)
+        is Updater.Status.Failed -> stringResource(R.string.update_failed, st.message)
+        else -> stringResource(R.string.check_updates)
+    }
+    Text(
+        "AsenaScale Mobile ${Updater.current}  ·  $note",
+        style = MonoSmall,
+        color = Pal.overlay0,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable {
+                scope.launch {
+                    val ready = withContext(Dispatchers.IO) { Updater.checkAndDownload(context, force = true) }
+                    if (ready) Updater.install(context)
+                }
+            }
+            .padding(8.dp),
     )
 }

@@ -152,4 +152,11 @@
     <string name="keyboard">แป้นพิมพ์</string>
     <string name="running_on_pc">กำลังทำงานบนพีซี</string>
     <string name="release_keys">ปล่อยปุ่ม</string>
+    <string name="update_ready">เวอร์ชัน %1$s พร้อมแล้ว</string>
+    <string name="update_downloading">กำลังดาวน์โหลดเวอร์ชัน %1$s…</string>
+    <string name="update_install">ติดตั้ง</string>
+    <string name="check_updates">ตรวจหาอัปเดต</string>
+    <string name="up_to_date">เป็นเวอร์ชันล่าสุด</string>
+    <string name="update_checking">กำลังตรวจสอบ…</string>
+    <string name="update_failed">ตรวจสอบไม่สำเร็จ: %1$s</string>
 </resources>

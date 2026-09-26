@@ -149,5 +149,12 @@
   "fit": "화면에 맞추기",
   "keyboard": "키보드",
   "running_on_pc": "PC에서 실행 중",
-  "release_keys": "키 놓기"
+  "release_keys": "키 놓기",
+  "update_ready": "버전 %1$s 준비됨",
+  "update_downloading": "버전 %1$s 다운로드 중…",
+  "update_install": "설치",
+  "check_updates": "업데이트 확인",
+  "up_to_date": "최신 버전",
+  "update_checking": "확인 중…",
+  "update_failed": "확인 실패: %1$s"
 }

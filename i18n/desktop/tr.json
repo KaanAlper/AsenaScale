@@ -23,5 +23,9 @@
   "request_body": "{device}\nAsenaScale ile bu bilgisayara bağlanmak istiyor.\n\nİzin verirsen bu telefon terminali kullanabilir ve ekran görüntüsü alabilir. Bir daha sorulmaz.\n\nAnahtar: {key}\n\nİzin veriyor musun?",
   "ts_off": "Tailscale: kapalı",
   "ts_connect": "Tailscale'e bağlan",
-  "ts_disconnect": "Tailscale bağlantısını kes"
+  "ts_disconnect": "Tailscale bağlantısını kes",
+  "check_updates": "Güncellemeleri denetle",
+  "update_to": "{v} sürümüne güncelle",
+  "up_to_date": "AsenaScale güncel ({v}).",
+  "update_failed": "Güncelleme başarısız: {e}"
 }

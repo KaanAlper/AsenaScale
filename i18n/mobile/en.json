@@ -149,5 +149,12 @@
   "fit": "Fit to screen",
   "keyboard": "Keyboard",
   "running_on_pc": "Running on the PC",
-  "release_keys": "Release held keys"
+  "release_keys": "Release held keys",
+  "update_ready": "Version %1$s is ready",
+  "update_downloading": "Downloading version %1$s…",
+  "update_install": "Install",
+  "check_updates": "Check for updates",
+  "up_to_date": "Up to date",
+  "update_checking": "Checking…",
+  "update_failed": "Update check failed: %1$s"
 }

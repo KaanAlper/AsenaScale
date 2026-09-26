@@ -152,4 +152,11 @@
     <string name="keyboard">Keyboard</string>
     <string name="running_on_pc">Berjalan di PC</string>
     <string name="release_keys">Lepaskan tombol</string>
+    <string name="update_ready">Versi %1$s siap</string>
+    <string name="update_downloading">Mengunduh versi %1$s…</string>
+    <string name="update_install">Pasang</string>
+    <string name="check_updates">Periksa pembaruan</string>
+    <string name="up_to_date">Terbaru</string>
+    <string name="update_checking">Memeriksa…</string>
+    <string name="update_failed">Pemeriksaan gagal: %1$s</string>
 </resources>

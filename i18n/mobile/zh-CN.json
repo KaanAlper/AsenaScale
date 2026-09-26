@@ -149,5 +149,12 @@
   "fit": "适应屏幕",
   "keyboard": "键盘",
   "running_on_pc": "电脑上正在运行",
-  "release_keys": "松开按键"
+  "release_keys": "松开按键",
+  "update_ready": "版本 %1$s 已就绪",
+  "update_downloading": "正在下载版本 %1$s…",
+  "update_install": "安装",
+  "check_updates": "检查更新",
+  "up_to_date": "已是最新",
+  "update_checking": "正在检查…",
+  "update_failed": "检查失败：%1$s"
 }

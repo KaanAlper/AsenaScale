@@ -152,4 +152,11 @@
     <string name="keyboard">Teclado</string>
     <string name="running_on_pc">Rodando no PC</string>
     <string name="release_keys">Soltar teclas</string>
+    <string name="update_ready">A versão %1$s está pronta</string>
+    <string name="update_downloading">Baixando a versão %1$s…</string>
+    <string name="update_install">Instalar</string>
+    <string name="check_updates">Procurar atualizações</string>
+    <string name="up_to_date">Atualizado</string>
+    <string name="update_checking">Verificando…</string>
+    <string name="update_failed">Falha na verificação: %1$s</string>
 </resources>

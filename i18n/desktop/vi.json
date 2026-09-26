@@ -23,5 +23,9 @@
   "request_body": "{device}\nmuốn kết nối tới máy tính này bằng AsenaScale.\n\nNếu cho phép, điện thoại này có thể dùng terminal và chụp màn hình. Sẽ không hỏi lại.\n\nKhóa: {key}\n\nCho phép?",
   "ts_off": "Tailscale: tắt",
   "ts_connect": "Kết nối Tailscale",
-  "ts_disconnect": "Ngắt kết nối Tailscale"
+  "ts_disconnect": "Ngắt kết nối Tailscale",
+  "check_updates": "Kiểm tra cập nhật",
+  "update_to": "Cập nhật lên {v}",
+  "up_to_date": "AsenaScale đã mới nhất ({v}).",
+  "update_failed": "Cập nhật thất bại: {e}"
 }

@@ -149,5 +149,12 @@
   "fit": "Adatta allo schermo",
   "keyboard": "Tastiera",
   "running_on_pc": "In esecuzione sul PC",
-  "release_keys": "Rilascia i tasti"
+  "release_keys": "Rilascia i tasti",
+  "update_ready": "La versione %1$s è pronta",
+  "update_downloading": "Download versione %1$s…",
+  "update_install": "Installa",
+  "check_updates": "Controlla aggiornamenti",
+  "up_to_date": "Aggiornato",
+  "update_checking": "Controllo…",
+  "update_failed": "Controllo non riuscito: %1$s"
 }

@@ -152,4 +152,11 @@
     <string name="keyboard">لوحة المفاتيح</string>
     <string name="running_on_pc">قيد التشغيل على الكمبيوتر</string>
     <string name="release_keys">تحرير المفاتيح</string>
+    <string name="update_ready">الإصدار %1$s جاهز</string>
+    <string name="update_downloading">جارٍ تنزيل الإصدار %1$s…</string>
+    <string name="update_install">تثبيت</string>
+    <string name="check_updates">التحقق من التحديثات</string>
+    <string name="up_to_date">محدَّث</string>
+    <string name="update_checking">جارٍ التحقق…</string>
+    <string name="update_failed">فشل التحقق: %1$s</string>
 </resources>

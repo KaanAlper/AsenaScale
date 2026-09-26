@@ -149,5 +149,12 @@
   "fit": "An Bildschirm anpassen",
   "keyboard": "Tastatur",
   "running_on_pc": "Läuft auf dem PC",
-  "release_keys": "Gehaltene Tasten loslassen"
+  "release_keys": "Gehaltene Tasten loslassen",
+  "update_ready": "Version %1$s ist bereit",
+  "update_downloading": "Lade Version %1$s…",
+  "update_install": "Installieren",
+  "check_updates": "Nach Updates suchen",
+  "up_to_date": "Aktuell",
+  "update_checking": "Suche…",
+  "update_failed": "Update-Prüfung fehlgeschlagen: %1$s"
 }

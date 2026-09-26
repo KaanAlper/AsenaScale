@@ -371,7 +371,7 @@ fn status(ctx: &Ctx, json: bool) -> String {
             "sessions": sessions.len(),
             "phonesConnected": connected,
             "phonesApproved": phones,
-            "version": env!("CARGO_PKG_VERSION"),
+            "version": env!("AS_VERSION"),
         })
         .to_string()
             + "\n";
@@ -382,7 +382,7 @@ fn status(ctx: &Ctx, json: bool) -> String {
             out += &format!("{k:<14}{v}\n");
         }
     };
-    line("AsenaScale", env!("CARGO_PKG_VERSION").into());
+    line("AsenaScale", env!("AS_VERSION").into());
     line("Tailscale", state);
     line("Name", st.me.as_ref().map(|m| m.dns_name.trim_end_matches('.').to_string()).unwrap_or_default());
     line("IPv4", st.ipv4().unwrap_or_default());

@@ -149,5 +149,12 @@
   "fit": "Ajustar a la pantalla",
   "keyboard": "Teclado",
   "running_on_pc": "En ejecución en el PC",
-  "release_keys": "Soltar teclas"
+  "release_keys": "Soltar teclas",
+  "update_ready": "La versión %1$s está lista",
+  "update_downloading": "Descargando la versión %1$s…",
+  "update_install": "Instalar",
+  "check_updates": "Buscar actualizaciones",
+  "up_to_date": "Al día",
+  "update_checking": "Comprobando…",
+  "update_failed": "Error al comprobar: %1$s"
 }

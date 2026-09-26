@@ -149,5 +149,12 @@
   "fit": "स्क्रीन में फ़िट करें",
   "keyboard": "कीबोर्ड",
   "running_on_pc": "PC पर चल रहे",
-  "release_keys": "कुंजियाँ छोड़ें"
+  "release_keys": "कुंजियाँ छोड़ें",
+  "update_ready": "संस्करण %1$s तैयार है",
+  "update_downloading": "संस्करण %1$s डाउनलोड हो रहा है…",
+  "update_install": "इंस्टॉल करें",
+  "check_updates": "अपडेट जाँचें",
+  "up_to_date": "अप टू डेट",
+  "update_checking": "जाँच हो रही है…",
+  "update_failed": "जाँच विफल: %1$s"
 }
