@@ -148,5 +148,6 @@
   "quality_high": "Scherp",
   "fit": "Aan scherm aanpassen",
   "keyboard": "Toetsenbord",
-  "running_on_pc": "Draait op de pc"
+  "running_on_pc": "Draait op de pc",
+  "release_keys": "Toetsen loslaten"
 }

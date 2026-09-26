@@ -151,4 +151,5 @@
     <string name="fit">Dopasuj do ekranu</string>
     <string name="keyboard">Klawiatura</string>
     <string name="running_on_pc">Działa na komputerze</string>
+    <string name="release_keys">Puść klawisze</string>
 </resources>

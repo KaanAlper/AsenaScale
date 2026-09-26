@@ -88,27 +88,25 @@ fun ExtraKeys(term: TerminalCanvasView, modifier: Modifier = Modifier) {
     var ctrl by remember { mutableStateOf(false) }
     var alt by remember { mutableStateOf(false) }
     // Long press locks a modifier until it's tapped again.
-    var ctrlLock by remember { mutableStateOf(false) }
-    var altLock by remember { mutableStateOf(false) }
     var fMenu by remember { mutableStateOf(false) }
     term.onModifiersConsumed = {
-        if (ctrlLock) term.ctrlDown = true else ctrl = false
-        if (altLock) term.altDown = true else alt = false
+        if (term.ctrlLock) term.ctrlDown = true else ctrl = false
+        if (term.altLock) term.altDown = true else alt = false
     }
     fun lock(k: XKey.Mod) {
         if (k.ctrl) {
-            ctrlLock = !ctrlLock; ctrl = ctrlLock; term.ctrlDown = ctrl
+            term.ctrlLock = !term.ctrlLock; ctrl = term.ctrlLock; term.ctrlDown = ctrl
         } else {
-            altLock = !altLock; alt = altLock; term.altDown = alt
+            term.altLock = !term.altLock; alt = term.altLock; term.altDown = alt
         }
     }
 
     fun press(k: XKey) {
         when (k) {
             is XKey.Mod -> if (k.ctrl) {
-                ctrl = !ctrl; ctrlLock = false; term.ctrlDown = ctrl
+                ctrl = !ctrl; term.ctrlLock = false; term.ctrlDown = ctrl
             } else {
-                alt = !alt; altLock = false; term.altDown = alt
+                alt = !alt; term.altLock = false; term.altDown = alt
             }
             XKey.Fn -> fMenu = true
             is XKey.Code -> term.sendKey(k.keyCode, k.shift)
@@ -126,7 +124,7 @@ fun ExtraKeys(term: TerminalCanvasView, modifier: Modifier = Modifier) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             mainRow.forEach { k ->
                 val active = (k is XKey.Mod) && (if (k.ctrl) ctrl else alt)
-                val locked = (k is XKey.Mod) && (if (k.ctrl) ctrlLock else altLock)
+                val locked = (k is XKey.Mod) && (if (k.ctrl) term.ctrlLock else term.altLock)
                 Key(k, active, Modifier.weight(1f), locked = locked, onLongPress = (k as? XKey.Mod)?.let { m -> { lock(m) } }) { press(k) }
             }
         }

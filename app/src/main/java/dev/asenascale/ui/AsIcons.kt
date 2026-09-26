@@ -57,6 +57,7 @@ object AsIcons {
         "M18 3a2 2 0 1 0 0 4a2 2 0 1 0 0-4z", "M6 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4z", "M18 17a2 2 0 1 0 0 4a2 2 0 1 0 0-4z",
         "M8 11l8-4", "M8 13l8 4",
     )
+    val Undo = icon("undo", "M9 14L4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 0 11H11")
     val Refresh = icon("refresh", "M19.5 12a7.5 7.5 0 1 1-2.2-5.3", "M19.5 4v4h-4")
 
     val Monitor = icon("monitor", "M3 4.5h18v12H3z", "M8.5 20h7", "M12 16.5V20")

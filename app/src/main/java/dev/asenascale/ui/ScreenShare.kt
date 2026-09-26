@@ -121,6 +121,10 @@ fun ScreenShare(host: Host, onDismiss: () -> Unit) {
                             .padding(14.dp),
                     )
                 }
+                // While a modifier is held: a round button (bottom right) lets them all go.
+                if (client.mods.values.any { it != ScreenClient.Mod.OFF }) {
+                    ReleaseButton(Modifier.align(Alignment.BottomEnd).padding(10.dp)) { client.releaseMods() }
+                }
                 if (hint && info != null) {
                     Text(
                         stringResource(R.string.screen_hint),
@@ -226,6 +230,21 @@ private fun ScreenKeys(client: ScreenClient) {
                 })
             }
         }
+    }
+}
+
+/** Round "let go" button shown while modifiers are held. */
+@Composable
+fun ReleaseButton(modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .size(42.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(Pal.mauve.copy(alpha = 0.9f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(AsIcons.Undo, stringResource(R.string.release_keys), tint = Pal.base, modifier = Modifier.size(22.dp))
     }
 }
 

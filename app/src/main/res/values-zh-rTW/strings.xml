@@ -151,4 +151,5 @@
     <string name="fit">符合螢幕</string>
     <string name="keyboard">鍵盤</string>
     <string name="running_on_pc">電腦上正在執行</string>
+    <string name="release_keys">放開按鍵</string>
 </resources>

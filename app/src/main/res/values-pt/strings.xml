@@ -151,4 +151,5 @@
     <string name="fit">Ajustar à tela</string>
     <string name="keyboard">Teclado</string>
     <string name="running_on_pc">Rodando no PC</string>
+    <string name="release_keys">Soltar teclas</string>
 </resources>

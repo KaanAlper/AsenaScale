@@ -151,4 +151,5 @@
     <string name="fit">Ekrana sığdır</string>
     <string name="keyboard">Klavye</string>
     <string name="running_on_pc">PC\'de çalışanlar</string>
+    <string name="release_keys">Basılı tuşları bırak</string>
 </resources>

@@ -295,6 +295,10 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView(factory = { term }, modifier = Modifier.fillMaxSize())
+            // Ctrl/Alt locked on the extra keys: a round button lets them go.
+            if (term.ctrlLock || term.altLock) {
+                ReleaseButton(Modifier.align(Alignment.BottomEnd).padding(10.dp)) { term.releaseModifiers() }
+            }
 
             Fade(state == ConnState.Connecting, Modifier.align(Alignment.Center)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

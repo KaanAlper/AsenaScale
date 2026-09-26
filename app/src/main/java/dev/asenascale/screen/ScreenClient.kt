@@ -160,6 +160,11 @@ class ScreenClient(private val host: Host, monitor: Int) {
         mods[m] = if (mods[m] == Mod.LOCKED) Mod.OFF else Mod.LOCKED
     }
 
+    /** Lets go of every held modifier; sends nothing. */
+    fun releaseMods() {
+        for (m in mods.keys.toList()) mods[m] = Mod.OFF
+    }
+
     private val order = listOf("ctrl", "alt", "shift", "win")
     fun monitor(i: Int) = send("o $i")
     fun quality(q: Int, maxWidth: Int) = send("q $q $maxWidth")

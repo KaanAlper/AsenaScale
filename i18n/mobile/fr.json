@@ -148,5 +148,6 @@
   "quality_high": "Net",
   "fit": "Ajuster à l'écran",
   "keyboard": "Clavier",
-  "running_on_pc": "En cours sur le PC"
+  "running_on_pc": "En cours sur le PC",
+  "release_keys": "Relâcher les touches"
 }

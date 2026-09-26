@@ -151,4 +151,5 @@
     <string name="fit">พอดีหน้าจอ</string>
     <string name="keyboard">แป้นพิมพ์</string>
     <string name="running_on_pc">กำลังทำงานบนพีซี</string>
+    <string name="release_keys">ปล่อยปุ่ม</string>
 </resources>

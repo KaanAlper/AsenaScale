@@ -148,5 +148,6 @@
   "quality_high": "高画質",
   "fit": "画面に合わせる",
   "keyboard": "キーボード",
-  "running_on_pc": "PC で実行中"
+  "running_on_pc": "PC で実行中",
+  "release_keys": "キーを離す"
 }

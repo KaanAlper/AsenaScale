@@ -151,4 +151,5 @@
     <string name="fit">Ajustar a la pantalla</string>
     <string name="keyboard">Teclado</string>
     <string name="running_on_pc">En ejecución en el PC</string>
+    <string name="release_keys">Soltar teclas</string>
 </resources>

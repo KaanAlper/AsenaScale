@@ -151,4 +151,5 @@
     <string name="fit">Vừa màn hình</string>
     <string name="keyboard">Bàn phím</string>
     <string name="running_on_pc">Đang chạy trên PC</string>
+    <string name="release_keys">Nhả phím</string>
 </resources>

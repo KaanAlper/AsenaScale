@@ -151,4 +151,5 @@
     <string name="fit">Вписать в экран</string>
     <string name="keyboard">Клавиатура</string>
     <string name="running_on_pc">Запущено на ПК</string>
+    <string name="release_keys">Отпустить клавиши</string>
 </resources>

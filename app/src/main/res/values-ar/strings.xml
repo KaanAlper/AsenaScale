@@ -151,4 +151,5 @@
     <string name="fit">ملاءمة الشاشة</string>
     <string name="keyboard">لوحة المفاتيح</string>
     <string name="running_on_pc">قيد التشغيل على الكمبيوتر</string>
+    <string name="release_keys">تحرير المفاتيح</string>
 </resources>

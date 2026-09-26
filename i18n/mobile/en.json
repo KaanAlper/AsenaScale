@@ -148,5 +148,6 @@
   "quality_high": "Sharp",
   "fit": "Fit to screen",
   "keyboard": "Keyboard",
-  "running_on_pc": "Running on the PC"
+  "running_on_pc": "Running on the PC",
+  "release_keys": "Release held keys"
 }

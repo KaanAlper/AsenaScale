@@ -151,4 +151,5 @@
     <string name="fit">Aan scherm aanpassen</string>
     <string name="keyboard">Toetsenbord</string>
     <string name="running_on_pc">Draait op de pc</string>
+    <string name="release_keys">Toetsen loslaten</string>
 </resources>

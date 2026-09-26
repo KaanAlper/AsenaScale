@@ -151,4 +151,5 @@
     <string name="fit">An Bildschirm anpassen</string>
     <string name="keyboard">Tastatur</string>
     <string name="running_on_pc">Läuft auf dem PC</string>
+    <string name="release_keys">Gehaltene Tasten loslassen</string>
 </resources>

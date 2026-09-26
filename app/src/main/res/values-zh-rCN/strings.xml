@@ -151,4 +151,5 @@
     <string name="fit">适应屏幕</string>
     <string name="keyboard">键盘</string>
     <string name="running_on_pc">电脑上正在运行</string>
+    <string name="release_keys">松开按键</string>
 </resources>
