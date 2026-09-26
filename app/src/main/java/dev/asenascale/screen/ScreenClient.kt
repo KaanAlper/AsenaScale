@@ -126,9 +126,6 @@ class ScreenClient(private val host: Host, monitor: Int) {
     fun move(x: Float, y: Float) = send("m ${x.toInt()} ${y.toInt()}")
     fun scroll(lines: Int) = send("w $lines")
     fun scrollSideways(columns: Int) = send("h $columns")
-    /** A key combination exactly as given, ignoring the sticky modifiers. */
-    fun sendRaw(combo: String) = send("k $combo")
-
     /** Sticky modifier keys of the extra row: off, for the next key, or locked. */
     enum class Mod { OFF, ONCE, LOCKED }
 

@@ -200,9 +200,10 @@ private fun Chip(label: String, active: Boolean, onClick: () -> Unit) {
  */
 @Composable
 private fun ScreenKeys(client: ScreenClient) {
-    val row1 = listOf("esc", "tab", "ctrl", "alt", "shift", "win", "F", "home", "end", "pgup", "pgdn", "del")
+    // Only single keys: combinations are made with the sticky modifiers.
+    val row1 = listOf("esc", "tab", "ctrl", "alt", "shift", "win", "F")
     val row2 = listOf("←" to "left", "↑" to "up", "↓" to "down", "→" to "right", "enter" to "enter", "⌫" to "backspace",
-        "ctrl+c" to "ctrl+c", "ctrl+v" to "ctrl+v", "ctrl+z" to "ctrl+z", "alt+tab" to "alt+tab", "alt+f4" to "alt+f4")
+        "del" to "del", "space" to "space", "home" to "home", "end" to "end", "pgup" to "pgup", "pgdn" to "pgdn")
     Column(
         Modifier.fillMaxWidth().background(Pal.mantle).padding(horizontal = 4.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -224,9 +225,8 @@ private fun ScreenKeys(client: ScreenClient) {
         }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             for ((label, combo) in row2) {
-                // Ready-made shortcuts ignore the sticky modifiers; the rest use them.
-                ScreenKey(label, repeat = combo in setOf("left", "up", "down", "right", "backspace"), onTap = {
-                    if ('+' in combo) client.sendRaw(combo) else client.key(combo)
+                ScreenKey(label, repeat = combo in setOf("left", "up", "down", "right", "backspace", "del", "pgup", "pgdn"), onTap = {
+                    client.key(combo)
                 })
             }
         }
