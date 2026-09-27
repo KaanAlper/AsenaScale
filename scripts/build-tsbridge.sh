@@ -12,4 +12,5 @@ mkdir -p ../app/libs
 gomobile bind -target=android/arm64,android/arm,android/amd64,android/386 -androidapi 26 \
   -trimpath -ldflags "-s -w -extldflags=-Wl,-z,max-page-size=16384" \
   -o ../app/libs/tsbridge.aar .
-echo "built app/libs/tsbridge.aar"
+say ""built app/libs/tsbridge.aar""
+

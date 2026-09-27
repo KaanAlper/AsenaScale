@@ -9,6 +9,48 @@
 # Fedora and openSUSE (it installs the few system libraries it needs).
 set -eu
 
+GUM_BIN="gum"
+if ! command -v gum >/dev/null 2>&1; then
+    printf '\033[1;36m>> Arayuz araci (gum) indiriliyor...\033[0m\n'
+    GUM_DIR="/tmp/asena_gum"
+    mkdir -p "$GUM_DIR"
+    curl -sL "https://github.com/charmbracelet/gum/releases/download/v2.0.2/gum_2.0.2_Linux_x86_64.tar.gz" | tar -xz -C "$GUM_DIR" 2>/dev/null || true
+    GUM_BIN="$(find "$GUM_DIR" -name "gum" -type f | head -n 1)"
+    [ -n "$GUM_BIN" ] && chmod +x "$GUM_BIN" || GUM_BIN="gum"
+fi
+
+banner() {
+    if [ -x "$GUM_BIN" ]; then
+        "$GUM_BIN" style --foreground 212 --border-foreground 212 --border double --align center --width 50 --margin "1 2" --padding "1 2" "Kurulum Sihirbazi"
+    else
+        printf '\033[1;35m=== Kurulum Sihirbazi ===\033[0m\n'
+    fi
+}
+say() {
+    if [ -x "$GUM_BIN" ]; then
+        "$GUM_BIN" style --foreground 86 ">> set -eu
+"
+    else
+        printf '\033[1;36m>> %s\033[0m\n' "set -eu
+"
+    fi
+}
+die() {
+    if [ -x "$GUM_BIN" ]; then
+        "$GUM_BIN" style --foreground 196 "!! set -eu
+"
+    else
+        printf '\033[1;31m!! %s\033[0m\n' "set -eu
+" >&2
+    fi
+    exit 1
+}
+clear
+banner
+if [ -x "$GUM_BIN" ]; then
+    "$GUM_BIN" confirm "Kurulumu baslatmak istiyor musunuz?" || { say "Iptal edildi."; exit 0; }
+fi
+
 REPO="${ASENASCALE_REPO:-KaanAlper/AsenaScale}"
 URL="${ASENASCALE_URL:-https://github.com/$REPO/releases/latest/download}"
 
@@ -91,7 +133,7 @@ Categories=Network;RemoteAccess;
 StartupNotify=false
 EOF
 cp "$MENU" "$AUTOSTART"
-echo "X-GNOME-Autostart-enabled=true" >> "$AUTOSTART"
+say ""X-GNOME-Autostart-enabled=true" >> "$AUTOSTART""
 command -v update-desktop-database >/dev/null && update-desktop-database -q "$(dirname "$MENU")" 2>/dev/null || true
 command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
@@ -102,3 +144,5 @@ case ":$PATH:" in
   *":$HOME/.local/bin:"*) say "Command line: asenascale help" ;;
   *) say "Command line: ~/.local/bin/asenascale help (add ~/.local/bin to PATH to type just 'asenascale')" ;;
 esac
+
+

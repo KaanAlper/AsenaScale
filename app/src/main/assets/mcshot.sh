@@ -167,3 +167,4 @@ case $mode in
   shot) shot ;;
   *) die "kullanım: list | shot KIND ID" ;;
 esac
+

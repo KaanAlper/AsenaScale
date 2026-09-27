@@ -21,4 +21,5 @@ curl -fsSL -o "$tool" https://github.com/AppImage/appimagetool/releases/download
 chmod +x "$tool"
 mkdir -p "$(dirname "$out")"
 ARCH=x86_64 "$tool" --appimage-extract-and-run --no-appstream "$app" "$out"
-echo "built $out"
+say ""built $out""
+
