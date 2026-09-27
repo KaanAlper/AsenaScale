@@ -120,15 +120,97 @@ LangString AUTOSTART ${LANG_KOREAN} "로그인할 때 AsenaScale 시작"
 LangString AUTOSTART ${LANG_SIMPCHINESE} "登录时启动 AsenaScale"
 LangString AUTOSTART ${LANG_TRADCHINESE} "登入時啟動 AsenaScale"
 
-; Stop a running copy so its files can be replaced / removed.
-!macro StopApp
-  nsExec::Exec 'taskkill /F /IM asenascale.exe'
+LangString RUNNING ${LANG_ENGLISH} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_TURKISH} "AsenaScale çalışıyor. Kapatılacak; telefon için açtığı terminal oturumları (PowerShell, Claude vb.) da kapanacak. Devam edilsin mi?"
+LangString RUNNING ${LANG_GERMAN} "AsenaScale läuft. Es wird geschlossen, zusammen mit seinen Terminalsitzungen (PowerShell, Claude usw.). Fortfahren?"
+LangString RUNNING ${LANG_FRENCH} "AsenaScale est en cours d'exécution. Il sera fermé, ainsi que ses sessions de terminal (PowerShell, Claude, etc.). Continuer ?"
+LangString RUNNING ${LANG_SPANISH} "AsenaScale está en ejecución. Se cerrará junto con sus sesiones de terminal (PowerShell, Claude, etc.). ¿Continuar?"
+LangString RUNNING ${LANG_ITALIAN} "AsenaScale è in esecuzione. Verrà chiuso insieme alle sue sessioni di terminale (PowerShell, Claude, ecc.). Continuare?"
+LangString RUNNING ${LANG_PORTUGUESE} "O AsenaScale está em execução. Será fechado, junto com as sessões de terminal (PowerShell, Claude etc.). Continuar?"
+LangString RUNNING ${LANG_PORTUGUESEBR} "O AsenaScale está em execução. Será fechado, junto com as sessões de terminal (PowerShell, Claude etc.). Continuar?"
+LangString RUNNING ${LANG_RUSSIAN} "AsenaScale запущен. Он будет закрыт вместе с его терминальными сеансами (PowerShell, Claude и др.). Продолжить?"
+LangString RUNNING ${LANG_UKRAINIAN} "AsenaScale запущено. Його буде закрито разом із терміналами (PowerShell, Claude тощо). Продовжити?"
+LangString RUNNING ${LANG_POLISH} "AsenaScale działa. Zostanie zamknięty razem z sesjami terminala (PowerShell, Claude itd.). Kontynuować?"
+LangString RUNNING ${LANG_DUTCH} "AsenaScale draait. Het wordt gesloten, samen met de terminalsessies (PowerShell, Claude enz.). Doorgaan?"
+LangString RUNNING ${LANG_SWEDISH} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_DANISH} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_NORWEGIAN} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_FINNISH} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_CZECH} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_GREEK} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_HUNGARIAN} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_ROMANIAN} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_ARABIC} "AsenaScale قيد التشغيل. سيتم إغلاقه مع جلسات الطرفية التابعة له (PowerShell وClaude وغيرها). متابعة؟"
+LangString RUNNING ${LANG_HEBREW} "AsenaScale is running. It will be closed, together with its terminal sessions (PowerShell, Claude and others opened for the phone). Continue?"
+LangString RUNNING ${LANG_FARSI} "AsenaScale در حال اجراست. همراه با جلسه‌های ترمینالش (PowerShell، Claude و...) بسته می‌شود. ادامه می‌دهید؟"
+LangString RUNNING ${LANG_HINDI} "AsenaScale चल रहा है। इसे इसके टर्मिनल सत्रों (PowerShell, Claude आदि) के साथ बंद किया जाएगा। जारी रखें?"
+LangString RUNNING ${LANG_INDONESIAN} "AsenaScale sedang berjalan. Aplikasi akan ditutup beserta sesi terminalnya (PowerShell, Claude, dll.). Lanjutkan?"
+LangString RUNNING ${LANG_VIETNAMESE} "AsenaScale đang chạy. Ứng dụng sẽ đóng cùng các phiên terminal (PowerShell, Claude...). Tiếp tục?"
+LangString RUNNING ${LANG_THAI} "AsenaScale กำลังทำงาน จะถูกปิดพร้อมเซสชันเทอร์มินัล (PowerShell, Claude ฯลฯ) ดำเนินการต่อหรือไม่"
+LangString RUNNING ${LANG_JAPANESE} "AsenaScale が実行中です。ターミナルセッション (PowerShell、Claude など) と一緒に終了します。続行しますか？"
+LangString RUNNING ${LANG_KOREAN} "AsenaScale이 실행 중입니다. 터미널 세션(PowerShell, Claude 등)과 함께 종료됩니다. 계속할까요?"
+LangString RUNNING ${LANG_SIMPCHINESE} "AsenaScale 正在运行。它及其终端会话（PowerShell、Claude 等）将被关闭。是否继续？"
+LangString RUNNING ${LANG_TRADCHINESE} "AsenaScale 正在執行。它及其終端機工作階段（PowerShell、Claude 等）將被關閉。是否繼續？"
+
+;; A running AsenaScale (installed or portable) and the terminals it
+;; started (PowerShell, Claude...) have to go before files are replaced or
+;; removed. Interactive runs ask first; silent runs (the app's own
+;; auto-update, which only happens with no terminal open) don't.
+!macro RunningCheck un
+Function ${un}IsRunning
+  nsExec::ExecToStack 'cmd /c tasklist /NH /FI "IMAGENAME eq asenascale.exe" | find /I "asenascale"'
   Pop $0
-  Sleep 400
+  Pop $1
+  StrCmp $0 0 found
+  nsExec::ExecToStack 'cmd /c tasklist /NH /FI "IMAGENAME eq AsenaScale-windows-x64-portable.exe" | find /I "asenascale"'
+  Pop $0
+  Pop $1
+  StrCmp $0 0 found
+  StrCpy $0 0
+  Return
+found:
+  StrCpy $0 1
+FunctionEnd
+
+Function ${un}AskToStop
+  Call ${un}IsRunning
+  StrCmp $0 1 0 done
+  IfSilent done
+  MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(RUNNING)" IDOK done
+  Abort
+done:
+FunctionEnd
+
+Function ${un}StopApp
+  Call ${un}IsRunning
+  StrCmp $0 1 0 done
+  ; Politely first (it ends its terminal sessions itself), then for sure,
+  ; with /T so child processes (shells, Claude) go too.
+  IfFileExists "$INSTDIR\asenascale.exe" 0 +3
+    nsExec::Exec '"$INSTDIR\asenascale.exe" quit'
+    Pop $1
+  Sleep 1500
+  nsExec::Exec 'taskkill /F /T /IM asenascale.exe'
+  Pop $1
+  nsExec::Exec 'taskkill /F /T /IM AsenaScale-windows-x64-portable.exe'
+  Pop $1
+  Sleep 600
+done:
+FunctionEnd
 !macroend
+!insertmacro RunningCheck ""
+!insertmacro RunningCheck "un."
+
+Function .onInit
+  Call AskToStop
+FunctionEnd
+
+Function un.onInit
+  Call un.AskToStop
+FunctionEnd
 
 Section "Install"
-  !insertmacro StopApp
+  Call StopApp
   SetOutPath "$INSTDIR"
   File "/oname=asenascale.exe" "${EXE}"
   WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -175,7 +257,7 @@ Function .onInstSuccess
 FunctionEnd
 
 Section "Uninstall"
-  !insertmacro StopApp
+  Call un.StopApp
   Delete "$INSTDIR\asenascale.exe"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"

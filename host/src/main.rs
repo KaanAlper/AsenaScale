@@ -225,12 +225,15 @@ fn main() {
             }
             Event::UserEvent(UserEvent::Changed) => refresh(tray.as_ref()),
             Event::UserEvent(UserEvent::Quit) => {
+                // Quitting ends the terminals too: nothing left running in the background.
+                state.sessions.kill_all();
                 let _ = std::fs::remove_file(control::Endpoint::path());
                 tray = None;
                 *control_flow = ControlFlow::Exit;
             }
             Event::UserEvent(UserEvent::Menu(e)) => {
                 if e.id == quit.id() {
+                    state.sessions.kill_all();
                     let _ = std::fs::remove_file(control::Endpoint::path());
                     tray = None;
                     *control_flow = ControlFlow::Exit;
