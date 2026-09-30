@@ -83,6 +83,10 @@ enum Target {
     Put(String),
     /// A byte range of a chunked upload.
     Range(std::path::PathBuf, u64),
+    /// An image for the clipboard.
+    ClipImage,
+    /// Text for the clipboard.
+    ClipText,
 }
 
 pub struct Conn {
@@ -289,6 +293,14 @@ impl russh::server::Handler for Conn {
         let handle = session.handle();
         session.channel_success(channel)?;
 
+        if cmd == "mc clip write image" {
+            self.channels.insert(channel, Chan::Upload { target: Target::ClipImage, data: Vec::new(), handle });
+            return Ok(());
+        }
+        if cmd == "mc clip write text" {
+            self.channels.insert(channel, Chan::Upload { target: Target::ClipText, data: Vec::new(), handle });
+            return Ok(());
+        }
         if let Some(encoded) = cmd.strip_prefix("mc put ") {
             // The name is base64url so spaces and non-ASCII survive any quoting.
             let name = crate::files::decode_name(encoded.trim());
@@ -364,6 +376,8 @@ impl russh::server::Handler for Conn {
                 let max = match target {
                     Target::Put(_) => crate::files::MAX_BYTES,
                     Target::Range(..) => crate::files::MAX_CHUNK,
+                    Target::ClipImage => 20 * 1024 * 1024, // 20 MB max for clip image
+                    Target::ClipText => 5 * 1024 * 1024,   // 5 MB max for clip text
                 };
                 if buf.len() + data.len() > max {
                     anyhow::bail!("upload too large");
@@ -387,6 +401,8 @@ impl russh::server::Handler for Conn {
                         let saved = tokio::task::spawn_blocking(move || match target {
                             Target::Put(name) => crate::files::save(&name, &data),
                             Target::Range(path, offset) => crate::files::write_at(&path, offset, &data).map(|_| String::new()),
+                            Target::ClipImage => crate::clip::write_image(&data).map(|_| String::new()),
+                            Target::ClipText => crate::clip::write_text(&String::from_utf8_lossy(&data)).map(|_| String::new()),
                         })
                         .await;
                         match saved {
@@ -480,6 +496,14 @@ fn builtin(args: &[String], sessions: &Sessions) -> anyhow::Result<Vec<u8>> {
             let kind = args.get(1).map(String::as_str).unwrap_or("screen");
             let id = args.get(2).map(String::as_str).unwrap_or("");
             crate::shot::shot(kind, id)
+        }
+        Some("clip") => {
+            let op = args.get(1).map(String::as_str).unwrap_or("");
+            if op == "read" {
+                crate::clip::read()
+            } else {
+                Ok(Vec::new())
+            }
         }
         Some("ls") => crate::files::list(args),
         Some("read") => crate::files::read(args),

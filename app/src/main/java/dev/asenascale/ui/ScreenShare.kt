@@ -62,6 +62,13 @@ fun ScreenShare(host: Host, onDismiss: () -> Unit) {
     val client = remember(monitor) { ScreenClient(host, monitor) }
     DisposableEffect(client) { onDispose { client.close() } }
     val view = remember { ScreenView(context) }
+    
+    val app = dev.asenascale.App.instance
+    val conn = remember(host) { app.sessions.forHost(host.id).firstOrNull { it.state.value is dev.asenascale.ssh.ConnState.Connected } }
+    if (conn != null) {
+        ClipboardSync(conn)
+    }
+
     val info by client.info.collectAsState()
     val error by client.error.collectAsState()
     val rate by client.rate.collectAsState()

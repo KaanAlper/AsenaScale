@@ -7,6 +7,7 @@
 mod approve;
 mod autostart;
 mod cli;
+mod clip;
 mod control;
 mod firewall;
 mod files;

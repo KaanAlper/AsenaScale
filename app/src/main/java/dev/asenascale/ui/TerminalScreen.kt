@@ -102,6 +102,10 @@ fun TerminalScreen(hostId: String, toolId: String, onSwitch: (toolId: String) ->
     }
     LaunchedEffect(state) { if (state is ConnState.Connected) term.showKeyboard() }
     DisposableEffect(Unit) { onDispose { term.connection = null } }
+    
+    if (state is ConnState.Connected) {
+        ClipboardSync(conn)
+    }
 
     fun reconnect() = app.sessions.reconnect(conn.key)
 
