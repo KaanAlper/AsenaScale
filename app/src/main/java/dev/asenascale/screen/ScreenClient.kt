@@ -123,6 +123,8 @@ class ScreenClient(private val host: Host, monitor: Int) {
     }
 
     fun click(x: Float, y: Float, button: Char = 'l', count: Int = 1) = send("c ${x.toInt()} ${y.toInt()} $button $count")
+    fun down(x: Float, y: Float, button: Char = 'l') = send("d ${x.toInt()} ${y.toInt()} $button")
+    fun up(x: Float, y: Float, button: Char = 'l') = send("u ${x.toInt()} ${y.toInt()} $button")
     fun move(x: Float, y: Float) = send("m ${x.toInt()} ${y.toInt()}")
     fun scroll(lines: Int) = send("w $lines")
     fun key(combo: String) = send("k $combo")

@@ -310,9 +310,16 @@ class TerminalCanvasView(context: Context) : View(context) {
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         // Visible-password + no-suggestions makes IMEs commit every key right
         // away instead of holding a composing word — essential for a terminal.
-        outAttrs.inputType = InputType.TYPE_NULL
+        outAttrs.inputType = InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_EXTRACT_UI
         return object : BaseInputConnection(this, true) {
+            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+                if (text.isNotEmpty()) typeText(text.toString())
+                return true
+            }
+
             override fun sendKeyEvent(event: KeyEvent): Boolean {
                 if (event.action == KeyEvent.ACTION_DOWN) onKeyDown(event.keyCode, event)
                 return true
@@ -321,7 +328,7 @@ class TerminalCanvasView(context: Context) : View(context) {
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
                 val del = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)
                 repeat(beforeLength.coerceAtLeast(1)) { sendKeyEvent(del) }
-                return super.deleteSurroundingText(beforeLength, afterLength)
+                return true
             }
         }
     }

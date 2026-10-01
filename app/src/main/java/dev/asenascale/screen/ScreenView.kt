@@ -129,21 +129,29 @@ class ScreenView(context: Context) : View(context) {
         }
 
         override fun onLongPress(e: MotionEvent) {
-            val p = toFrame(e.x, e.y)
-            client?.click(p[0], p[1], button = 'r')
-            feedback(e.x, e.y)
+            longPressed = true
             performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
         }
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
             if (e2.pointerCount > 1 || scaling) return true
+            if (longPressed) {
+                longPressed = false
+                dragging = true
+                val p = toFrame(e2.x, e2.y)
+                client?.down(p[0], p[1])
+            }
+            if (dragging) {
+                val p = toFrame(e2.x, e2.y)
+                client?.move(p[0], p[1])
+                return true
+            }
+            
             if (zoom > 1.01f) {
                 panX -= dx
                 panY -= dy
                 invalidate()
             } else {
-                // Wheel: about one line per 40 px of finger travel. Move the
-                // pointer there first so the right window scrolls.
                 scrollRest += dy
                 val lines = (scrollRest / 40f).toInt()
                 if (lines != 0) {
@@ -158,6 +166,8 @@ class ScreenView(context: Context) : View(context) {
     })
 
     private var scaling = false
+    private var longPressed = false
+    private var dragging = false
     private var lastFocusX = 0f
     private var lastFocusY = 0f
 
@@ -173,7 +183,6 @@ class ScreenView(context: Context) : View(context) {
             val old = zoom
             zoom = (zoom * d.scaleFactor).coerceIn(1f, 6f)
             val f = zoom / old
-            // Zoom around the fingers, and follow them as they move.
             val cx = width / 2f + panX
             val cy = height / 2f + panY
             panX += (cx - d.focusX) * (f - 1) + (d.focusX - lastFocusX)
@@ -194,12 +203,24 @@ class ScreenView(context: Context) : View(context) {
         scaler.onTouchEvent(event)
         if (event.pointerCount == 1 && !scaling) gestures.onTouchEvent(event)
         else if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
-            // Second finger: cancel the pending tap / long press.
             val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
             gestures.onTouchEvent(cancel)
             cancel.recycle()
         }
-        if (event.actionMasked == MotionEvent.ACTION_UP) scrollRest = 0f
+        
+        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            if (longPressed) {
+                val p = toFrame(event.x, event.y)
+                client?.click(p[0], p[1], button = 'r')
+                feedback(event.x, event.y)
+            } else if (dragging) {
+                val p = toFrame(event.x, event.y)
+                client?.up(p[0], p[1])
+            }
+            longPressed = false
+            dragging = false
+            scrollRest = 0f
+        }
         return true
     }
 
@@ -218,9 +239,21 @@ class ScreenView(context: Context) : View(context) {
     override fun onCheckIsTextEditor() = true
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-        outAttrs.inputType = InputType.TYPE_NULL
+        outAttrs.inputType = InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_EXTRACT_UI
         return object : BaseInputConnection(this, true) {
+            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+                if (text.isNotEmpty()) {
+                    text.toString().split('\n').forEachIndexed { i, part ->
+                        if (i > 0) client?.key("enter")
+                        client?.type(part)
+                    }
+                }
+                return true
+            }
+
             override fun sendKeyEvent(event: KeyEvent): Boolean {
                 if (event.action == KeyEvent.ACTION_DOWN) onKeyDown(event.keyCode, event)
                 return true
@@ -228,7 +261,7 @@ class ScreenView(context: Context) : View(context) {
 
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
                 repeat(beforeLength.coerceAtLeast(1)) { client?.key("backspace") }
-                return super.deleteSurroundingText(beforeLength, afterLength)
+                return true
             }
         }
     }
