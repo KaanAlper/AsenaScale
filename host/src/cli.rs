@@ -99,6 +99,14 @@ pub fn run(args: &[String]) -> i32 {
     }
 }
 
+pub fn is_running() -> bool {
+    ask(&["ping-app".into()]).is_ok()
+}
+
+pub fn quit_running() {
+    let _ = ask(&["quit".into()]);
+}
+
 /// One request to the running app: (exit code, text).
 fn ask(args: &[String]) -> std::io::Result<(i32, String)> {
     let ep = Endpoint::load().ok_or_else(|| std::io::Error::other("AsenaScale isn't running"))?;

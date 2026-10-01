@@ -44,6 +44,19 @@ fn main() {
     if !args.is_empty() {
         std::process::exit(cli::run(&args));
     }
+    
+    if cli::is_running() {
+        let msg = t("already_running_restart");
+        let title = "AsenaScale";
+        let ok = approve::ask(title, &msg);
+        if ok {
+            cli::quit_running();
+            std::thread::sleep(Duration::from_millis(500));
+        } else {
+            return;
+        }
+    }
+    
     init_log();
 
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
