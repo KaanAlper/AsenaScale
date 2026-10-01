@@ -218,50 +218,17 @@ class ScreenView(context: Context) : View(context) {
     override fun onCheckIsTextEditor() = true
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-        outAttrs.inputType = InputType.TYPE_CLASS_TEXT or
-            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
-            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        outAttrs.inputType = InputType.TYPE_NULL
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_EXTRACT_UI
-        return object : BaseInputConnection(this, false) {
-            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
-                super.commitText(text, newCursorPosition)
-                flush()
-                return true
-            }
-
-            override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
-                super.setComposingText(text, newCursorPosition)
-                flush()
-                return true
-            }
-
-            override fun finishComposingText(): Boolean {
-                super.finishComposingText()
-                flush()
+        return object : BaseInputConnection(this, true) {
+            override fun sendKeyEvent(event: KeyEvent): Boolean {
+                if (event.action == KeyEvent.ACTION_DOWN) onKeyDown(event.keyCode, event)
                 return true
             }
 
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
                 repeat(beforeLength.coerceAtLeast(1)) { client?.key("backspace") }
                 return super.deleteSurroundingText(beforeLength, afterLength)
-            }
-
-            override fun sendKeyEvent(event: KeyEvent): Boolean {
-                if (event.action == KeyEvent.ACTION_DOWN) onKeyDown(event.keyCode, event)
-                return true
-            }
-
-            private fun flush() {
-                val content = editable ?: return
-                if (content.isNotEmpty()) {
-                    val text = content.toString()
-                    // Enter from the IME arrives as "\n": send it as the key.
-                    text.split('\n').forEachIndexed { i, part ->
-                        if (i > 0) client?.key("enter")
-                        client?.type(part)
-                    }
-                }
-                content.clear()
             }
         }
     }
