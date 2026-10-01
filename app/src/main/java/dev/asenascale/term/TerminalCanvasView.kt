@@ -332,6 +332,7 @@ class TerminalCanvasView(context: Context) : View(context) {
             private var composing = ""
 
             override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+                super.setComposingText(text, newCursorPosition)
                 val current = text.toString()
                 if (current.startsWith(composing)) {
                     val diff = current.substring(composing.length)
@@ -345,6 +346,7 @@ class TerminalCanvasView(context: Context) : View(context) {
             }
 
             override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+                super.commitText(text, newCursorPosition)
                 val current = text.toString()
                 if (current.startsWith(composing)) {
                     val diff = current.substring(composing.length)
@@ -354,11 +356,13 @@ class TerminalCanvasView(context: Context) : View(context) {
                     if (current.isNotEmpty()) typeText(current)
                 }
                 composing = ""
+                editable?.clear()
                 return true
             }
 
             override fun finishComposingText(): Boolean {
                 composing = ""
+                editable?.clear()
                 return super.finishComposingText()
             }
 
@@ -370,7 +374,7 @@ class TerminalCanvasView(context: Context) : View(context) {
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
                 val del = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)
                 repeat(beforeLength.coerceAtLeast(1)) { sendKeyEvent(del) }
-                return true
+                return super.deleteSurroundingText(beforeLength, afterLength)
             }
         }
     }
