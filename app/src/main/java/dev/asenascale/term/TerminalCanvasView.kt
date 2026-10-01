@@ -315,9 +315,37 @@ class TerminalCanvasView(context: Context) : View(context) {
             InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_EXTRACT_UI
         return object : BaseInputConnection(this, true) {
-            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
-                if (text.isNotEmpty()) typeText(text.toString())
+            private var composing = ""
+
+            override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+                val current = text.toString()
+                if (current.startsWith(composing)) {
+                    val diff = current.substring(composing.length)
+                    if (diff.isNotEmpty()) typeText(diff)
+                } else {
+                    repeat(composing.length) { sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)) }
+                    if (current.isNotEmpty()) typeText(current)
+                }
+                composing = current
                 return true
+            }
+
+            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+                val current = text.toString()
+                if (current.startsWith(composing)) {
+                    val diff = current.substring(composing.length)
+                    if (diff.isNotEmpty()) typeText(diff)
+                } else {
+                    repeat(composing.length) { sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)) }
+                    if (current.isNotEmpty()) typeText(current)
+                }
+                composing = ""
+                return true
+            }
+
+            override fun finishComposingText(): Boolean {
+                composing = ""
+                return super.finishComposingText()
             }
 
             override fun sendKeyEvent(event: KeyEvent): Boolean {

@@ -244,14 +244,44 @@ class ScreenView(context: Context) : View(context) {
             InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_EXTRACT_UI
         return object : BaseInputConnection(this, true) {
-            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
-                if (text.isNotEmpty()) {
-                    text.toString().split('\n').forEachIndexed { i, part ->
-                        if (i > 0) client?.key("enter")
-                        client?.type(part)
-                    }
+            private var composing = ""
+            
+            private fun typeDiff(diff: String) {
+                diff.split('\n').forEachIndexed { i, part ->
+                    if (i > 0) client?.key("enter")
+                    client?.type(part)
                 }
+            }
+
+            override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+                val current = text.toString()
+                if (current.startsWith(composing)) {
+                    val diff = current.substring(composing.length)
+                    if (diff.isNotEmpty()) typeDiff(diff)
+                } else {
+                    repeat(composing.length) { client?.key("backspace") }
+                    if (current.isNotEmpty()) typeDiff(current)
+                }
+                composing = current
                 return true
+            }
+
+            override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+                val current = text.toString()
+                if (current.startsWith(composing)) {
+                    val diff = current.substring(composing.length)
+                    if (diff.isNotEmpty()) typeDiff(diff)
+                } else {
+                    repeat(composing.length) { client?.key("backspace") }
+                    if (current.isNotEmpty()) typeDiff(current)
+                }
+                composing = ""
+                return true
+            }
+
+            override fun finishComposingText(): Boolean {
+                composing = ""
+                return super.finishComposingText()
             }
 
             override fun sendKeyEvent(event: KeyEvent): Boolean {
