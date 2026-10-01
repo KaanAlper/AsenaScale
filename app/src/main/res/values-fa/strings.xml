@@ -18,7 +18,7 @@
     <string name="offline">آفلاین</string>
     <string name="my_ssh_key">کلید SSH من</string>
     <string name="section_computers">رایانه‌ها</string>
-    <string name="section_devices">دستگاه‌ها</string>
+    <string name="section_devices">دستگاه‌های دیگر</string>
     <string name="hint_no_computers">AsenaScale را روی رایانه اجرا کنید تا خودش اینجا ظاهر شود. یا روی یکی از دستگاه‌های زیر بزنید.</string>
     <string name="no_other_devices">دستگاه دیگری در tailnet شما نیست.</string>
     <string name="ts_off">خاموش</string>
@@ -145,9 +145,18 @@
     <string name="downloading">در حال دانلود %1$s</string>
     <string name="n_files">%1$d فایل</string>
     <string name="screen_share">اشتراک صفحه</string>
-    <string name="screen_hint">ضربه: کلیک · نگه داشتن: کلیک راست · کشیدن: پیمایش · دو انگشت: بزرگ‌نمایی</string>
+    <string name="screen_hint">ضربه: کلیک · نگه داشتن: کلیک راست · دو انگشت هم‌جهت: پیمایش · باز و بسته کردن: بزرگ‌نمایی · یک انگشت: جابه‌جایی در حالت بزرگ</string>
     <string name="quality_low">کم‌مصرف</string>
     <string name="quality_high">واضح</string>
     <string name="fit">اندازهٔ صفحه</string>
     <string name="keyboard">صفحه‌کلید</string>
+    <string name="running_on_pc">در حال اجرا روی رایانه</string>
+    <string name="release_keys">رها کردن کلیدها</string>
+    <string name="update_ready">نسخهٔ %1$s آماده است</string>
+    <string name="update_downloading">در حال دانلود نسخهٔ %1$s…</string>
+    <string name="update_install">نصب</string>
+    <string name="check_updates">بررسی به‌روزرسانی</string>
+    <string name="up_to_date">به‌روز</string>
+    <string name="update_checking">در حال بررسی…</string>
+    <string name="update_failed">بررسی ناموفق: %1$s</string>
 </resources>

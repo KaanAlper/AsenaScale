@@ -18,7 +18,7 @@
     <string name="offline">çevrimdışı</string>
     <string name="my_ssh_key">SSH anahtarım</string>
     <string name="section_computers">Bilgisayarlar</string>
-    <string name="section_devices">Cihazlar</string>
+    <string name="section_devices">Diğer cihazlar</string>
     <string name="hint_no_computers">AsenaScale\'i PC\'de çalıştır, burada kendiliğinden görünür. Ya da aşağıdan bir cihaza dokun.</string>
     <string name="no_other_devices">Tailnet\'te başka cihaz yok.</string>
     <string name="ts_off">Kapalı</string>
@@ -145,9 +145,18 @@
     <string name="downloading">İndiriliyor: %1$s</string>
     <string name="n_files">%1$d dosya</string>
     <string name="screen_share">Ekran paylaşımı</string>
-    <string name="screen_hint">Dokun: tıkla · Basılı tut: sağ tık · Sürükle: kaydır · İki parmak: yakınlaştır</string>
+    <string name="screen_hint">Dokun: tıkla · Basılı tut: sağ tık · İki parmak aynı yöne: kaydır · İki parmak aç/kapa: yakınlaştır · Tek parmak: yakındayken gezin</string>
     <string name="quality_low">Tasarruf</string>
     <string name="quality_high">Net</string>
     <string name="fit">Ekrana sığdır</string>
     <string name="keyboard">Klavye</string>
+    <string name="running_on_pc">PC\'de çalışanlar</string>
+    <string name="release_keys">Basılı tuşları bırak</string>
+    <string name="update_ready">%1$s sürümü hazır</string>
+    <string name="update_downloading">%1$s sürümü indiriliyor…</string>
+    <string name="update_install">Kur</string>
+    <string name="check_updates">Güncellemeleri denetle</string>
+    <string name="up_to_date">Güncel</string>
+    <string name="update_checking">Denetleniyor…</string>
+    <string name="update_failed">Güncelleme denetlenemedi: %1$s</string>
 </resources>

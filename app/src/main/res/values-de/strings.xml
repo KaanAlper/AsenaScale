@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Mein SSH-Schlüssel</string>
     <string name="section_computers">Computer</string>
-    <string name="section_devices">Geräte</string>
+    <string name="section_devices">Andere Geräte</string>
     <string name="hint_no_computers">Starte AsenaScale auf deinem PC, dann erscheint er hier von selbst. Oder tippe unten auf ein Gerät.</string>
     <string name="no_other_devices">Keine anderen Geräte in deinem Tailnet.</string>
     <string name="ts_off">Aus</string>
@@ -145,9 +145,18 @@
     <string name="downloading">Lade %1$s herunter</string>
     <string name="n_files">%1$d Dateien</string>
     <string name="screen_share">Bildschirmfreigabe</string>
-    <string name="screen_hint">Tippen: Klick · Lang drücken: Rechtsklick · Ziehen: Scrollen · Zwei Finger: Zoom</string>
+    <string name="screen_hint">Tippen: Klick · Lang drücken: Rechtsklick · Zwei Finger gleich: scrollen · Spreizen: Zoom · Ein Finger: verschieben (gezoomt)</string>
     <string name="quality_low">Sparsam</string>
     <string name="quality_high">Scharf</string>
     <string name="fit">An Bildschirm anpassen</string>
     <string name="keyboard">Tastatur</string>
+    <string name="running_on_pc">Läuft auf dem PC</string>
+    <string name="release_keys">Gehaltene Tasten loslassen</string>
+    <string name="update_ready">Version %1$s ist bereit</string>
+    <string name="update_downloading">Lade Version %1$s…</string>
+    <string name="update_install">Installieren</string>
+    <string name="check_updates">Nach Updates suchen</string>
+    <string name="up_to_date">Aktuell</string>
+    <string name="update_checking">Suche…</string>
+    <string name="update_failed">Update-Prüfung fehlgeschlagen: %1$s</string>
 </resources>

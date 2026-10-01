@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Mój klucz SSH</string>
     <string name="section_computers">Komputery</string>
-    <string name="section_devices">Urządzenia</string>
+    <string name="section_devices">Inne urządzenia</string>
     <string name="hint_no_computers">Uruchom AsenaScale na komputerze, a pojawi się tu sam. Albo dotknij urządzenia poniżej.</string>
     <string name="no_other_devices">Brak innych urządzeń w Twojej tailnecie.</string>
     <string name="ts_off">Wyłączony</string>
@@ -145,9 +145,18 @@
     <string name="downloading">Pobieranie %1$s</string>
     <string name="n_files">Pliki: %1$d</string>
     <string name="screen_share">Udostępnianie ekranu</string>
-    <string name="screen_hint">Dotknij: klik · Przytrzymaj: prawy klik · Przeciągnij: przewijanie · Dwa palce: powiększenie</string>
+    <string name="screen_hint">Dotknij: klik · Przytrzymaj: prawy klik · Dwa palce w tę samą stronę: przewijanie · Szczypanie: zoom · Jeden palec: przesuwanie (po powiększeniu)</string>
     <string name="quality_low">Oszczędny</string>
     <string name="quality_high">Ostry</string>
     <string name="fit">Dopasuj do ekranu</string>
     <string name="keyboard">Klawiatura</string>
+    <string name="running_on_pc">Działa na komputerze</string>
+    <string name="release_keys">Puść klawisze</string>
+    <string name="update_ready">Wersja %1$s jest gotowa</string>
+    <string name="update_downloading">Pobieranie wersji %1$s…</string>
+    <string name="update_install">Zainstaluj</string>
+    <string name="check_updates">Sprawdź aktualizacje</string>
+    <string name="up_to_date">Aktualna</string>
+    <string name="update_checking">Sprawdzanie…</string>
+    <string name="update_failed">Sprawdzanie nie powiodło się: %1$s</string>
 </resources>

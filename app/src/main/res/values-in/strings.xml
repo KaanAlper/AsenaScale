@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Kunci SSH saya</string>
     <string name="section_computers">Komputer</string>
-    <string name="section_devices">Perangkat</string>
+    <string name="section_devices">Perangkat lain</string>
     <string name="hint_no_computers">Jalankan AsenaScale di PC dan PC akan muncul di sini dengan sendirinya. Atau ketuk perangkat di bawah.</string>
     <string name="no_other_devices">Tidak ada perangkat lain di tailnet Anda.</string>
     <string name="ts_off">Mati</string>
@@ -145,9 +145,18 @@
     <string name="downloading">Mengunduh %1$s</string>
     <string name="n_files">%1$d berkas</string>
     <string name="screen_share">Berbagi layar</string>
-    <string name="screen_hint">Ketuk: klik · Tekan lama: klik kanan · Seret: gulir · Dua jari: zoom</string>
+    <string name="screen_hint">Ketuk: klik · Tekan lama: klik kanan · Dua jari searah: gulir · Cubit: zoom · Satu jari: geser saat zoom</string>
     <string name="quality_low">Hemat</string>
     <string name="quality_high">Tajam</string>
     <string name="fit">Sesuaikan layar</string>
     <string name="keyboard">Keyboard</string>
+    <string name="running_on_pc">Berjalan di PC</string>
+    <string name="release_keys">Lepaskan tombol</string>
+    <string name="update_ready">Versi %1$s siap</string>
+    <string name="update_downloading">Mengunduh versi %1$s…</string>
+    <string name="update_install">Pasang</string>
+    <string name="check_updates">Periksa pembaruan</string>
+    <string name="up_to_date">Terbaru</string>
+    <string name="update_checking">Memeriksa…</string>
+    <string name="update_failed">Pemeriksaan gagal: %1$s</string>
 </resources>

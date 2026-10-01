@@ -18,6 +18,7 @@ mod session;
 mod shot;
 mod store;
 mod tailnet;
+mod update;
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -66,13 +67,13 @@ fn main() {
         let _ = changed.send_event(UserEvent::Changed);
     }));
 
-    if let Err(e) = start_server(state.clone()) {
-        approve::info(
-            "AsenaScale",
-            &tf("start_failed", &[("e", &format!("{e:#}"))]),
-        );
-        return;
-    }
+    let rt = match start_server(state.clone()) {
+        Ok(rt) => rt,
+        Err(e) => {
+            approve::info("AsenaScale", &tf("start_failed", &[("e", &format!("{e:#}"))]));
+            return;
+        }
+    };
 
     if autostart::first_run() {
         autostart::set(true);
@@ -98,6 +99,7 @@ fn main() {
             state: state.clone(),
             ts: ts.clone(),
             net: net.clone(),
+            rt,
             quit: Box::new(move || {
                 let _ = quit.send_event(UserEvent::Quit);
             }),
@@ -122,6 +124,15 @@ fn main() {
     let fix_firewall = MenuItem::new(t("fix_firewall"), cfg!(windows), None);
     let autorun = CheckMenuItem::new(t("autorun"), true, autostart::is_enabled(), None);
     let logout = MenuItem::new(t("ts_logout"), true, None);
+    let update_item = MenuItem::new(t("check_updates"), true, None);
+    // A newer release found by the background check, not installed yet.
+    let pending: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    {
+        let (pending, state, changed) = (pending.clone(), state.clone(), proxy.clone());
+        std::thread::spawn(move || watch_updates(pending, state, move || {
+            let _ = changed.send_event(UserEvent::Changed);
+        }));
+    }
     let toggle = MenuItem::new(if net.want_up() { t("ts_disconnect") } else { t("ts_connect") }, true, None);
     let quit = MenuItem::new(t("quit"), true, None);
     let menu = Menu::new();
@@ -136,6 +147,7 @@ fn main() {
         &reset,
         &fix_firewall,
         &autorun,
+        &update_item,
         &toggle,
         &logout,
         &PredefinedMenuItem::separator(),
@@ -154,6 +166,7 @@ fn main() {
             toggle.clone(),
             net.clone(),
         );
+        let (update_item, pending) = (update_item.clone(), pending.clone());
         move |tray: Option<&tray_icon::TrayIcon>| {
             let live = state.sessions.list();
             let attached: usize = live.iter().map(|s| s.attached()).sum();
@@ -164,6 +177,10 @@ fn main() {
             };
             status.set_text(&text);
             let st = ts.lock().unwrap().clone();
+            match pending.lock().unwrap().as_deref() {
+                Some(v) => update_item.set_text(tf("update_to", &[("v", &v)])),
+                None => update_item.set_text(t("check_updates")),
+            }
             toggle.set_text(if net.want_up() { t("ts_disconnect") } else { t("ts_connect") });
             let line = if !net.want_up() {
                 t("ts_off").to_string()
@@ -222,12 +239,15 @@ fn main() {
             }
             Event::UserEvent(UserEvent::Changed) => refresh(tray.as_ref()),
             Event::UserEvent(UserEvent::Quit) => {
+                // Quitting ends the terminals too: nothing left running in the background.
+                state.sessions.kill_all();
                 let _ = std::fs::remove_file(control::Endpoint::path());
                 tray = None;
                 *control_flow = ControlFlow::Exit;
             }
             Event::UserEvent(UserEvent::Menu(e)) => {
                 if e.id == quit.id() {
+                    state.sessions.kill_all();
                     let _ = std::fs::remove_file(control::Endpoint::path());
                     tray = None;
                     *control_flow = ControlFlow::Exit;
@@ -243,6 +263,9 @@ fn main() {
                     } else {
                         approve::open_url(&url);
                     }
+                } else if e.id == update_item.id() {
+                    let pending = pending.lock().unwrap().clone();
+                    std::thread::spawn(move || update_now(pending));
                 } else if e.id == toggle.id() {
                     net.set(!net.want_up());
                     refresh(tray.as_ref());
@@ -261,7 +284,7 @@ fn main() {
 
 /// Runs the SSH server on its own Tokio runtime thread. Fails fast if the
 /// port is taken (usually: already running).
-fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
+fn start_server(state: Arc<server::State>) -> anyhow::Result<tokio::runtime::Handle> {
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
     // Loopback only: the tailnet reaches it through the embedded node.
     let listener = rt.block_on(tokio::net::TcpListener::bind(("127.0.0.1", PORT)))?;
@@ -277,6 +300,7 @@ fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
         nodelay: true,
         ..Default::default()
     });
+    let handle = rt.handle().clone();
     std::thread::spawn(move || {
         rt.block_on(async move {
             use russh::server::Server as _;
@@ -287,7 +311,7 @@ fn start_server(state: Arc<server::State>) -> anyhow::Result<()> {
         });
     });
     log::info!("listening on 127.0.0.1:{PORT}");
-    Ok(())
+    Ok(handle)
 }
 
 /// Starts the embedded node, forwards its port to the local server, and
@@ -333,6 +357,60 @@ fn watch_tailnet(ts: Arc<Mutex<tailnet::Status>>, net: Arc<control::Net>, change
             changed();
         }
         net.wait(Duration::from_secs(if running || !want { 30 } else { 2 }));
+    }
+}
+
+/// Checks for a new release a minute after start and then twice a day
+/// (hourly once one is waiting). Installs by itself when no terminal is
+/// open; with terminals open it only offers it in the tray, so nothing the
+/// user is running gets closed.
+fn watch_updates(pending: Arc<Mutex<Option<String>>>, state: Arc<server::State>, changed: impl Fn()) {
+    if !update::auto_allowed() {
+        return;
+    }
+    std::thread::sleep(Duration::from_secs(90));
+    loop {
+        match update::available() {
+            Ok(Some(v)) => {
+                if pending.lock().unwrap().as_deref() != Some(&v) {
+                    log::info!("update available: {v}");
+                    *pending.lock().unwrap() = Some(v.clone());
+                    changed();
+                }
+                if state.sessions.list().is_empty() {
+                    match update::apply(&v) {
+                        #[cfg(not(windows))]
+                        Ok(()) => update::restart(),
+                        #[cfg(windows)]
+                        Ok(()) => {}
+                        Err(e) => log::warn!("update: {e:#}"),
+                    }
+                }
+            }
+            Ok(None) => {}
+            Err(e) => log::info!("update check: {e:#}"),
+        }
+        let wait = if pending.lock().unwrap().is_some() { 3600 } else { 12 * 3600 };
+        std::thread::sleep(Duration::from_secs(wait));
+    }
+}
+
+/// Tray click: install the waiting update, or check now and say so.
+fn update_now(pending: Option<String>) {
+    let found = match pending {
+        Some(v) => Ok(Some(v)),
+        None => update::available(),
+    };
+    match found {
+        Ok(Some(v)) => match update::apply(&v) {
+            #[cfg(not(windows))]
+            Ok(()) => update::restart(),
+            #[cfg(windows)]
+            Ok(()) => {}
+            Err(e) => approve::info("AsenaScale", &tf("update_failed", &[("e", &format!("{e:#}"))])),
+        },
+        Ok(None) => approve::info("AsenaScale", &tf("up_to_date", &[("v", &update::current())])),
+        Err(e) => approve::info("AsenaScale", &tf("update_failed", &[("e", &format!("{e:#}"))])),
     }
 }
 

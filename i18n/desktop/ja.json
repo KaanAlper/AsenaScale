@@ -23,5 +23,9 @@
   "request_body": "{device}\nが AsenaScale でこのコンピューターに接続しようとしています。\n\n許可すると、このスマホはターミナルを使い、スクリーンショットを撮れるようになります。再度確認はしません。\n\nキー: {key}\n\n許可しますか？",
   "ts_off": "Tailscale: オフ",
   "ts_connect": "Tailscale に接続",
-  "ts_disconnect": "Tailscale から切断"
+  "ts_disconnect": "Tailscale から切断",
+  "check_updates": "アップデートを確認",
+  "update_to": "{v} に更新",
+  "up_to_date": "AsenaScale は最新です ({v})。",
+  "update_failed": "更新に失敗しました: {e}"
 }

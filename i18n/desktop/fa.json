@@ -23,5 +23,9 @@
   "request_body": "{device}\nمی‌خواهد با AsenaScale به این رایانه وصل شود.\n\nاگر اجازه دهید، این تلفن می‌تواند از ترمینال استفاده کند و نماگرفت بگیرد. دوباره پرسیده نمی‌شود.\n\nکلید: {key}\n\nاجازه می‌دهید؟",
   "ts_off": "Tailscale: خاموش",
   "ts_connect": "اتصال به Tailscale",
-  "ts_disconnect": "قطع اتصال از Tailscale"
+  "ts_disconnect": "قطع اتصال از Tailscale",
+  "check_updates": "بررسی به‌روزرسانی",
+  "update_to": "به‌روزرسانی به {v}",
+  "up_to_date": "AsenaScale به‌روز است ({v}).",
+  "update_failed": "به‌روزرسانی ناموفق: {e}"
 }

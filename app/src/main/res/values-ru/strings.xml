@@ -18,7 +18,7 @@
     <string name="offline">не в сети</string>
     <string name="my_ssh_key">Мой SSH-ключ</string>
     <string name="section_computers">Компьютеры</string>
-    <string name="section_devices">Устройства</string>
+    <string name="section_devices">Другие устройства</string>
     <string name="hint_no_computers">Запустите AsenaScale на ПК, и он сам появится здесь. Или нажмите на устройство ниже.</string>
     <string name="no_other_devices">В вашем tailnet нет других устройств.</string>
     <string name="ts_off">Выключен</string>
@@ -145,9 +145,18 @@
     <string name="downloading">Загрузка %1$s</string>
     <string name="n_files">Файлов: %1$d</string>
     <string name="screen_share">Демонстрация экрана</string>
-    <string name="screen_hint">Нажатие: клик · Удержание: правый клик · Перетаскивание: прокрутка · Два пальца: масштаб</string>
+    <string name="screen_hint">Нажатие: клик · Удержание: правый клик · Два пальца в одну сторону: прокрутка · Щипок: масштаб · Один палец: сдвиг (при увеличении)</string>
     <string name="quality_low">Экономия</string>
     <string name="quality_high">Чётко</string>
     <string name="fit">Вписать в экран</string>
     <string name="keyboard">Клавиатура</string>
+    <string name="running_on_pc">Запущено на ПК</string>
+    <string name="release_keys">Отпустить клавиши</string>
+    <string name="update_ready">Версия %1$s готова</string>
+    <string name="update_downloading">Загрузка версии %1$s…</string>
+    <string name="update_install">Установить</string>
+    <string name="check_updates">Проверить обновления</string>
+    <string name="up_to_date">Актуально</string>
+    <string name="update_checking">Проверка…</string>
+    <string name="update_failed">Не удалось проверить: %1$s</string>
 </resources>

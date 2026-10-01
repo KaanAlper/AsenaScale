@@ -18,7 +18,7 @@
     <string name="offline">ngoại tuyến</string>
     <string name="my_ssh_key">Khóa SSH của tôi</string>
     <string name="section_computers">Máy tính</string>
-    <string name="section_devices">Thiết bị</string>
+    <string name="section_devices">Thiết bị khác</string>
     <string name="hint_no_computers">Chạy AsenaScale trên PC và nó sẽ tự hiện ở đây. Hoặc chạm vào một thiết bị bên dưới.</string>
     <string name="no_other_devices">Không có thiết bị nào khác trong tailnet của bạn.</string>
     <string name="ts_off">Tắt</string>
@@ -145,9 +145,18 @@
     <string name="downloading">Đang tải %1$s</string>
     <string name="n_files">%1$d tệp</string>
     <string name="screen_share">Chia sẻ màn hình</string>
-    <string name="screen_hint">Chạm: nhấp · Nhấn giữ: nhấp phải · Kéo: cuộn · Hai ngón: thu phóng</string>
+    <string name="screen_hint">Chạm: nhấp · Nhấn giữ: nhấp phải · Hai ngón cùng hướng: cuộn · Chụm: thu phóng · Một ngón: di chuyển khi phóng to</string>
     <string name="quality_low">Tiết kiệm</string>
     <string name="quality_high">Nét</string>
     <string name="fit">Vừa màn hình</string>
     <string name="keyboard">Bàn phím</string>
+    <string name="running_on_pc">Đang chạy trên PC</string>
+    <string name="release_keys">Nhả phím</string>
+    <string name="update_ready">Phiên bản %1$s đã sẵn sàng</string>
+    <string name="update_downloading">Đang tải phiên bản %1$s…</string>
+    <string name="update_install">Cài đặt</string>
+    <string name="check_updates">Kiểm tra cập nhật</string>
+    <string name="up_to_date">Đã mới nhất</string>
+    <string name="update_checking">Đang kiểm tra…</string>
+    <string name="update_failed">Kiểm tra thất bại: %1$s</string>
 </resources>

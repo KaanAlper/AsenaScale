@@ -1,4 +1,4 @@
-package dev.asenascale.screen
+﻿package dev.asenascale.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -11,7 +11,6 @@ import android.text.InputType
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
@@ -22,8 +21,9 @@ import kotlin.math.abs
 /**
  * Shows the PC's screen and turns touches into mouse input:
  * tap = click, double tap = double click, long press = right click,
- * one-finger drag = scroll (pans instead when zoomed in),
- * two fingers = zoom and pan. With the keyboard up, typing goes to the PC.
+ * two fingers the same way = scroll (up/down, left/right), two fingers
+ * apart/together = zoom, one finger = move around when zoomed in.
+ * With the keyboard up, typing goes to the PC.
  */
 class ScreenView(context: Context) : View(context) {
     var client: ScreenClient? = null
@@ -51,7 +51,6 @@ class ScreenView(context: Context) : View(context) {
     private var tapX = 0f
     private var tapY = 0f
     private var tapAt = 0L
-    private var scrollRest = 0f
 
     var accent: Int = Color.WHITE
         set(value) {
@@ -134,7 +133,7 @@ class ScreenView(context: Context) : View(context) {
         }
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
-            if (e2.pointerCount > 1 || scaling) return true
+            if (multi) return true
             if (longPressed) {
                 longPressed = false
                 dragging = true
@@ -146,81 +145,138 @@ class ScreenView(context: Context) : View(context) {
                 client?.move(p[0], p[1])
                 return true
             }
-            
-            if (zoom > 1.01f) {
-                panX -= dx
-                panY -= dy
-                invalidate()
-            } else {
-                scrollRest += dy
-                val lines = (scrollRest / 40f).toInt()
-                if (lines != 0) {
-                    scrollRest -= lines * 40f
-                    val p = toFrame(e2.x, e2.y)
-                    client?.move(p[0], p[1])
-                    client?.scroll(lines)
-                }
-            }
-            return true
-        }
-    })
 
-    private var scaling = false
-    private var longPressed = false
-    private var dragging = false
-    private var lastFocusX = 0f
-    private var lastFocusY = 0f
-
-    private val scaler = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScaleBegin(d: ScaleGestureDetector): Boolean {
-            scaling = true
-            lastFocusX = d.focusX
-            lastFocusY = d.focusY
-            return true
-        }
-
-        override fun onScale(d: ScaleGestureDetector): Boolean {
-            val old = zoom
-            zoom = (zoom * d.scaleFactor).coerceIn(1f, 6f)
-            val f = zoom / old
-            val cx = width / 2f + panX
-            val cy = height / 2f + panY
-            panX += (cx - d.focusX) * (f - 1) + (d.focusX - lastFocusX)
-            panY += (cy - d.focusY) * (f - 1) + (d.focusY - lastFocusY)
-            lastFocusX = d.focusX
-            lastFocusY = d.focusY
+            // One finger moves around a zoomed-in screen.
+            if (zoom <= 1.01f) return true
+            panX -= dx
+            panY -= dy
             invalidate()
             return true
         }
-
-        override fun onScaleEnd(d: ScaleGestureDetector) {
-            scaling = false
-        }
     })
+
+    // Two fingers: apart/together = zoom, same direction = scroll. Decided
+    // once per gesture so the two never mix.
+    private enum class Two { UNDECIDED, ZOOM, SCROLL }
+
+    private var longPressed = false
+    private var dragging = false
+    private var multi = false
+    private var two = Two.UNDECIDED
+    private var lastSpan = 0f
+    private var lastFx = 0f
+    private var lastFy = 0f
+    private var accSpan = 0f
+    private var accX = 0f
+    private var accY = 0f
+    private var restX = 0f
+    private var restY = 0f
+    private val slop = android.view.ViewConfiguration.get(context).scaledTouchSlop * 1.5f
+
+    private fun twoFingers(e: MotionEvent): Triple<Float, Float, Float> {
+        val x0 = e.getX(0)
+        val y0 = e.getY(0)
+        val x1 = e.getX(1)
+        val y1 = e.getY(1)
+        return Triple(kotlin.math.hypot(x1 - x0, y1 - y0), (x0 + x1) / 2, (y0 + y1) / 2)
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        scaler.onTouchEvent(event)
-        if (event.pointerCount == 1 && !scaling) gestures.onTouchEvent(event)
-        else if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
-            val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
-            gestures.onTouchEvent(cancel)
-            cancel.recycle()
-        }
-        
-        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-            if (longPressed) {
-                val p = toFrame(event.x, event.y)
-                client?.click(p[0], p[1], button = 'r')
-                feedback(event.x, event.y)
-            } else if (dragging) {
-                val p = toFrame(event.x, event.y)
-                client?.up(p[0], p[1])
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_POINTER_DOWN -> if (event.pointerCount == 2) {
+                // Second finger: no tap / long press any more.
+                val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+                gestures.onTouchEvent(cancel)
+                cancel.recycle()
+                multi = true
+                two = Two.UNDECIDED
+                val (span, fx, fy) = twoFingers(event)
+                lastSpan = span
+                lastFx = fx
+                lastFy = fy
+                accSpan = 0f
+                accX = 0f
+                accY = 0f
+                restX = 0f
+                restY = 0f
             }
-            longPressed = false
-            dragging = false
-            scrollRest = 0f
+            MotionEvent.ACTION_MOVE -> if (multi && event.pointerCount >= 2) {
+                val (span, fx, fy) = twoFingers(event)
+                val dSpan = span - lastSpan
+                val dx = fx - lastFx
+                val dy = fy - lastFy
+                if (two == Two.UNDECIDED) {
+                    accSpan += dSpan
+                    accX += dx
+                    accY += dy
+                    if (abs(accSpan) > slop * 1.5f) {
+                        two = Two.ZOOM
+                    } else if (kotlin.math.hypot(accX, accY) > slop) {
+                        two = Two.SCROLL
+                        // Point the mouse between the fingers so that window scrolls.
+                        val p = toFrame(fx, fy)
+                        client?.move(p[0], p[1])
+                    }
+                }
+                when (two) {
+                    Two.ZOOM -> if (lastSpan > 0f) {
+                        val old = zoom
+                        zoom = (zoom * span / lastSpan).coerceIn(1f, 6f)
+                        val f = zoom / old
+                        val cx = width / 2f + panX
+                        val cy = height / 2f + panY
+                        panX += (cx - fx) * (f - 1) + dx
+                        panY += (cy - fy) * (f - 1) + dy
+                        invalidate()
+                    }
+                    Two.SCROLL -> {
+                        // Like a touchpad: fingers up = page moves up (scroll down).
+                        restY -= dy
+                        restX -= dx
+                        val lines = (restY / 40f).toInt()
+                        if (lines != 0) {
+                            restY -= lines * 40f
+                            client?.scroll(lines)
+                        }
+                        val cols = (restX / 60f).toInt()
+                        if (cols != 0) {
+                            restX -= cols * 60f
+                            client?.scrollSideways(cols)
+                        }
+                    }
+                    Two.UNDECIDED -> {}
+                }
+                lastSpan = span
+                lastFx = fx
+                lastFy = fy
+            }
+            MotionEvent.ACTION_POINTER_UP -> if (event.pointerCount <= 2) {
+                // Down to one finger: stop until the next gesture.
+                two = Two.UNDECIDED
+                lastSpan = 0f
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (longPressed) {
+                    val p = toFrame(event.x, event.y)
+                    client?.click(p[0], p[1], button = 'r')
+                    feedback(event.x, event.y)
+                } else if (dragging) {
+                    val p = toFrame(event.x, event.y)
+                    client?.up(p[0], p[1])
+                }
+                longPressed = false
+                dragging = false
+
+                if (!multi) gestures.onTouchEvent(event)
+                multi = false
+                two = Two.UNDECIDED
+                return true
+            }
         }
+        if (!multi) gestures.onTouchEvent(event)
+
         return true
     }
 
@@ -321,3 +377,6 @@ class ScreenView(context: Context) : View(context) {
         return super.onKeyDown(keyCode, event)
     }
 }
+
+
+

@@ -18,7 +18,7 @@
     <string name="offline">ऑफ़लाइन</string>
     <string name="my_ssh_key">मेरी SSH कुंजी</string>
     <string name="section_computers">कंप्यूटर</string>
-    <string name="section_devices">डिवाइस</string>
+    <string name="section_devices">अन्य डिवाइस</string>
     <string name="hint_no_computers">अपने PC पर AsenaScale चलाएँ, वह यहाँ अपने आप दिखेगा। या नीचे किसी डिवाइस पर टैप करें।</string>
     <string name="no_other_devices">आपके tailnet पर कोई और डिवाइस नहीं है।</string>
     <string name="ts_off">बंद</string>
@@ -145,9 +145,18 @@
     <string name="downloading">%1$s डाउनलोड हो रहा है</string>
     <string name="n_files">%1$d फ़ाइलें</string>
     <string name="screen_share">स्क्रीन शेयर</string>
-    <string name="screen_hint">टैप: क्लिक · देर तक दबाएँ: राइट क्लिक · खींचें: स्क्रॉल · दो उँगलियाँ: ज़ूम</string>
+    <string name="screen_hint">टैप: क्लिक · देर तक दबाएँ: राइट क्लिक · दो उँगलियाँ एक दिशा: स्क्रॉल · पिंच: ज़ूम · एक उँगली: ज़ूम में घुमाएँ</string>
     <string name="quality_low">बचत</string>
     <string name="quality_high">साफ़</string>
     <string name="fit">स्क्रीन में फ़िट करें</string>
     <string name="keyboard">कीबोर्ड</string>
+    <string name="running_on_pc">PC पर चल रहे</string>
+    <string name="release_keys">कुंजियाँ छोड़ें</string>
+    <string name="update_ready">संस्करण %1$s तैयार है</string>
+    <string name="update_downloading">संस्करण %1$s डाउनलोड हो रहा है…</string>
+    <string name="update_install">इंस्टॉल करें</string>
+    <string name="check_updates">अपडेट जाँचें</string>
+    <string name="up_to_date">अप टू डेट</string>
+    <string name="update_checking">जाँच हो रही है…</string>
+    <string name="update_failed">जाँच विफल: %1$s</string>
 </resources>

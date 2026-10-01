@@ -18,7 +18,7 @@
     <string name="offline">غير متصل</string>
     <string name="my_ssh_key">مفتاح SSH الخاص بي</string>
     <string name="section_computers">أجهزة الكمبيوتر</string>
-    <string name="section_devices">الأجهزة</string>
+    <string name="section_devices">أجهزة أخرى</string>
     <string name="hint_no_computers">شغّل AsenaScale على الكمبيوتر وسيظهر هنا تلقائيًا. أو اضغط على جهاز أدناه.</string>
     <string name="no_other_devices">لا توجد أجهزة أخرى في شبكة tailnet.</string>
     <string name="ts_off">متوقف</string>
@@ -145,9 +145,18 @@
     <string name="downloading">جارٍ تنزيل %1$s</string>
     <string name="n_files">الملفات: %1$d</string>
     <string name="screen_share">مشاركة الشاشة</string>
-    <string name="screen_hint">نقرة: نقر · ضغط مطوّل: نقر يمين · سحب: تمرير · إصبعان: تكبير</string>
+    <string name="screen_hint">نقرة: نقر · ضغط مطوّل: نقر يمين · إصبعان بنفس الاتجاه: تمرير · قرص: تكبير · إصبع واحد: تحريك عند التكبير</string>
     <string name="quality_low">توفير</string>
     <string name="quality_high">واضح</string>
     <string name="fit">ملاءمة الشاشة</string>
     <string name="keyboard">لوحة المفاتيح</string>
+    <string name="running_on_pc">قيد التشغيل على الكمبيوتر</string>
+    <string name="release_keys">تحرير المفاتيح</string>
+    <string name="update_ready">الإصدار %1$s جاهز</string>
+    <string name="update_downloading">جارٍ تنزيل الإصدار %1$s…</string>
+    <string name="update_install">تثبيت</string>
+    <string name="check_updates">التحقق من التحديثات</string>
+    <string name="up_to_date">محدَّث</string>
+    <string name="update_checking">جارٍ التحقق…</string>
+    <string name="update_failed">فشل التحقق: %1$s</string>
 </resources>

@@ -30,15 +30,19 @@ impl vt100::Callbacks for Title {
     }
 }
 
-struct Client {
-    handle: Handle,
-    channel: ChannelId,
+/// Where a session's output goes: a phone (SSH channel) or a terminal on
+/// the PC itself (`asenascale attach`).
+enum Client {
+    Ssh { handle: Handle, channel: ChannelId },
+    Local(std::sync::mpsc::Sender<Vec<u8>>),
 }
 
 pub struct Session {
     pub id: String,
     pub command: String,
     pub created: u64,
+    /// Folder it started in.
+    pub cwd: String,
     writer: Mutex<Box<dyn Write + Send>>,
     master: Mutex<Box<dyn MasterPty + Send>>,
     killer: Mutex<Box<dyn ChildKiller + Send + Sync>>,
@@ -95,8 +99,19 @@ impl Session {
         let snap = self.snapshot();
         let _ = handle.data(channel, snap).await;
         let id = NEXT_CLIENT.fetch_add(1, Ordering::Relaxed);
-        self.clients.lock().unwrap().insert(id, Client { handle, channel });
+        self.clients.lock().unwrap().insert(id, Client::Ssh { handle, channel });
         id
+    }
+
+    /// Adds a terminal on this PC; output (starting with the current
+    /// screen) arrives on the returned receiver until the session ends.
+    pub fn attach_local(&self, size: PtySize) -> (u64, std::sync::mpsc::Receiver<Vec<u8>>) {
+        self.resize(size);
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _ = tx.send(self.snapshot());
+        let id = NEXT_CLIENT.fetch_add(1, Ordering::Relaxed);
+        self.clients.lock().unwrap().insert(id, Client::Local(tx));
+        (id, rx)
     }
 
     pub fn detach(&self, client: u64) {
@@ -132,11 +147,17 @@ impl Sessions {
         self: &Arc<Self>,
         id: &str,
         command: &str,
+        cwd: Option<std::path::PathBuf>,
         size: PtySize,
         on_change: Arc<dyn Fn() + Send + Sync>,
     ) -> anyhow::Result<Arc<Session>> {
         let pair = native_pty_system().openpty(size)?;
-        let mut child = pair.slave.spawn_command(shell_command())?;
+        let cwd = cwd.filter(|d| d.is_dir()).or_else(dirs::home_dir);
+        let mut cmd = shell_command();
+        if let Some(d) = &cwd {
+            cmd.cwd(d);
+        }
+        let mut child = pair.slave.spawn_command(cmd)?;
         drop(pair.slave);
         let killer = child.clone_killer();
         let mut reader = pair.master.try_clone_reader()?;
@@ -149,6 +170,7 @@ impl Sessions {
             id: id.to_string(),
             command: command.to_string(),
             created: SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+            cwd: cwd.map(|d| d.display().to_string()).unwrap_or_default(),
             writer: Mutex::new(writer),
             master: Mutex::new(pair.master),
             killer: Mutex::new(killer),
@@ -161,20 +183,55 @@ impl Sessions {
         let (sessions, s, rt) = (self.clone(), session.clone(), tokio::runtime::Handle::current());
         std::thread::Builder::new().name(format!("pty-{id}")).spawn(move || {
             let mut buf = [0u8; 16 * 1024];
+            let mut dsr = CursorQueries::default();
             loop {
                 let n = match reader.read(&mut buf) {
                     Ok(0) | Err(_) => break,
                     Ok(n) => n,
                 };
-                let bytes = &buf[..n];
-                s.screen.lock().unwrap().process(bytes);
-                // Fan out to every attached phone; drop the ones that are gone.
-                let clients: Vec<(u64, Handle, ChannelId)> =
-                    s.clients.lock().unwrap().iter().map(|(k, c)| (*k, c.handle.clone(), c.channel)).collect();
-                for (k, h, ch) in clients {
-                    if rt.block_on(h.data(ch, bytes.to_vec())).is_err() {
-                        s.detach(k);
+                // Cursor position queries are answered here, from the screen
+                // copy: Windows' ConPTY asks one at startup and shows nothing
+                // until it gets an answer, even with no phone attached.
+                let mut owned = Vec::with_capacity(n);
+                {
+                    let mut screen = s.screen.lock().unwrap();
+                    for piece in dsr.split(&buf[..n]) {
+                        match piece {
+                            Piece::Output(bytes) => {
+                                screen.process(&bytes);
+                                owned.extend_from_slice(&bytes);
+                            }
+                            Piece::Query => {
+                                let (row, col) = screen.screen().cursor_position();
+                                s.write(format!("\x1b[{};{}R", row + 1, col + 1).as_bytes());
+                            }
+                        }
                     }
+                }
+                if owned.is_empty() {
+                    continue;
+                }
+                let bytes = &owned[..];
+                // Fan out to every attached phone; drop the ones that are gone.
+                let mut ssh: Vec<(u64, Handle, ChannelId)> = Vec::new();
+                let mut gone: Vec<u64> = Vec::new();
+                for (k, c) in s.clients.lock().unwrap().iter() {
+                    match c {
+                        Client::Ssh { handle, channel } => ssh.push((*k, handle.clone(), *channel)),
+                        Client::Local(tx) => {
+                            if tx.send(bytes.to_vec()).is_err() {
+                                gone.push(*k);
+                            }
+                        }
+                    }
+                }
+                for (k, h, ch) in ssh {
+                    if rt.block_on(h.data(ch, bytes.to_vec())).is_err() {
+                        gone.push(k);
+                    }
+                }
+                for k in gone {
+                    s.detach(k);
                 }
             }
             let code = child.wait().map(|st| st.exit_code()).unwrap_or(1);
@@ -182,9 +239,12 @@ impl Sessions {
             let clients: Vec<Client> = s.clients.lock().unwrap().drain().map(|(_, c)| c).collect();
             rt.block_on(async {
                 for c in clients {
-                    let _ = c.handle.exit_status_request(c.channel, code).await;
-                    let _ = c.handle.eof(c.channel).await;
-                    let _ = c.handle.close(c.channel).await;
+                    // Local terminals notice when their sender is dropped.
+                    if let Client::Ssh { handle, channel } = c {
+                        let _ = handle.exit_status_request(channel, code).await;
+                        let _ = handle.eof(channel).await;
+                        let _ = handle.close(channel).await;
+                    }
                 }
             });
             on_change();
@@ -212,9 +272,6 @@ fn shell_command() -> CommandBuilder {
     };
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
-    if let Some(home) = dirs::home_dir() {
-        cmd.cwd(home);
-    }
     cmd
 }
 
@@ -228,7 +285,78 @@ fn which(exe: &str) -> Option<String> {
     })
 }
 
+enum Piece {
+    Output(Vec<u8>),
+    /// ESC[6n: "where is the cursor?"
+    Query,
+}
+
+/// Finds ESC[6n (cursor position query) in terminal output, also when split
+/// across reads, so it can be answered here and kept from the phones.
+#[derive(Default)]
+struct CursorQueries {
+    carry: Vec<u8>,
+}
+
+impl CursorQueries {
+    const QUERY: &'static [u8] = b"\x1b[6n";
+
+    fn split(&mut self, input: &[u8]) -> Vec<Piece> {
+        let mut data = std::mem::take(&mut self.carry);
+        data.extend_from_slice(input);
+        let mut pieces = Vec::new();
+        let mut start = 0;
+        let mut i = 0;
+        while i < data.len() {
+            if data[i..].starts_with(Self::QUERY) {
+                if i > start {
+                    pieces.push(Piece::Output(data[start..i].to_vec()));
+                }
+                pieces.push(Piece::Query);
+                i += Self::QUERY.len();
+                start = i;
+            } else if data[i] == 0x1b && Self::QUERY.starts_with(&data[i..]) {
+                break; // a query cut at the end of this read: hold it back
+            } else {
+                i += 1;
+            }
+        }
+        if i > start {
+            pieces.push(Piece::Output(data[start..i].to_vec()));
+        }
+        self.carry = data[i..].to_vec();
+        pieces
+    }
+}
+
 /// Ids come from phones: keep them short and plain.
 pub fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn run(q: &mut CursorQueries, input: &[u8]) -> (Vec<u8>, usize) {
+        let mut out = Vec::new();
+        let mut n = 0;
+        for p in q.split(input) {
+            match p {
+                Piece::Output(b) => out.extend(b),
+                Piece::Query => n += 1,
+            }
+        }
+        (out, n)
+    }
+
+    #[test]
+    fn cursor_queries() {
+        let mut q = CursorQueries::default();
+        assert_eq!(run(&mut q, b"hi\x1b[6nthere\x1b["), (b"hithere".to_vec(), 1));
+        assert_eq!(run(&mut q, b"6nok\x1b[31m"), (b"ok\x1b[31m".to_vec(), 1));
+        // An ESC that turns out not to be a query is passed on.
+        assert_eq!(run(&mut q, b"x\x1b"), (b"x".to_vec(), 0));
+        assert_eq!(run(&mut q, b"[Ay"), (b"\x1b[Ay".to_vec(), 0));
+    }
 }

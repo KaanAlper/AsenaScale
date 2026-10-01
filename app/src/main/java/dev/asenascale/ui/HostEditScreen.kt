@@ -270,7 +270,7 @@ private fun Field(
 }
 
 /** Where the PC app is downloaded from. */
-const val HOST_APP_DOWNLOAD = "https://github.com/KaanAlper/Mobile-Claude/releases/latest"
+const val HOST_APP_DOWNLOAD = "https://github.com/KaanAlper/AsenaScale/releases/latest"
 
 @Composable
 private fun HostAppFoundCard() {

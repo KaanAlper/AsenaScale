@@ -23,5 +23,9 @@
   "request_body": "{device}\nต้องการเชื่อมต่อกับคอมพิวเตอร์นี้ด้วย AsenaScale\n\nถ้าอนุญาต โทรศัพท์นี้จะใช้เทอร์มินัลและจับภาพหน้าจอได้ จะไม่ถามอีก\n\nคีย์: {key}\n\nอนุญาตหรือไม่",
   "ts_off": "Tailscale: ปิด",
   "ts_connect": "เชื่อมต่อ Tailscale",
-  "ts_disconnect": "ตัดการเชื่อมต่อ Tailscale"
+  "ts_disconnect": "ตัดการเชื่อมต่อ Tailscale",
+  "check_updates": "ตรวจหาอัปเดต",
+  "update_to": "อัปเดตเป็น {v}",
+  "up_to_date": "AsenaScale เป็นเวอร์ชันล่าสุด ({v})",
+  "update_failed": "อัปเดตไม่สำเร็จ: {e}"
 }

@@ -46,6 +46,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.asenascale.R
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
 import dev.asenascale.data.Host
 import dev.asenascale.screen.ScreenClient
 import dev.asenascale.screen.ScreenView
@@ -82,7 +90,7 @@ fun ScreenShare(host: Host, onDismiss: () -> Unit) {
         if (sharp) client.quality(75, 1920) else client.quality(50, 1280)
     }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(4000)
+        kotlinx.coroutines.delay(6000)
         hint = false
     }
 
@@ -119,6 +127,10 @@ fun ScreenShare(host: Host, onDismiss: () -> Unit) {
                             .background(Pal.mantle, RoundedCornerShape(14.dp))
                             .padding(14.dp),
                     )
+                }
+                // While a modifier is held: a round button (bottom right) lets them all go.
+                if (client.mods.values.any { it != ScreenClient.Mod.OFF }) {
+                    ReleaseButton(Modifier.align(Alignment.BottomEnd).padding(10.dp)) { client.releaseMods() }
                 }
                 if (hint && info != null) {
                     Text(
@@ -188,31 +200,147 @@ private fun Chip(label: String, active: Boolean, onClick: () -> Unit) {
     )
 }
 
-/** Keys a phone keyboard lacks, for the PC. */
+/**
+ * Keys a phone keyboard lacks, in two rows. Modifiers: tap = for the next
+ * key (win, then r = Win+R), long press = held until tapped again, tap
+ * while armed = the key alone (win = Start menu). F opens F1-F12.
+ */
 @Composable
 private fun ScreenKeys(client: ScreenClient) {
-    val keys = listOf(
-        "esc" to "esc", "tab" to "tab", "enter" to "enter",
-        "←" to "left", "↑" to "up", "↓" to "down", "→" to "right",
-        "ctrl+c" to "ctrl+c", "ctrl+v" to "ctrl+v", "ctrl+z" to "ctrl+z", "ctrl+a" to "ctrl+a",
-        "alt+tab" to "alt+tab", "win" to "win", "del" to "del", "home" to "home", "end" to "end",
-    )
-    Row(
-        Modifier.fillMaxWidth().background(Pal.mantle).horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    // Only single keys: combinations are made with the sticky modifiers.
+    val row1 = listOf("esc", "tab", "ctrl", "alt", "shift", "win", "F")
+    val row2 = listOf("←" to "left", "↑" to "up", "↓" to "down", "→" to "right", "enter" to "enter", "⌫" to "backspace",
+        "del" to "del", "space" to "space", "home" to "home", "end" to "end", "pgup" to "pgup", "pgdn" to "pgdn")
+    Column(
+        Modifier.fillMaxWidth().background(Pal.mantle).padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        for ((label, combo) in keys) {
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Pal.surface0.copy(alpha = 0.6f))
-                    .clickable { client.key(combo) }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-            ) {
-                Text(label, fontSize = 13.sp, fontFamily = Mono, color = Pal.text, maxLines = 1, softWrap = false)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            for (k in row1) {
+                val mod = client.mods[k]
+                when {
+                    mod != null -> ScreenKey(
+                        k,
+                        state = mod,
+                        onTap = { client.tapMod(k) },
+                        onLong = { client.lockMod(k) },
+                    )
+                    k == "F" -> FKeys(client)
+                    else -> ScreenKey(k, onTap = { client.key(k) })
+                }
             }
         }
-        Spacer(Modifier.width(4.dp))
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            for ((label, combo) in row2) {
+                ScreenKey(label, repeat = combo in setOf("left", "up", "down", "right", "backspace", "del", "pgup", "pgdn"), onTap = {
+                    client.key(combo)
+                })
+            }
+        }
     }
-    Spacer(Modifier.height(0.dp))
+}
+
+/** Round "let go" button shown while modifiers are held. */
+@Composable
+fun ReleaseButton(modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .size(42.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(Pal.mauve.copy(alpha = 0.9f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(AsIcons.Undo, stringResource(R.string.release_keys), tint = Pal.base, modifier = Modifier.size(22.dp))
+    }
+}
+
+@Composable
+private fun FKeys(client: ScreenClient) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        ScreenKey("F1–12", onTap = { open = true })
+        androidx.compose.material3.DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier.heightIn(max = 280.dp),
+        ) {
+            for (n in 1..12) {
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text("F$n", fontFamily = Mono) },
+                    onClick = {
+                        open = false
+                        client.key("f$n")
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScreenKey(
+    label: String,
+    state: ScreenClient.Mod = ScreenClient.Mod.OFF,
+    repeat: Boolean = false,
+    onTap: () -> Unit,
+    onLong: (() -> Unit)? = null,
+) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val tap by androidx.compose.runtime.rememberUpdatedState(onTap)
+    val long by androidx.compose.runtime.rememberUpdatedState(onLong)
+    var pressed by remember { mutableStateOf(false) }
+    Box(
+        Modifier
+            .height(38.dp)
+            .widthIn(min = 44.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                when {
+                    state == ScreenClient.Mod.LOCKED -> Pal.mauve.copy(alpha = 0.45f)
+                    state == ScreenClient.Mod.ONCE -> Pal.mauve.copy(alpha = 0.2f)
+                    pressed -> Pal.surface1
+                    else -> Pal.surface0.copy(alpha = 0.6f)
+                },
+            )
+            .pointerInput(repeat) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    pressed = true
+                    view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                    var longFired = false
+                    val job = scope.launch {
+                        delay(420)
+                        if (long != null) {
+                            longFired = true
+                            view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                            long?.invoke()
+                        } else if (repeat) {
+                            longFired = true
+                            while (true) {
+                                tap()
+                                delay(50)
+                            }
+                        }
+                    }
+                    val up = waitForUpOrCancellation()
+                    job.cancel()
+                    if (up != null && !longFired) tap()
+                    pressed = false
+                }
+            }
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            fontSize = 13.sp,
+            fontFamily = Mono,
+            color = if (state != ScreenClient.Mod.OFF) Pal.mauve else Pal.text,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
 }

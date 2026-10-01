@@ -41,6 +41,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.LinearProgressIndicator
+import dev.asenascale.update.Updater
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import dev.asenascale.tailnet.HOST_APP_PORT
@@ -82,6 +86,15 @@ fun HomeScreen(
     var launcherFor by remember { mutableStateOf<Host?>(null) }
     var deviceFor by remember { mutableStateOf<Peer?>(null) }
     val onOpenHost: (Host) -> Unit = { launcherFor = it }
+    val scope = rememberCoroutineScope()
+
+    // A newer release: downloaded in the background, then Android's install
+    // screen opens by itself (once per version).
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        val ready = withContext(Dispatchers.IO) { Updater.checkAndDownload(context, force = false) }
+        if (ready && Updater.shouldAutoOffer(context)) Updater.install(context)
+    }
 
     // PCs running AsenaScale show up by themselves: while this screen is
     // open, online non-phone devices are knocked on once a minute.
@@ -115,6 +128,7 @@ fun HomeScreen(
         }
 
         item { TailscaleCard(ts) }
+        item { UpdateBanner() }
 
         item {
             SectionHeader(stringResource(R.string.section_computers)) {
@@ -128,11 +142,16 @@ fun HomeScreen(
                 Hint(stringResource(R.string.hint_no_computers))
             }
         }
-        items(hosts, key = { it.id }) { host ->
+        // Online first, then by name.
+        val sorted = hosts.sortedWith(
+            compareBy<Host>({ h -> ts.peers.firstOrNull { it.matches(h.address) }?.online != true }, { it.title.lowercase() }),
+        )
+        items(sorted, key = { it.id }) { host ->
             val peer = ts.peers.firstOrNull { it.matches(host.address) }
             val openHere = open.values.count { it.host.id == host.id && it.state.collectAsState().value !is ConnState.Closed }
             HostRow(
                 host = host,
+                peer = peer,
                 online = peer?.online,
                 sessionOpen = openHere > 0,
                 onClick = { onOpenHost(host) },
@@ -140,13 +159,20 @@ fun HomeScreen(
             )
         }
 
-        if (ts.running) {
+        // Everything else on the tailnet. Devices already listed above (and
+        // AsenaScale nodes, which join the list above by themselves) are
+        // not repeated; tap one to add it as a computer.
+        val others = ts.peers.filter { p ->
+            !p.shortName.startsWith("asenascale-") &&
+                hosts.none { p.matches(it.address) || it.address.equals("asenascale-" + p.shortName, ignoreCase = true) }
+        }
+        if (ts.running && others.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.section_devices)) }
-            if (ts.peers.isEmpty()) item { Hint(stringResource(R.string.no_other_devices)) }
-            items(ts.peers, key = { "peer:" + it.dnsName + it.name }) { peer ->
-                PeerRow(peer, saved = hosts.any { peer.matches(it.address) }) { deviceFor = peer }
+            items(others, key = { "peer:" + it.dnsName + it.name }) { peer ->
+                PeerRow(peer, saved = false) { deviceFor = peer }
             }
         }
+        item { VersionLine() }
         item { Spacer(Modifier.height(24.dp)) }
     }
 
@@ -160,7 +186,14 @@ fun HomeScreen(
             saved = existing != null,
             onAction = {
                 deviceFor = null
-                if (existing != null) launcherFor = existing else onNewHost(peer.shortName)
+                when {
+                    existing != null -> launcherFor = existing
+                    else -> scope.launch {
+                        // Runs the PC app? Then no form: add it and open.
+                        val added = withContext(Dispatchers.IO) { addIfHostApp(peer) }
+                        if (added != null) launcherFor = added else onNewHost(peer.shortName)
+                    }
+                }
             },
             onDismiss = { deviceFor = null },
         )
@@ -188,19 +221,24 @@ private fun discoverHostApps() {
     }
     for (peer in candidates) {
         checked[peer.dnsName] = now
-        val ip = peer.ipv4 ?: continue
-        if (app.tailnet.isHostApp(ip)) {
-            app.hosts.save(
-                Host(
-                    name = peer.shortName.removePrefix("asenascale-"),
-                    address = peer.shortName,
-                    port = HOST_APP_PORT,
-                    user = "pc",
-                    auth = AuthMode.KEY,
-                ),
-            )
-        }
+        addIfHostApp(peer)
     }
+}
+
+/** Saves [peer] as a computer if it runs the AsenaScale PC app; returns it. */
+private fun addIfHostApp(peer: Peer): Host? {
+    val app = App.instance
+    val ip = peer.ipv4 ?: return null
+    if (!app.tailnet.isHostApp(ip)) return null
+    val host = Host(
+        name = peer.shortName.removePrefix("asenascale-"),
+        address = peer.shortName,
+        port = HOST_APP_PORT,
+        user = "pc",
+        auth = AuthMode.KEY,
+    )
+    app.hosts.save(host)
+    return host
 }
 
 private fun Peer.matches(address: String): Boolean {
@@ -331,7 +369,7 @@ private fun Hint(text: String) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick: () -> Unit, onEdit: () -> Unit) {
+private fun HostRow(host: Host, peer: Peer?, online: Boolean?, sessionOpen: Boolean, onClick: () -> Unit, onEdit: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -365,8 +403,14 @@ private fun HostRow(host: Host, online: Boolean?, sessionOpen: Boolean, onClick:
                         )
                     }
                 }
+                // The PC app needs no user name: show what matters instead.
+                val detail = if (host.port == HOST_APP_PORT) {
+                    listOfNotNull("AsenaScale", peer?.os?.ifEmpty { null }, peer?.ipv4 ?: host.address).joinToString("  ·  ")
+                } else {
+                    "${host.user}@${host.address}" + if (host.startup.isNotBlank()) "  ›  ${host.startup}" else ""
+                }
                 Text(
-                    "${host.user}@${host.address}" + if (host.startup.isNotBlank()) "  ›  ${host.startup}" else "",
+                    detail,
                     style = MonoSmall,
                     color = Pal.subtext,
                     maxLines = 1,
@@ -461,5 +505,75 @@ private fun KeyDialog(onDismiss: () -> Unit) {
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = Pal.subtext) } },
+    )
+}
+
+@Composable
+private fun UpdateBanner() {
+    val context = LocalContext.current
+    val status by Updater.status.collectAsState()
+    val (text, fraction) = when (val st = status) {
+        is Updater.Status.Downloading -> stringResource(R.string.update_downloading, st.version) to st.fraction
+        is Updater.Status.Ready -> stringResource(R.string.update_ready, st.version) to null
+        else -> return
+    }
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Pal.mauve.copy(alpha = 0.12f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(start = 18.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(AsIcons.Download, null, tint = Pal.mauve, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(12.dp))
+                Text(text, modifier = Modifier.weight(1f), fontSize = 14.sp)
+                if (status is Updater.Status.Ready) {
+                    TextButton(onClick = { Updater.install(context) }) {
+                        Text(stringResource(R.string.update_install), color = Pal.mauve)
+                    }
+                }
+            }
+            fraction?.let {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { it },
+                    modifier = Modifier.fillMaxWidth().padding(end = 10.dp).height(3.dp),
+                    color = Pal.mauve,
+                    trackColor = Pal.surface0,
+                    drawStopIndicator = {},
+                )
+            }
+        }
+    }
+}
+
+/** App version, and a manual update check. */
+@Composable
+private fun VersionLine() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val status by Updater.status.collectAsState()
+    val note = when (val st = status) {
+        Updater.Status.Checking -> stringResource(R.string.update_checking)
+        Updater.Status.UpToDate -> stringResource(R.string.up_to_date)
+        is Updater.Status.Failed -> stringResource(R.string.update_failed, st.message)
+        else -> stringResource(R.string.check_updates)
+    }
+    Text(
+        "AsenaScale Mobile ${Updater.current}  ·  $note",
+        style = MonoSmall,
+        color = Pal.overlay0,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable {
+                scope.launch {
+                    val ready = withContext(Dispatchers.IO) { Updater.checkAndDownload(context, force = true) }
+                    if (ready) Updater.install(context)
+                }
+            }
+            .padding(8.dp),
     )
 }

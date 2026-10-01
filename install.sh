@@ -22,7 +22,22 @@ BIN="$HOME/.local/bin/asenascale"
 say() { printf '\033[1;35m::\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 
+is_running() {
+  pgrep -x asenascale >/dev/null 2>&1 || pgrep -f "$APPIMAGE" >/dev/null 2>&1
+}
+
+# Closes a running AsenaScale and the terminals it started, after asking
+# (the question goes to the terminal even when this script comes from curl).
 stop_running() {
+  is_running || return 0
+  if [ -z "${ASENASCALE_YES:-}" ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    printf '\033[1;33m::\033[0m AsenaScale is running; it will be closed together with its terminal sessions. Continue? [Y/n] ' > /dev/tty
+    read -r answer < /dev/tty || answer=""
+    case "$answer" in [nN]*) die "cancelled" ;; esac
+  fi
+  # Politely first (it ends its sessions itself), then for sure.
+  [ -x "$APPIMAGE" ] && "$APPIMAGE" quit >/dev/null 2>&1 || true
+  sleep 1
   pkill -x asenascale 2>/dev/null || true
   pkill -f "$APPIMAGE" 2>/dev/null || true
 }

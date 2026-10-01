@@ -27,7 +27,22 @@ object Tools {
         return extra + builtIn
     }
 
-    fun find(host: Host, id: String): Tool = forHost(host).firstOrNull { it.id == id } ?: shell
+    /** Id prefix of a session that was started elsewhere (on the PC) and joined. */
+    const val JOINED = "s:"
+
+    fun find(host: Host, id: String): Tool =
+        if (id.startsWith(JOINED)) {
+            Tool(id, App.instance.joinedNames[id] ?: id.removePrefix(JOINED), "")
+        } else {
+            forHost(host).firstOrNull { it.id == id } ?: shell
+        }
+
+    /** A session already running on the PC, to join as it is. */
+    fun joined(sessionId: String, label: String): Tool {
+        val id = JOINED + sessionId
+        App.instance.joinedNames[id] = label
+        return Tool(id, label, "")
+    }
 
     /** Which tool a plain tap opens: the host's startup command, else Claude. */
     fun default(host: Host): Tool = forHost(host).first()
@@ -44,6 +59,10 @@ class SessionIds(context: Context) {
         prefs.getString(key, null) ?: ("p" + UUID.randomUUID().toString().replace("-", "").take(12)).also {
             prefs.edit().putString(key, it).apply()
         }
+
+    fun get(key: String): String? = prefs.getString(key, null)
+
+    fun set(key: String, id: String) = prefs.edit().putString(key, id).apply()
 
     fun clear(key: String) = prefs.edit().remove(key).apply()
 }

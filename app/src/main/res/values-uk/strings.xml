@@ -18,7 +18,7 @@
     <string name="offline">не в мережі</string>
     <string name="my_ssh_key">Мій SSH-ключ</string>
     <string name="section_computers">Комп\'ютери</string>
-    <string name="section_devices">Пристрої</string>
+    <string name="section_devices">Інші пристрої</string>
     <string name="hint_no_computers">Запустіть AsenaScale на ПК, і він сам з\'явиться тут. Або торкніться пристрою нижче.</string>
     <string name="no_other_devices">У вашому tailnet немає інших пристроїв.</string>
     <string name="ts_off">Вимкнено</string>
@@ -145,9 +145,18 @@
     <string name="downloading">Завантаження %1$s</string>
     <string name="n_files">Файлів: %1$d</string>
     <string name="screen_share">Демонстрація екрана</string>
-    <string name="screen_hint">Дотик: клік · Утримання: правий клік · Перетягування: прокрутка · Два пальці: масштаб</string>
+    <string name="screen_hint">Дотик: клік · Утримання: правий клік · Два пальці в один бік: прокрутка · Щипок: масштаб · Один палець: зсув (при збільшенні)</string>
     <string name="quality_low">Економія</string>
     <string name="quality_high">Чітко</string>
     <string name="fit">Вписати в екран</string>
     <string name="keyboard">Клавіатура</string>
+    <string name="running_on_pc">Запущено на ПК</string>
+    <string name="release_keys">Відпустити клавіші</string>
+    <string name="update_ready">Версія %1$s готова</string>
+    <string name="update_downloading">Завантаження версії %1$s…</string>
+    <string name="update_install">Встановити</string>
+    <string name="check_updates">Перевірити оновлення</string>
+    <string name="up_to_date">Актуально</string>
+    <string name="update_checking">Перевірка…</string>
+    <string name="update_failed">Не вдалося перевірити: %1$s</string>
 </resources>

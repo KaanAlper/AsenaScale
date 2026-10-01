@@ -23,5 +23,9 @@
   "request_body": "{device}\nwil met AsenaScale verbinding maken met deze computer.\n\nAls je het toestaat, kan deze telefoon de terminal gebruiken en schermafbeeldingen maken. Er wordt niet opnieuw gevraagd.\n\nSleutel: {key}\n\nToestaan?",
   "ts_off": "Tailscale: uit",
   "ts_connect": "Verbinden met Tailscale",
-  "ts_disconnect": "Verbinding met Tailscale verbreken"
+  "ts_disconnect": "Verbinding met Tailscale verbreken",
+  "check_updates": "Controleren op updates",
+  "update_to": "Bijwerken naar {v}",
+  "up_to_date": "AsenaScale is up-to-date ({v}).",
+  "update_failed": "Bijwerken mislukt: {e}"
 }

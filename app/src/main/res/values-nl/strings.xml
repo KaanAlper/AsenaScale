@@ -18,7 +18,7 @@
     <string name="offline">offline</string>
     <string name="my_ssh_key">Mijn SSH-sleutel</string>
     <string name="section_computers">Computers</string>
-    <string name="section_devices">Apparaten</string>
+    <string name="section_devices">Andere apparaten</string>
     <string name="hint_no_computers">Start AsenaScale op je pc en hij verschijnt hier vanzelf. Of tik hieronder op een apparaat.</string>
     <string name="no_other_devices">Geen andere apparaten in je tailnet.</string>
     <string name="ts_off">Uit</string>
@@ -145,9 +145,18 @@
     <string name="downloading">%1$s downloaden</string>
     <string name="n_files">%1$d bestanden</string>
     <string name="screen_share">Scherm delen</string>
-    <string name="screen_hint">Tik: klik · Lang drukken: rechtsklik · Slepen: scrollen · Twee vingers: zoomen</string>
+    <string name="screen_hint">Tik: klik · Lang drukken: rechtsklik · Twee vingers dezelfde kant: scrollen · Knijpen: zoom · Eén vinger: verschuiven (ingezoomd)</string>
     <string name="quality_low">Zuinig</string>
     <string name="quality_high">Scherp</string>
     <string name="fit">Aan scherm aanpassen</string>
     <string name="keyboard">Toetsenbord</string>
+    <string name="running_on_pc">Draait op de pc</string>
+    <string name="release_keys">Toetsen loslaten</string>
+    <string name="update_ready">Versie %1$s staat klaar</string>
+    <string name="update_downloading">Versie %1$s downloaden…</string>
+    <string name="update_install">Installeren</string>
+    <string name="check_updates">Controleren op updates</string>
+    <string name="up_to_date">Up-to-date</string>
+    <string name="update_checking">Controleren…</string>
+    <string name="update_failed">Controle mislukt: %1$s</string>
 </resources>

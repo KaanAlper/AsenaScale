@@ -1,5 +1,7 @@
 package dev.asenascale.term
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
@@ -53,6 +55,18 @@ class TerminalCanvasView(context: Context) : View(context) {
     var ctrlDown = false
     var altDown = false
     var onModifiersConsumed: (() -> Unit)? = null
+    /** Ctrl/Alt locked by a long press on the extra keys (shown in the UI). */
+    var ctrlLock by androidx.compose.runtime.mutableStateOf(false)
+    var altLock by androidx.compose.runtime.mutableStateOf(false)
+
+    /** Lets go of held modifiers; sends nothing. */
+    fun releaseModifiers() {
+        ctrlLock = false
+        altLock = false
+        ctrlDown = false
+        altDown = false
+        onModifiersConsumed?.invoke()
+    }
     var onLongPress: (() -> Unit)? = null
 
     private fun sp(v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, resources.displayMetrics)

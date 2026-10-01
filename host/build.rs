@@ -8,6 +8,12 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
+    // The version shown and compared for updates: set by CI (release number,
+    // or "N-nightly" for branch builds); local builds are "-dev".
+    let version = env::var("AS_VERSION").unwrap_or_else(|_| format!("{}-dev", env::var("CARGO_PKG_VERSION").unwrap()));
+    println!("cargo:rustc-env=AS_VERSION={version}");
+    println!("cargo:rerun-if-env-changed=AS_VERSION");
+
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let target = env::var("TARGET").unwrap();
