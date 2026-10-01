@@ -321,6 +321,12 @@ class TerminalCanvasView(context: Context) : View(context) {
                 return true
             }
 
+            override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+                super.setComposingText(text, newCursorPosition)
+                flushEditable()
+                return true
+            }
+
             override fun finishComposingText(): Boolean {
                 super.finishComposingText()
                 flushEditable()
@@ -331,6 +337,11 @@ class TerminalCanvasView(context: Context) : View(context) {
                 val del = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)
                 repeat(beforeLength.coerceAtLeast(1)) { sendKeyEvent(del) }
                 return super.deleteSurroundingText(beforeLength, afterLength)
+            }
+
+            override fun sendKeyEvent(event: KeyEvent): Boolean {
+                if (event.action == KeyEvent.ACTION_DOWN) onKeyDown(event.keyCode, event)
+                return true
             }
 
             private fun flushEditable() {

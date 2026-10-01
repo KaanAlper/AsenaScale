@@ -229,6 +229,12 @@ class ScreenView(context: Context) : View(context) {
                 return true
             }
 
+            override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+                super.setComposingText(text, newCursorPosition)
+                flush()
+                return true
+            }
+
             override fun finishComposingText(): Boolean {
                 super.finishComposingText()
                 flush()
