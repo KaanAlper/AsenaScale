@@ -276,7 +276,7 @@ impl russh::server::Handler for Conn {
         match term {
             Ok(term) => {
                 session.channel_success(channel)?;
-                let client = term.attach(session.handle(), channel, pty).await;
+                let client = term.attach(session.handle(), channel, pty);
                 self.channels.insert(channel, Chan::Shell { session: term, client });
                 (self.state.on_change)();
             }
@@ -567,4 +567,128 @@ fn spawn_exec(cmd: &str, channel: ChannelId, handle: Handle) -> anyhow::Result<C
         let _ = handle.close(channel).await;
     });
     Ok(stdin)
+}
+
+/// The real server driven by the phone app's own SSH library (JSch) through
+/// tests/PhoneProbe.java. Needs java and the JSch jar the app uses:
+/// `AS_E2E_JSCH=path/to/jsch.jar cargo test phone -- --ignored --nocapture`
+#[cfg(test)]
+mod phone {
+    use super::*;
+    use std::path::{Path, PathBuf};
+    use std::process::Command;
+    use std::time::Duration;
+
+    struct Probe {
+        jar: PathBuf,
+        source: PathBuf,
+        key: PathBuf,
+        port: u16,
+        state: Arc<State>,
+        _rt: tokio::runtime::Runtime,
+    }
+
+    /// java with no window of its own (the test binary has no console, so each java would open one)
+    fn java(jar: &Path, source: &Path) -> Command {
+        use std::os::windows::process::CommandExt;
+        let mut c = Command::new("java");
+        c.creation_flags(0x0800_0000).arg("-cp").arg(jar).arg(source); // CREATE_NO_WINDOW
+        c
+    }
+
+    impl Probe {
+        fn start() -> Option<Probe> {
+            let jar = PathBuf::from(std::env::var_os("AS_E2E_JSCH")?);
+            std::env::set_var("AS_TEST_LOCAL", "1");
+            let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/PhoneProbe.java");
+            let dir = std::env::temp_dir().join(format!("asenascale-phone-{}", std::process::id()));
+            std::fs::create_dir_all(&dir).unwrap();
+            let key = dir.join("id_ecdsa");
+            let _ = std::fs::remove_file(&key);
+            let gen = java(&jar, &source).arg("genkey").arg(&key).status().unwrap();
+            assert!(gen.success(), "java could not make a key");
+            let public = PublicKey::from_openssh(std::fs::read_to_string(key.with_extension("pub")).unwrap().trim()).unwrap();
+            let state = Arc::new(State {
+                devices: Mutex::new(Devices::only(&[public])),
+                sessions: Arc::new(Sessions::default()),
+                prompt: tokio::sync::Mutex::new(()),
+                on_change: Arc::new(|| {}),
+                connected: Mutex::new(Vec::new()),
+            });
+            let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
+            let listener = rt.block_on(tokio::net::TcpListener::bind(("127.0.0.1", 0))).unwrap();
+            let port = listener.local_addr().unwrap().port();
+            // as start_server
+            let config = Arc::new(russh::server::Config {
+                server_id: russh::SshId::Standard(SERVER_ID.into()),
+                keys: vec![russh::keys::PrivateKey::random(&mut rand::rng(), russh::keys::Algorithm::Ed25519).unwrap()],
+                preferred: crate::preferred(),
+                auth_rejection_time: Duration::from_millis(300),
+                auth_rejection_time_initial: Some(Duration::ZERO),
+                inactivity_timeout: None,
+                keepalive_interval: Some(Duration::from_secs(20)),
+                keepalive_max: 6,
+                nodelay: true,
+                ..Default::default()
+            });
+            let mut srv = Server { state: state.clone() };
+            rt.spawn(async move {
+                use russh::server::Server as _;
+                let _ = srv.run_on_socket(config, &listener).await;
+            });
+            Some(Probe { jar, source, key, port, state, _rt: rt })
+        }
+
+        /// Runs the phone; returns what it printed.
+        fn phone(&self, session: &str, extra: &[&str]) -> String {
+            let out = java(&self.jar, &self.source)
+                .args(["run", &self.port.to_string()])
+                .arg(&self.key)
+                .arg(session)
+                .args(extra)
+                .output()
+                .unwrap();
+            let text = String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);
+            println!("--- phone {session} {extra:?}\n{text}");
+            text
+        }
+    }
+
+    impl Drop for Probe {
+        fn drop(&mut self) {
+            self.state.sessions.kill_all();
+        }
+    }
+
+    /// A phone that stopped reading (asleep, or its link died without closing; the server notices only after its
+    /// keepalives, minutes later) must not hold up the terminal for the phone that's typing into it now.
+    #[test]
+    #[ignore]
+    fn a_stalled_phone_does_not_freeze_the_terminal() {
+        let Some(p) = Probe::start() else { return };
+        let mut stalled = java(&p.jar, &p.source)
+            .args(["stall", &p.port.to_string()])
+            .arg(&p.key)
+            .args(["e2e-shared", "180"])
+            .spawn()
+            .unwrap();
+        let attached = (0..300).any(|_| {
+            std::thread::sleep(Duration::from_millis(100));
+            p.state.sessions.get("e2e-shared").is_some_and(|s| s.attached() == 1)
+        });
+        assert!(attached, "the stalled phone never attached");
+        let out = p.phone("e2e-shared", &["flood"]);
+        let _ = stalled.kill();
+        assert!(out.contains("RESULT ok"));
+    }
+
+    #[test]
+    #[ignore]
+    fn phone_types_and_sees_the_output() {
+        let Some(p) = Probe::start() else { return };
+        assert!(p.phone("e2e-plain", &[]).contains("RESULT ok"));
+        // back to the same terminal, as after a drop
+        assert!(p.phone("e2e-plain", &[]).contains("RESULT ok"));
+        assert!(p.phone("e2e-clip", &["clip"]).contains("RESULT ok"));
+    }
 }

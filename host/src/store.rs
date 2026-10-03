@@ -68,6 +68,13 @@ impl Devices {
         }
     }
 
+    /// Tests: these keys only, in memory (never saved over the user's list).
+    #[cfg(test)]
+    pub fn only(keys: &[PublicKey]) -> Devices {
+        let list = keys.iter().map(|k| Device { key: k.to_openssh().unwrap(), name: "test".into(), added: 0 }).collect();
+        Devices { list }
+    }
+
     pub fn is_allowed(&self, key: &PublicKey) -> bool {
         self.list.iter().any(|d| {
             PublicKey::from_openssh(&d.key)

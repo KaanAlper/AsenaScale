@@ -6,6 +6,10 @@
 //! and then the live stream. The shell only ends when it exits or is
 //! killed, so a phone that dropped off (network, Android killing the app)
 //! comes back to exactly where it was, without tmux.
+//!
+//! The shell's output is never held up by a phone: each phone has its own
+//! outbox and task (a phone that stopped reading, or whose link died and
+//! isn't noticed yet, would otherwise stop the output for everyone).
 
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -33,8 +37,111 @@ impl vt100::Callbacks for Title {
 /// Where a session's output goes: a phone (SSH channel) or a terminal on
 /// the PC itself (`asenascale attach`).
 enum Client {
-    Ssh { handle: Handle, channel: ChannelId },
+    Ssh(Arc<Outbox>),
     Local(std::sync::mpsc::Sender<Vec<u8>>),
+}
+
+/// How far a phone may fall behind before what it missed is dropped; it then
+/// gets the screen as it is, once it takes data again.
+const BEHIND: usize = 1 << 20;
+
+/// What one phone still has to get. The shell's reader only adds to it; the
+/// phone's own task ([`send_to_phone`]) sends it.
+#[derive(Default)]
+struct Outbox {
+    state: Mutex<Pending>,
+    wake: tokio::sync::Notify,
+}
+
+#[derive(Default)]
+struct Pending {
+    bytes: Vec<u8>,
+    /// Fell more than [`BEHIND`] behind: send the current screen instead.
+    repaint: bool,
+    /// The shell exited with this code: send the rest, then end the channel.
+    exit: Option<u32>,
+    /// Detached.
+    gone: bool,
+}
+
+impl Outbox {
+    fn push(&self, bytes: &[u8]) {
+        let mut p = self.state.lock().unwrap();
+        if p.repaint || p.gone {
+            return;
+        }
+        if p.bytes.len() + bytes.len() > BEHIND {
+            p.bytes = Vec::new();
+            p.repaint = true;
+        } else {
+            p.bytes.extend_from_slice(bytes);
+        }
+        drop(p);
+        self.wake.notify_one();
+    }
+
+    fn end(&self, code: u32) {
+        self.state.lock().unwrap().exit = Some(code);
+        self.wake.notify_one();
+    }
+
+    fn stop(&self) {
+        self.state.lock().unwrap().gone = true;
+        self.wake.notify_one();
+    }
+}
+
+enum Work {
+    Send(Vec<u8>),
+    Repaint,
+    End(u32),
+    Wait,
+}
+
+/// Sends a phone its output, at the pace its link takes it.
+async fn send_to_phone(session: Arc<Session>, client: u64, outbox: Arc<Outbox>, handle: Handle, channel: ChannelId) {
+    loop {
+        let work = {
+            let mut p = outbox.state.lock().unwrap();
+            if p.gone {
+                return;
+            }
+            if p.repaint {
+                Work::Repaint
+            } else if !p.bytes.is_empty() {
+                Work::Send(std::mem::take(&mut p.bytes))
+            } else if let Some(code) = p.exit {
+                Work::End(code)
+            } else {
+                Work::Wait
+            }
+        };
+        let bytes = match work {
+            Work::Wait => {
+                outbox.wake.notified().await;
+                continue;
+            }
+            Work::Send(bytes) => bytes,
+            Work::Repaint => {
+                // with the reader held off, so the stream goes on right after this screen
+                let screen = session.screen.lock().unwrap();
+                let mut p = outbox.state.lock().unwrap();
+                p.bytes = Vec::new();
+                p.repaint = false;
+                paint(&screen)
+            }
+            Work::End(code) => {
+                let _ = handle.exit_status_request(channel, code).await;
+                let _ = handle.eof(channel).await;
+                let _ = handle.close(channel).await;
+                return;
+            }
+        };
+        if handle.data(channel, bytes).await.is_err() {
+            session.detach(client);
+            return;
+        }
+    }
 }
 
 pub struct Session {
@@ -76,30 +183,18 @@ impl Session {
         self.screen.lock().unwrap().callbacks().0.clone()
     }
 
-    /// Escape codes that paint the current screen on a fresh terminal:
-    /// modes, contents, cursor, title.
-    fn snapshot(&self) -> Vec<u8> {
-        let parser = self.screen.lock().unwrap();
-        let screen = parser.screen();
-        let mut out = b"\x1b[0m\x1b[H\x1b[2J".to_vec();
-        if screen.alternate_screen() {
-            out.extend_from_slice(b"\x1b[?1049h\x1b[H\x1b[2J");
-        }
-        out.extend(screen.state_formatted());
-        let title = &parser.callbacks().0;
-        if !title.is_empty() {
-            out.extend(format!("\x1b]0;{title}\x07").into_bytes());
-        }
-        out
-    }
-
     /// Adds a phone. Returns its client id, for [`Session::detach`].
-    pub async fn attach(&self, handle: Handle, channel: ChannelId, size: PtySize) -> u64 {
+    pub fn attach(self: &Arc<Self>, handle: Handle, channel: ChannelId, size: PtySize) -> u64 {
         self.resize(size);
-        let snap = self.snapshot();
-        let _ = handle.data(channel, snap).await;
+        let outbox = Arc::new(Outbox::default());
         let id = NEXT_CLIENT.fetch_add(1, Ordering::Relaxed);
-        self.clients.lock().unwrap().insert(id, Client::Ssh { handle, channel });
+        {
+            // With the reader held off: the live stream goes on right where this screen ends.
+            let screen = self.screen.lock().unwrap();
+            outbox.push(&paint(&screen));
+            self.clients.lock().unwrap().insert(id, Client::Ssh(outbox.clone()));
+        }
+        tokio::spawn(send_to_phone(self.clone(), id, outbox, handle, channel));
         id
     }
 
@@ -108,15 +203,34 @@ impl Session {
     pub fn attach_local(&self, size: PtySize) -> (u64, std::sync::mpsc::Receiver<Vec<u8>>) {
         self.resize(size);
         let (tx, rx) = std::sync::mpsc::channel();
-        let _ = tx.send(self.snapshot());
         let id = NEXT_CLIENT.fetch_add(1, Ordering::Relaxed);
+        let screen = self.screen.lock().unwrap();
+        let _ = tx.send(paint(&screen));
         self.clients.lock().unwrap().insert(id, Client::Local(tx));
         (id, rx)
     }
 
     pub fn detach(&self, client: u64) {
-        self.clients.lock().unwrap().remove(&client);
+        if let Some(Client::Ssh(outbox)) = self.clients.lock().unwrap().remove(&client) {
+            outbox.stop();
+        }
     }
+}
+
+/// Escape codes that paint the current screen on a fresh terminal:
+/// modes, contents, cursor, title.
+fn paint(parser: &vt100::Parser<Title>) -> Vec<u8> {
+    let screen = parser.screen();
+    let mut out = b"\x1b[0m\x1b[H\x1b[2J".to_vec();
+    if screen.alternate_screen() {
+        out.extend_from_slice(b"\x1b[?1049h\x1b[H\x1b[2J");
+    }
+    out.extend(screen.state_formatted());
+    let title = &parser.callbacks().0;
+    if !title.is_empty() {
+        out.extend(format!("\x1b]0;{title}\x07").into_bytes());
+    }
+    out
 }
 
 /// All live sessions, by id (chosen by the phone, so it can find its way back).
@@ -180,7 +294,7 @@ impl Sessions {
         self.map.lock().unwrap().insert(id.to_string(), session.clone());
         on_change();
 
-        let (sessions, s, rt) = (self.clone(), session.clone(), tokio::runtime::Handle::current());
+        let (sessions, s) = (self.clone(), session.clone());
         std::thread::Builder::new().name(format!("pty-{id}")).spawn(move || {
             let mut buf = [0u8; 16 * 1024];
             let mut dsr = CursorQueries::default();
@@ -193,6 +307,7 @@ impl Sessions {
                 // copy: Windows' ConPTY asks one at startup and shows nothing
                 // until it gets an answer, even with no phone attached.
                 let mut owned = Vec::with_capacity(n);
+                let mut gone: Vec<u64> = Vec::new();
                 {
                     let mut screen = s.screen.lock().unwrap();
                     for piece in dsr.split(&buf[..n]) {
@@ -207,27 +322,19 @@ impl Sessions {
                             }
                         }
                     }
-                }
-                if owned.is_empty() {
-                    continue;
-                }
-                let bytes = &owned[..];
-                // Fan out to every attached phone; drop the ones that are gone.
-                let mut ssh: Vec<(u64, Handle, ChannelId)> = Vec::new();
-                let mut gone: Vec<u64> = Vec::new();
-                for (k, c) in s.clients.lock().unwrap().iter() {
-                    match c {
-                        Client::Ssh { handle, channel } => ssh.push((*k, handle.clone(), *channel)),
-                        Client::Local(tx) => {
-                            if tx.send(bytes.to_vec()).is_err() {
-                                gone.push(*k);
+                    // Into every outbox while the screen copy is held, so an
+                    // attach's screen and the stream after it line up.
+                    if !owned.is_empty() {
+                        for (k, c) in s.clients.lock().unwrap().iter() {
+                            match c {
+                                Client::Ssh(outbox) => outbox.push(&owned),
+                                Client::Local(tx) => {
+                                    if tx.send(owned.clone()).is_err() {
+                                        gone.push(*k);
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                for (k, h, ch) in ssh {
-                    if rt.block_on(h.data(ch, bytes.to_vec())).is_err() {
-                        gone.push(k);
                     }
                 }
                 for k in gone {
@@ -236,17 +343,13 @@ impl Sessions {
             }
             let code = child.wait().map(|st| st.exit_code()).unwrap_or(1);
             sessions.map.lock().unwrap().remove(&s.id);
-            let clients: Vec<Client> = s.clients.lock().unwrap().drain().map(|(_, c)| c).collect();
-            rt.block_on(async {
-                for c in clients {
-                    // Local terminals notice when their sender is dropped.
-                    if let Client::Ssh { handle, channel } = c {
-                        let _ = handle.exit_status_request(channel, code).await;
-                        let _ = handle.eof(channel).await;
-                        let _ = handle.close(channel).await;
-                    }
+            // Phones get the rest of their output, then the exit; local
+            // terminals notice when their sender is dropped.
+            for (_, c) in s.clients.lock().unwrap().drain() {
+                if let Client::Ssh(outbox) = c {
+                    outbox.end(code);
                 }
-            });
+            }
             on_change();
         })?;
         Ok(session)
@@ -261,6 +364,9 @@ fn shell_command() -> CommandBuilder {
         let pwsh = which("pwsh.exe");
         let mut c = CommandBuilder::new(pwsh.unwrap_or_else(|| "powershell.exe".into()));
         c.arg("-NoLogo");
+        // Tests type into real shells: keep their lines out of the user's PowerShell history.
+        #[cfg(test)]
+        c.args(["-NoExit", "-Command", "Remove-Module PSReadLine"]);
         c
     };
     #[cfg(not(windows))]
