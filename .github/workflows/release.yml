@@ -1,0 +1,93 @@
+name: Release
+
+# Actions -> Release -> Run workflow. The version follows the commits since the last release
+# (semantic versioning, the same rule as Logical Lunge): "feat:" -> MINOR, "fix:" / "perf:" / others
+# -> PATCH, a "!" after the type or a breaking-change footer -> MAJOR. "bump" forces the level.
+# A tag that was ever used (failed attempts too) is never reused. The phone and PC apps are built
+# by the Build workflow with that version, then published together as the latest release
+# (the apps' own updaters read /releases/latest).
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version step: auto reads the commits (feat: minor, fix: patch, type!: or BREAKING CHANGE: major)"
+        type: choice
+        options: [auto, patch, minor, major]
+        default: auto
+        required: true
+      notes:
+        description: "Release notes (optional)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      ver: ${{ steps.v.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute the next version
+        id: v
+        shell: pwsh
+        env:
+          BUMP: ${{ inputs.bump || 'auto' }}
+        run: |
+          $tags = @(git tag --list 'v*')
+          $last = $tags | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]($_ -replace '^v', '') } -Descending | Select-Object -First 1
+          $commits = @()
+          if ($last) { $commits = @((git log "$last..HEAD" --format='%s%n%b%x1e') -join "`n" -split [char]0x1e) }
+          # base: the PC app's crate version (the tags decide once there are any)
+          $base = ((Select-String -Path host/Cargo.toml -Pattern '^version\s*=\s*"(\d+\.\d+\.\d+)"' | Select-Object -First 1).Matches[0].Groups[1].Value)
+          $ver = & ./tools/release-version.ps1 -BaseVersion $base -Tags $tags -Commits $commits -Bump $env:BUMP
+          Write-Host "Last release: $last, step: $env:BUMP -> $ver"
+          "ver=$ver" >> $env:GITHUB_OUTPUT
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.ver }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: dist
+        run: |
+          for f in *.apk *.exe *.AppImage; do sha256sum "$f" > "$f.sha256"; done
+          ls -la
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.ver }}
+          target_commitish: ${{ github.sha }}
+          name: AsenaScale v${{ needs.version.outputs.ver }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          make_latest: "true"
+          body: |
+            ${{ inputs.notes }}
+
+            **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
+            **PC (Windows):** PowerShell'de `irm https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.ps1 | iex`, ya da **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) / taşınabilir **AsenaScale-windows-x64-portable.exe**.
+            **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
+          files: dist/*

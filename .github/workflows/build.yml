@@ -1,28 +1,29 @@
 name: Build
 
 # Every push builds the phone app (universal APK plus one per CPU
-# architecture) and the PC app (AsenaScale for Windows and Linux).
+# architecture) and the PC app (AsenaScale for Windows and Linux), and tries
+# the Windows one-line installer (install.ps1: install, then uninstall).
 #   - branch push -> "nightly" pre-release is updated
-#   - tag v*      -> a real GitHub release
-#   - Actions -> "Build" -> Run workflow with "release" = 0.2.0 -> release v0.2.0
+#   - Actions -> "Release" -> Run workflow publishes a real release; it runs
+#     this same workflow with the version it computed.
 on:
   push:
     branches: ["**"]
-    tags: ["v*"]
   pull_request:
   workflow_dispatch:
+  workflow_call:
     inputs:
-      release:
-        description: "Publish a release with this version (e.g. 0.1.0). Empty = just build."
-        required: false
+      version:
+        description: "Release version (x.y.z) to build with; empty = nightly"
+        type: string
         default: ""
 
 permissions:
   contents: write
 
 concurrency:
-  group: apk-${{ github.ref }}
-  cancel-in-progress: true
+  group: build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   version:
@@ -33,22 +34,19 @@ jobs:
     steps:
       - id: v
         env:
-          RELEASE_INPUT: ${{ github.event.inputs.release }}
+          RELEASE_INPUT: ${{ inputs.version }}
         run: |
           if [[ -n "$RELEASE_INPUT" ]]; then n="${RELEASE_INPUT#v}"
-          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"
           else n="0.4.${GITHUB_RUN_NUMBER}"; fi
           # NSIS wants a plain dotted number.
           num="$(echo "$n" | grep -oE '^[0-9]+(\.[0-9]+){0,2}')"
           echo "number=$num" >> "$GITHUB_OUTPUT"
           # The app's own version: branch builds are marked so they never auto-update themselves.
-          if [[ -n "$RELEASE_INPUT" || "$GITHUB_REF" == refs/tags/v* ]]; then echo "name=$num" >> "$GITHUB_OUTPUT"
+          if [[ -n "$RELEASE_INPUT" ]]; then echo "name=$num" >> "$GITHUB_OUTPUT"
           else echo "name=$num-nightly" >> "$GITHUB_OUTPUT"; fi
 
   apk:
     runs-on: ubuntu-latest
-    env:
-      VERSION_CODE: ${{ github.run_number }}
     outputs:
       version: ${{ steps.version.outputs.version }}
       release_tag: ${{ steps.version.outputs.release_tag }}
@@ -58,17 +56,17 @@ jobs:
       - name: Version
         id: version
         env:
-          RELEASE_INPUT: ${{ github.event.inputs.release }}
+          RELEASE_INPUT: ${{ inputs.version }}
         run: |
           if [[ -n "$RELEASE_INPUT" ]]; then
             echo "VERSION_NAME=${RELEASE_INPUT#v}" >> "$GITHUB_ENV"
             echo "RELEASE_TAG=v${RELEASE_INPUT#v}" >> "$GITHUB_ENV"
-          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-            echo "RELEASE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
           else
             echo "VERSION_NAME=0.3.0-nightly.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
           fi
+          # Minutes since 2024-01-01: grows with time for nightly and release builds
+          # alike (run numbers differ per workflow), so every newer APK installs over an older one.
+          echo "VERSION_CODE=$(( ( $(date -u +%s) - 1704067200 ) / 60 ))" >> "$GITHUB_ENV"
           . "$GITHUB_ENV"
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "release_tag=${RELEASE_TAG:-}" >> "$GITHUB_OUTPUT"
@@ -198,13 +196,43 @@ jobs:
           name: host-${{ matrix.target }}
           path: dist/*
 
-  publish:
-    needs: [apk, host]
-    if: github.event_name != 'pull_request'
+  install-test:
+    needs: [version, host]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: host-x86_64-pc-windows-gnu
+          path: dist
+
+      - name: install.ps1 - install, update, uninstall
+        shell: powershell
+        env:
+          EXPECTED: ${{ needs.version.outputs.number }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\AsenaScale'
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs\AsenaScale\asenascale.exe'
+          $env:ASENASCALE_SOURCE = (Resolve-Path 'dist/AsenaScale-Setup.exe').Path
+          $env:ASENASCALE_DEFAULTS = '1'
+          ./install.ps1
+          if (-not (Test-Path $exe)) { throw 'not installed' }
+          if ((Get-ItemProperty $key).DisplayVersion -ne $env:EXPECTED) { throw "wrong version in Apps: $((Get-ItemProperty $key).DisplayVersion)" }
+          ./install.ps1
+          if (-not (Test-Path $exe)) { throw 'update failed' }
+          $env:ASENASCALE_UNINSTALL = '1'
+          ./install.ps1
+          if ((Test-Path $exe) -or (Test-Path $key)) { throw 'uninstall left files behind' }
+          'install / update / uninstall ok'
+
+  nightly:
+    needs: [apk, host, install-test]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     env:
       VERSION_NAME: ${{ needs.apk.outputs.version }}
-      RELEASE_TAG: ${{ needs.apk.outputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -216,13 +244,11 @@ jobs:
       - run: ls -la dist
 
       - name: Move nightly tag
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
         run: |
           git tag -f nightly
           git push -f origin nightly
 
       - name: Publish nightly
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly
@@ -231,20 +257,6 @@ jobs:
           body: |
             Son derleme: `${{ env.VERSION_NAME }}` — ${{ github.sha }} (${{ github.ref_name }})
 
-            **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
-            **PC (Windows):** **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) ya da taşınabilir **AsenaScale-windows-x64-portable.exe**.
-            **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
-          files: dist/*
-
-      - name: Publish release
-        if: env.RELEASE_TAG != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          target_commitish: ${{ github.sha }}
-          name: AsenaScale ${{ env.RELEASE_TAG }}
-          generate_release_notes: true
-          body: |
             **Telefon:** çoğu telefon için **AsenaScale-Mobile-arm64-v8a.apk**, emin değilsen **AsenaScale-Mobile-universal.apk**.
             **PC (Windows):** **AsenaScale-Setup.exe** (kurulum, yönetici izni istemez) ya da taşınabilir **AsenaScale-windows-x64-portable.exe**.
             **PC (Linux, Debian/Ubuntu/Arch/Fedora):** `curl -fsSL https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.sh | sh` ya da **AsenaScale-x86_64.AppImage**.
