@@ -426,7 +426,13 @@ function Invoke-Program([string]$exe, [string]$arguments) {
     Log "run: $exe $arguments"
     # not -Wait: Windows PowerShell then also waits for what the program starts (a silent setup starts the app)
     try { $p = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru }
-    catch [ComponentModel.Win32Exception] { if ($_.Exception.NativeErrorCode -eq 1223) { Log 'permission declined'; return $false }; throw }
+    catch {
+        # a declined permission prompt (1223), possibly wrapped by Windows PowerShell 5.1
+        for ($x = $_.Exception; $x; $x = $x.InnerException) {
+            if ($x -is [ComponentModel.Win32Exception] -and $x.NativeErrorCode -eq 1223) { Log 'permission declined'; return $false }
+        }
+        throw
+    }
     $null = $p.Handle  # keeps the exit code readable after the process ends
     $p.WaitForExit()
     Log "exit $($p.ExitCode)"
@@ -443,10 +449,10 @@ function Invoke-Uninstall {
         Stop-Running (Get-InstallDir)
         $cmd = Split-Command $(if ($e.QuietUninstallString) { $e.QuietUninstallString } else { $e.UninstallString })
         $ok = Step ($T.unGo + ' ' + $App.Name) {
-            $r = Invoke-Program $cmd[0] (($cmd[1] + ' ' + $App.UninstallArgs).Trim())
-            # an NSIS uninstaller hands over to a copy of itself in %TEMP% and returns at once: wait for its Apps entry to go
-            for ($w = 0; $r -and $w -lt 120 -and (Get-SetupEntry); $w++) { Start-Sleep -Milliseconds 500 }
-            $r
+            $done = Invoke-Program $cmd[0] (($cmd[1] + ' ' + $App.UninstallArgs).Trim())
+            # NSIS and Inno uninstallers hand over to a copy of themselves in %TEMP% and return at once: wait for the Apps entry to go
+            for ($w = 0; $done -and $w -lt 120 -and (Get-SetupEntry); $w++) { Start-Sleep -Milliseconds 500 }
+            $done
         }
         if (-not $ok) { Box $COL.warn $T.uacTitle $T.uacBody; return }
     }
@@ -626,6 +632,8 @@ try {
     }
 
     $exe = if ($App.Mode -eq 'setup') { Install-Setup $rel $file } else { Install-Zip $rel $file $autostart }
+    # the version the setup program actually registered (a local setup exe has none in its name)
+    if ($App.Mode -eq 'setup') { $v = Get-Installed; if ($v) { $rel.Version = $v } }
     $committed = $true
     Log "installed $($rel.Version)"
     if (Test-Path -LiteralPath $backupDir) { Remove-Item -LiteralPath $backupDir -Recurse -Force -ErrorAction SilentlyContinue }
