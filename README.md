@@ -28,6 +28,8 @@ oturum açınca başlatır. Aynı komut güncelleme yapar.
 irm https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.ps1 | iex
 ```
 
+**Pencereli kurulum:** [**AsenaScale-Setup-x64.exe**](https://github.com/KaanAlper/AsenaScale/releases/latest/download/AsenaScale-Setup-x64.exe) (32-bit Windows için [AsenaScale-Setup-x86.exe](https://github.com/KaanAlper/AsenaScale/releases/latest/download/AsenaScale-Setup-x86.exe)) — aynı kurulumu düğmelerle yapar: dil seçimi, ilerleme, iptal edince geri alma; kuruluysa **Güncelle / Onar / Kaldır** sunar.
+
 Kaldırmak için: Ayarlar > Uygulamalar > AsenaScale, ya da
 `$env:ASENASCALE_UNINSTALL = 1; irm https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.ps1 | iex`
 

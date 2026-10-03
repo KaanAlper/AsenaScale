@@ -227,8 +227,27 @@ jobs:
           if ((Test-Path $exe) -or (Test-Path $key)) { throw 'uninstall left files behind' }
           'install / update / uninstall ok'
 
+  setup:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The windowed setup app (installer/gui): builds both exes, draws every page and proves it starts and talks to install.ps1
+      - name: Setup app - build x64 / x86, draw the pages, run install.ps1's uninstall through the window
+        shell: pwsh
+        run: |
+          ./installer/gui/build.ps1 -Out dist -Smoke uninstall
+
+      # only the exes: the release and nightly publish every artifact of this workflow
+      - uses: actions/upload-artifact@v4
+        with:
+          name: setup
+          path: |
+            dist/AsenaScale-Setup-x64.exe
+            dist/AsenaScale-Setup-x86.exe
+
   nightly:
-    needs: [apk, host, install-test]
+    needs: [apk, host, install-test, setup]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     env:
