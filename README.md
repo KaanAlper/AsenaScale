@@ -21,9 +21,18 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 emin değilsen `AsenaScale-Mobile-universal.apk`. Tailscale anahtarını aç → **Giriş yap**.
 
 ### PC — Windows
-**`AsenaScale-Setup.exe`**'yi indirip çalıştır. Yönetici izni istemez, Windows'un diline göre
-Türkçe/İngilizce dahil 31 dilde açılır, oturum açınca başlar. (Kurulum istemezsen:
-`AsenaScale-windows-x64-portable.exe`.)
+Tek satır (PowerShell, yönetici izni istemez): son sürümü indirir, SHA-256'sını doğrular, kurar,
+oturum açınca başlatır. Aynı komut güncelleme yapar.
+
+```powershell
+irm https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.ps1 | iex
+```
+
+Kaldırmak için: Ayarlar > Uygulamalar > AsenaScale, ya da
+`$env:ASENASCALE_UNINSTALL = 1; irm https://raw.githubusercontent.com/KaanAlper/AsenaScale/main/install.ps1 | iex`
+
+Elle: **`AsenaScale-Setup.exe`**'yi indirip çalıştır (Windows'un diline göre Türkçe/İngilizce dahil
+31 dilde açılır). Kurulum istemezsen: `AsenaScale-windows-x64-portable.exe`.
 
 ### PC — Linux (Debian, Ubuntu, Arch, Fedora, openSUSE)
 Tek satır; gerekli kütüphaneleri kurar, menüye ikonuyla ekler, oturum açınca başlatır:
@@ -157,6 +166,8 @@ sh app/src/main/assets/mcshot.sh list  # PC'de: ekran görüntüsü hedeflerini 
 ```
 
 Her push'ta GitHub Actions universal + ABI'ye özel APK'ları (arm64-v8a, armeabi-v7a,
-x86_64, x86) derler ve `nightly` sürümüne yükler. Yeni sürüm çıkarmak için: Actions → **Build** →
-**Run workflow** → `release` alanına `0.2.0` yaz (ya da `v0.2.0` etiketi push et). APK repodaki
+x86_64, x86) derler, Windows kurulumunu (`install.ps1`: kur, güncelle, kaldır) dener ve `nightly`
+sürümüne yükler. Yeni sürüm çıkarmak için: Actions → **Release** → **Run workflow**; sürüm numarası
+son sürümden bu yana gelen commit'lerden hesaplanır (`feat:` → minor, `fix:` → patch, tipten sonra `!`
+ya da breaking-change notu → major; `bump` ile elle de seçilebilir). APK repodaki
 sabit `app/debug.keystore` ile imzalanır, böylece yeni sürüm eskisinin üzerine kurulur.
