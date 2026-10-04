@@ -590,9 +590,13 @@ mod phone {
 
     /// java with no window of its own (the test binary has no console, so each java would open one)
     fn java(jar: &Path, source: &Path) -> Command {
-        use std::os::windows::process::CommandExt;
         let mut c = Command::new("java");
-        c.creation_flags(0x0800_0000).arg("-cp").arg(jar).arg(source); // CREATE_NO_WINDOW
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            c.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        }
+        c.arg("-cp").arg(jar).arg(source);
         c
     }
 
