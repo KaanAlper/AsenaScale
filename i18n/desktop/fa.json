@@ -27,5 +27,7 @@
   "check_updates": "بررسی به‌روزرسانی",
   "update_to": "به‌روزرسانی به {v}",
   "up_to_date": "AsenaScale به‌روز است ({v}).",
-  "update_failed": "به‌روزرسانی ناموفق: {e}"
+  "update_failed": "به‌روزرسانی ناموفق: {e}",
+  "forwards": "پورت‌های هدایت‌شده: {p}",
+  "forwards_none": "پورت‌های هدایت‌شده: هیچ"
 }

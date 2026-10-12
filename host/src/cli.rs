@@ -29,6 +29,10 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
                       Ctrl+] leaves it running
   sessions            terminal sessions (IDs for attach)
   kill ID|all         end a terminal session
+  forward [list]      local ports opened on this PC's tailnet address
+  forward add PORT    let your own tailnet devices (a phone in phone-wide
+                      mode) reach 127.0.0.1:PORT here; off by default
+  forward remove PORT|all
   phones              phones allowed on this PC
   revoke N|NAME|all   forget an allowed phone (it will be asked again)
   log [-f] [-n N]     the app's log (-f: keep following)
@@ -143,6 +147,23 @@ pub fn run(args: &[String]) -> i32 {
                 if cmd == "quit" {
                     println!("AsenaScale isn't running");
                     return 0;
+                }
+                if matches!(cmd, "forward" | "forwards") {
+                    // Not running: edit the saved list; it applies on start.
+                    let mut fw = crate::forward::Forwards::load();
+                    return match crate::forward::command(&mut fw, args, None) {
+                        Ok((text, changed)) => {
+                            print!("{text}");
+                            if changed {
+                                println!("AsenaScale isn't running; this applies when it starts");
+                            }
+                            0
+                        }
+                        Err(e) => {
+                            eprintln!("{e:#}");
+                            1
+                        }
+                    };
                 }
                 if matches!(cmd, "connect" | "login" | "status") {
                     start_app();

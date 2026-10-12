@@ -14,6 +14,8 @@ extern "C" {
     fn AsLogin() -> *mut c_char;
     fn AsLogout() -> *mut c_char;
     fn AsPing(ip: *const c_char) -> c_int;
+    fn AsSetForwards(ports: *const c_char) -> *mut c_char;
+    fn AsSetLogger(f: extern "C" fn(*const c_char));
     fn AsStop();
     fn AsFree(p: *mut c_char);
 }
@@ -51,6 +53,27 @@ pub fn login() -> Result<()> {
 
 pub fn logout() -> Result<()> {
     check(unsafe { AsLogout() })
+}
+
+/// Opens exactly these ports on this node, each piped to the same port on
+/// 127.0.0.1 (see forward.rs). Needs a started node; `stop` closes them.
+pub fn set_forwards(csv: &str) -> Result<()> {
+    let c = CString::new(csv)?;
+    check(unsafe { AsSetForwards(c.as_ptr()) })
+}
+
+extern "C" fn go_log(line: *const c_char) {
+    if line.is_null() {
+        return;
+    }
+    let s = unsafe { CStr::from_ptr(line) }.to_string_lossy();
+    log::info!(target: "tailscale", "{s}");
+}
+
+/// Sends the embedded node's log lines (forwarded connections among them)
+/// to this app's log instead of a stderr nobody sees.
+pub fn route_logs() {
+    unsafe { AsSetLogger(go_log) }
 }
 
 /// Shuts the node down (off the tailnet); `start` + `serve` bring it back.

@@ -27,5 +27,7 @@
   "check_updates": "Sprawdź aktualizacje",
   "update_to": "Zaktualizuj do {v}",
   "up_to_date": "AsenaScale jest aktualny ({v}).",
-  "update_failed": "Aktualizacja nie powiodła się: {e}"
+  "update_failed": "Aktualizacja nie powiodła się: {e}",
+  "forwards": "Przekierowane porty: {p}",
+  "forwards_none": "Przekierowane porty: brak"
 }

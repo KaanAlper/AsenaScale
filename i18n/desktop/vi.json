@@ -27,5 +27,7 @@
   "check_updates": "Kiểm tra cập nhật",
   "update_to": "Cập nhật lên {v}",
   "up_to_date": "AsenaScale đã mới nhất ({v}).",
-  "update_failed": "Cập nhật thất bại: {e}"
+  "update_failed": "Cập nhật thất bại: {e}",
+  "forwards": "Cổng được chuyển tiếp: {p}",
+  "forwards_none": "Cổng được chuyển tiếp: không có"
 }

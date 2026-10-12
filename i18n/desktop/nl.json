@@ -27,5 +27,7 @@
   "check_updates": "Controleren op updates",
   "update_to": "Bijwerken naar {v}",
   "up_to_date": "AsenaScale is up-to-date ({v}).",
-  "update_failed": "Bijwerken mislukt: {e}"
+  "update_failed": "Bijwerken mislukt: {e}",
+  "forwards": "Doorgestuurde poorten: {p}",
+  "forwards_none": "Doorgestuurde poorten: geen"
 }

@@ -14,7 +14,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::server::State;
-use crate::{store, tailnet};
+use crate::{forward, store, tailnet};
 
 #[derive(Serialize, Deserialize)]
 pub struct Endpoint {
@@ -71,6 +71,8 @@ pub struct Ctx {
     pub state: Arc<State>,
     pub ts: Arc<Mutex<tailnet::Status>>,
     pub net: Arc<Net>,
+    /// Ports opened on the tailnet address (asenascale forward).
+    pub forwards: Arc<Mutex<forward::Forwards>>,
     /// The server's runtime (sessions spawn their readers on it).
     pub rt: tokio::runtime::Handle,
     pub quit: Box<dyn Fn() + Send + Sync>,
@@ -345,6 +347,7 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
             }
             Ok(format!("removed {n}; it will be asked for permission again\n"))
         }
+        "forward" | "forwards" => forward_cmd(ctx, args),
         "quit" => {
             (ctx.quit)();
             Ok("AsenaScale stopped\n".into())
@@ -352,6 +355,31 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
         "ping-app" => Ok("pong\n".into()),
         other => anyhow::bail!("unknown command {other:?} (asenascale help)"),
     }
+}
+
+/// `forward ...`: edits the allowlist and applies it to the running node.
+fn forward_cmd(ctx: &Ctx, args: &[String]) -> Result<String> {
+    let ip = ctx.ts.lock().unwrap().ipv4();
+    let mut fw = ctx.forwards.lock().unwrap();
+    let (mut text, changed) = forward::command(&mut fw, args, ip.as_deref())?;
+    if !changed {
+        return Ok(text);
+    }
+    let csv = fw.csv();
+    drop(fw);
+    log::info!("forwarded ports now: [{csv}]");
+    if !ctx.net.want_up() {
+        text += "Tailscale is off on this PC; it applies on `asenascale connect`\n";
+    } else if let Err(e) = tailnet::set_forwards(&csv) {
+        if e.to_string().contains("not started") {
+            text += "applies as soon as Tailscale has started\n";
+        } else {
+            log::warn!("forward: {e:#}");
+            text += &format!("warning: {e:#}\n");
+        }
+    }
+    (ctx.state.on_change)();
+    Ok(text)
 }
 
 fn status(ctx: &Ctx, json: bool) -> String {
@@ -371,6 +399,7 @@ fn status(ctx: &Ctx, json: bool) -> String {
             "sessions": sessions.len(),
             "phonesConnected": connected,
             "phonesApproved": phones,
+            "forwardedPorts": ctx.forwards.lock().unwrap().ports(),
             "version": env!("AS_VERSION"),
         })
         .to_string()
@@ -395,6 +424,7 @@ fn status(ctx: &Ctx, json: bool) -> String {
     line("Sessions", sessions.len().to_string());
     line("Phones now", if connected.is_empty() { "none".into() } else { dedup(&connected).join(", ") });
     line("Approved", phones.to_string());
+    line("Forwarded", ctx.forwards.lock().unwrap().csv().replace(',', ", "));
     out
 }
 

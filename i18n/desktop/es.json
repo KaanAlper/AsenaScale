@@ -27,5 +27,7 @@
   "check_updates": "Buscar actualizaciones",
   "update_to": "Actualizar a {v}",
   "up_to_date": "AsenaScale está al día ({v}).",
-  "update_failed": "Error al actualizar: {e}"
+  "update_failed": "Error al actualizar: {e}",
+  "forwards": "Puertos reenviados: {p}",
+  "forwards_none": "Puertos reenviados: ninguno"
 }

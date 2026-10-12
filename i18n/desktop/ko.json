@@ -27,5 +27,7 @@
   "check_updates": "업데이트 확인",
   "update_to": "{v}(으)로 업데이트",
   "up_to_date": "AsenaScale이 최신 버전입니다 ({v}).",
-  "update_failed": "업데이트 실패: {e}"
+  "update_failed": "업데이트 실패: {e}",
+  "forwards": "전달 중인 포트: {p}",
+  "forwards_none": "전달 중인 포트: 없음"
 }

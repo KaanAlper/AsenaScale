@@ -28,5 +28,7 @@
   "update_to": "{v} sürümüne güncelle",
   "up_to_date": "AsenaScale güncel ({v}).",
   "update_failed": "Güncelleme başarısız: {e}",
-  "already_running_restart": "AsenaScale zaten çalışıyor. Önceki oturumu sonlandırıp yeniden başlatmak ister misiniz?"
+  "already_running_restart": "AsenaScale zaten çalışıyor. Önceki oturumu sonlandırıp yeniden başlatmak ister misiniz?",
+  "forwards": "Yönlendirilen portlar: {p}",
+  "forwards_none": "Yönlendirilen portlar: yok"
 }

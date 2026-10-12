@@ -27,5 +27,7 @@
   "check_updates": "アップデートを確認",
   "update_to": "{v} に更新",
   "up_to_date": "AsenaScale は最新です ({v})。",
-  "update_failed": "更新に失敗しました: {e}"
+  "update_failed": "更新に失敗しました: {e}",
+  "forwards": "転送中のポート: {p}",
+  "forwards_none": "転送中のポート: なし"
 }

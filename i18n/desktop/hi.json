@@ -27,5 +27,7 @@
   "check_updates": "अपडेट जाँचें",
   "update_to": "{v} पर अपडेट करें",
   "up_to_date": "AsenaScale अप टू डेट है ({v})।",
-  "update_failed": "अपडेट विफल: {e}"
+  "update_failed": "अपडेट विफल: {e}",
+  "forwards": "फ़ॉरवर्ड किए गए पोर्ट: {p}",
+  "forwards_none": "फ़ॉरवर्ड किए गए पोर्ट: कोई नहीं"
 }

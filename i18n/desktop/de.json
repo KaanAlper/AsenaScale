@@ -27,5 +27,7 @@
   "check_updates": "Nach Updates suchen",
   "update_to": "Auf {v} aktualisieren",
   "up_to_date": "AsenaScale ist aktuell ({v}).",
-  "update_failed": "Update fehlgeschlagen: {e}"
+  "update_failed": "Update fehlgeschlagen: {e}",
+  "forwards": "Weitergeleitete Ports: {p}",
+  "forwards_none": "Weitergeleitete Ports: keine"
 }

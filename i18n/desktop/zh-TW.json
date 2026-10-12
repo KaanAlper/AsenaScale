@@ -27,5 +27,7 @@
   "check_updates": "檢查更新",
   "update_to": "更新至 {v}",
   "up_to_date": "AsenaScale 已是最新版本（{v}）。",
-  "update_failed": "更新失敗：{e}"
+  "update_failed": "更新失敗：{e}",
+  "forwards": "已轉送連接埠：{p}",
+  "forwards_none": "已轉送連接埠：無"
 }

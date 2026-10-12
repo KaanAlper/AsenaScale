@@ -28,5 +28,7 @@
   "update_to": "Update to {v}",
   "up_to_date": "AsenaScale is up to date ({v}).",
   "update_failed": "Update failed: {e}",
-  "already_running_restart": "AsenaScale is already running. Do you want to terminate the previous instance and restart?"
+  "already_running_restart": "AsenaScale is already running. Do you want to terminate the previous instance and restart?",
+  "forwards": "Forwarded ports: {p}",
+  "forwards_none": "Forwarded ports: none"
 }

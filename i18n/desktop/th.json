@@ -27,5 +27,7 @@
   "check_updates": "ตรวจหาอัปเดต",
   "update_to": "อัปเดตเป็น {v}",
   "up_to_date": "AsenaScale เป็นเวอร์ชันล่าสุด ({v})",
-  "update_failed": "อัปเดตไม่สำเร็จ: {e}"
+  "update_failed": "อัปเดตไม่สำเร็จ: {e}",
+  "forwards": "พอร์ตที่ส่งต่อ: {p}",
+  "forwards_none": "พอร์ตที่ส่งต่อ: ไม่มี"
 }

@@ -11,6 +11,7 @@ mod clip;
 mod control;
 mod firewall;
 mod files;
+mod forward;
 mod i18n;
 mod screen;
 mod server;
@@ -59,6 +60,7 @@ fn main() {
     }
     
     init_log();
+    tailnet::route_logs();
 
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
     let proxy = event_loop.create_proxy();
@@ -85,9 +87,10 @@ fn main() {
     // The embedded Tailscale node, and a slow watcher for the tray.
     let ts = Arc::new(Mutex::new(tailnet::Status::default()));
     let net = control::Net::new();
+    let forwards = Arc::new(Mutex::new(forward::Forwards::load()));
     {
-        let (ts, net, changed) = (ts.clone(), net.clone(), proxy.clone());
-        std::thread::spawn(move || watch_tailnet(ts, net, move || {
+        let (ts, net, forwards, changed) = (ts.clone(), net.clone(), forwards.clone(), proxy.clone());
+        std::thread::spawn(move || watch_tailnet(ts, net, forwards, move || {
             let _ = changed.send_event(UserEvent::Changed);
         }));
     }
@@ -99,6 +102,7 @@ fn main() {
             state: state.clone(),
             ts: ts.clone(),
             net: net.clone(),
+            forwards: forwards.clone(),
             rt,
             quit: Box::new(move || {
                 let _ = quit.send_event(UserEvent::Quit);
@@ -118,6 +122,7 @@ fn main() {
     let address = MenuItem::new(t("ts_starting"), false, None);
     let login = MenuItem::new(t("ts_login"), false, None);
     let devices = MenuItem::new("", false, None);
+    let forwarded = MenuItem::new("", false, None);
     let peers_menu = Submenu::new(t("devices"), true);
     let reset = MenuItem::new(t("reset"), true, None);
     let close_all = MenuItem::new(t("close_all"), true, None);
@@ -142,6 +147,7 @@ fn main() {
         &login,
         &peers_menu,
         &devices,
+        &forwarded,
         &PredefinedMenuItem::separator(),
         &close_all,
         &reset,
@@ -167,6 +173,7 @@ fn main() {
             net.clone(),
         );
         let (update_item, pending) = (update_item.clone(), pending.clone());
+        let (forwarded, forwards) = (forwarded.clone(), forwards.clone());
         move |tray: Option<&tray_icon::TrayIcon>| {
             let live = state.sessions.list();
             let attached: usize = live.iter().map(|s| s.attached()).sum();
@@ -217,6 +224,12 @@ fn main() {
             }
             let d = state.devices.lock().unwrap().len();
             devices.set_text(tf("allowed_phones", &[("d", &d)]));
+            let ports = forwards.lock().unwrap().csv();
+            forwarded.set_text(if ports.is_empty() {
+                t("forwards_none").to_string()
+            } else {
+                tf("forwards", &[("p", &ports.replace(',', ", "))])
+            });
             if let Some(t) = tray {
                 let _ = t.set_tooltip(Some(format!("AsenaScale — {text}")));
             }
@@ -317,7 +330,12 @@ fn start_server(state: Arc<server::State>) -> anyhow::Result<tokio::runtime::Han
 /// Starts the embedded node, forwards its port to the local server, and
 /// keeps the tray's copy of its status fresh: every 2 s while logging in,
 /// every 30 s once connected (it costs next to nothing).
-fn watch_tailnet(ts: Arc<Mutex<tailnet::Status>>, net: Arc<control::Net>, changed: impl Fn()) {
+fn watch_tailnet(
+    ts: Arc<Mutex<tailnet::Status>>,
+    net: Arc<control::Net>,
+    forwards: Arc<Mutex<forward::Forwards>>,
+    changed: impl Fn(),
+) {
     let dir = store::dir().to_string_lossy().into_owned();
     let mut up = false;
     let mut opened_login = false;
@@ -329,6 +347,13 @@ fn watch_tailnet(ts: Arc<Mutex<tailnet::Status>>, net: Arc<control::Net>, change
                 Ok(()) => {
                     if let Err(e) = tailnet::serve(PORT, PORT) {
                         log::error!("tailscale serve: {e:#}");
+                    }
+                    // Ports the user opted into (asenascale forward add).
+                    let csv = forwards.lock().unwrap().csv();
+                    if !csv.is_empty() {
+                        if let Err(e) = tailnet::set_forwards(&csv) {
+                            log::error!("forward: {e:#}");
+                        }
                     }
                     log::info!("tailscale on");
                     up = true;

@@ -27,5 +27,7 @@
   "check_updates": "Перевірити оновлення",
   "update_to": "Оновити до {v}",
   "up_to_date": "AsenaScale оновлено ({v}).",
-  "update_failed": "Не вдалося оновити: {e}"
+  "update_failed": "Не вдалося оновити: {e}",
+  "forwards": "Переспрямовані порти: {p}",
+  "forwards_none": "Переспрямовані порти: немає"
 }

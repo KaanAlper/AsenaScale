@@ -27,5 +27,7 @@
   "check_updates": "التحقق من التحديثات",
   "update_to": "التحديث إلى {v}",
   "up_to_date": "AsenaScale محدَّث ({v}).",
-  "update_failed": "فشل التحديث: {e}"
+  "update_failed": "فشل التحديث: {e}",
+  "forwards": "المنافذ المُعاد توجيهها: {p}",
+  "forwards_none": "المنافذ المُعاد توجيهها: لا يوجد"
 }
