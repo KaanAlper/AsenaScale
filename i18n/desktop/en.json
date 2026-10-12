@@ -1,4 +1,4 @@
-﻿{
+{
   "start_failed": "Couldn't start: {e}\n\nThe app may already be running (look in the system tray).",
   "starting": "Starting...",
   "ts_starting": "Tailscale starting...",

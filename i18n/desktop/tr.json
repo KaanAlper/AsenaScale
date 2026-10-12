@@ -1,4 +1,4 @@
-﻿{
+{
   "start_failed": "Başlatılamadı: {e}\n\nUygulama zaten açık olabilir (sağ alt köşeye bak).",
   "starting": "Başlatılıyor...",
   "ts_starting": "Tailscale başlatılıyor...",
