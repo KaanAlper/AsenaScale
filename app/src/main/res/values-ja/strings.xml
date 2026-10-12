@@ -159,4 +159,18 @@
     <string name="up_to_date">最新です</string>
     <string name="update_checking">確認中…</string>
     <string name="update_failed">確認に失敗しました: %1$s</string>
+    <string name="phone_wide">スマホ全体</string>
+    <string name="phone_wide_desc">他のアプリからも tailnet のデバイスに届きます（tailnet アドレス専用の VPN）</string>
+    <string name="phone_wide_active">オン：このスマホのアプリから tailnet の IP に届きます</string>
+    <string name="phone_wide_waiting">Tailscale の接続を待っています</string>
+    <string name="other_vpn_title">別の VPN が有効です</string>
+    <string name="other_vpn_body">Android で同時に使える VPN は 1 つだけです。「スマホ全体」をオンにすると、別の VPN（Tailscale アプリなど）は切断されます。AsenaScale 自身のターミナルはどちらの場合も使えます。</string>
+    <string name="continue_anyway">続ける</string>
+    <string name="phone_wide_denied">「スマホ全体」には VPN の許可が必要です。</string>
+    <string name="phone_wide_revoked">別の VPN に切り替わったため、「スマホ全体」をオフにしました。</string>
+    <string name="phone_wide_failed">「スマホ全体」を開始できませんでした：%1$s</string>
+    <string name="vpn_notif_channel">スマホ全体の tailnet</string>
+    <string name="vpn_notif_title">スマホ全体の tailnet がオンです</string>
+    <string name="vpn_notif_text">このスマホのアプリから tailnet のデバイスに届きます</string>
+    <string name="turn_off">オフにする</string>
 </resources>

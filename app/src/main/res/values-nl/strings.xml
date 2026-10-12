@@ -159,4 +159,18 @@
     <string name="up_to_date">Up-to-date</string>
     <string name="update_checking">Controleren…</string>
     <string name="update_failed">Controle mislukt: %1$s</string>
+    <string name="phone_wide">Hele telefoon</string>
+    <string name="phone_wide_desc">Ook andere apps bereiken tailnet-apparaten (een VPN alleen voor tailnet-adressen)</string>
+    <string name="phone_wide_active">Aan: apps op deze telefoon bereiken tailnet-IP\'s</string>
+    <string name="phone_wide_waiting">Wachten tot Tailscale verbonden is</string>
+    <string name="other_vpn_title">Er is een andere VPN actief</string>
+    <string name="other_vpn_body">Android staat maar één VPN tegelijk toe. Als je Hele telefoon aanzet, wordt de andere VPN (bijvoorbeeld de Tailscale-app) verbroken. De terminal van AsenaScale blijft in elk geval werken.</string>
+    <string name="continue_anyway">Doorgaan</string>
+    <string name="phone_wide_denied">Hele telefoon heeft de VPN-toestemming nodig.</string>
+    <string name="phone_wide_revoked">Een andere VPN heeft het overgenomen, dus Hele telefoon is uitgezet.</string>
+    <string name="phone_wide_failed">Hele telefoon kon niet starten: %1$s</string>
+    <string name="vpn_notif_channel">Tailnet voor de hele telefoon</string>
+    <string name="vpn_notif_title">Tailnet voor de hele telefoon staat aan</string>
+    <string name="vpn_notif_text">Apps op deze telefoon bereiken je tailnet-apparaten</string>
+    <string name="turn_off">Uitzetten</string>
 </resources>

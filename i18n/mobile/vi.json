@@ -156,5 +156,19 @@
   "check_updates": "Kiểm tra cập nhật",
   "up_to_date": "Đã mới nhất",
   "update_checking": "Đang kiểm tra…",
-  "update_failed": "Kiểm tra thất bại: %1$s"
+  "update_failed": "Kiểm tra thất bại: %1$s",
+  "phone_wide": "Toàn điện thoại",
+  "phone_wide_desc": "Các ứng dụng khác cũng truy cập được thiết bị tailnet (VPN chỉ cho địa chỉ tailnet)",
+  "phone_wide_active": "Bật: ứng dụng trên điện thoại này truy cập được IP tailnet",
+  "phone_wide_waiting": "Đang chờ Tailscale kết nối",
+  "other_vpn_title": "Một VPN khác đang hoạt động",
+  "other_vpn_body": "Android chỉ cho phép một VPN tại một thời điểm. Bật Toàn điện thoại sẽ ngắt VPN kia (ví dụ ứng dụng Tailscale). Terminal riêng của AsenaScale vẫn hoạt động trong mọi trường hợp.",
+  "continue_anyway": "Tiếp tục",
+  "phone_wide_denied": "Toàn điện thoại cần quyền VPN.",
+  "phone_wide_revoked": "Một VPN khác đã thay thế, nên Toàn điện thoại đã tắt.",
+  "phone_wide_failed": "Không thể bật Toàn điện thoại: %1$s",
+  "vpn_notif_channel": "Tailnet toàn điện thoại",
+  "vpn_notif_title": "Tailnet toàn điện thoại đang bật",
+  "vpn_notif_text": "Ứng dụng trên điện thoại này truy cập được thiết bị tailnet của bạn",
+  "turn_off": "Tắt"
 }

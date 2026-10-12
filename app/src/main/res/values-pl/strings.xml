@@ -159,4 +159,18 @@
     <string name="up_to_date">Aktualna</string>
     <string name="update_checking">Sprawdzanie…</string>
     <string name="update_failed">Sprawdzanie nie powiodło się: %1$s</string>
+    <string name="phone_wide">Cały telefon</string>
+    <string name="phone_wide_desc">Inne aplikacje też docierają do urządzeń w tailnecie (VPN tylko dla adresów tailnetu)</string>
+    <string name="phone_wide_active">Włączone: aplikacje na tym telefonie docierają do adresów IP tailnetu</string>
+    <string name="phone_wide_waiting">Czekam na połączenie Tailscale</string>
+    <string name="other_vpn_title">Aktywna jest inna sieć VPN</string>
+    <string name="other_vpn_body">Android pozwala na tylko jedną sieć VPN naraz. Włączenie trybu Cały telefon rozłączy drugą sieć VPN (na przykład aplikację Tailscale). Terminal AsenaScale działa dalej w każdym przypadku.</string>
+    <string name="continue_anyway">Dalej</string>
+    <string name="phone_wide_denied">Tryb Cały telefon wymaga uprawnienia VPN.</string>
+    <string name="phone_wide_revoked">Inna sieć VPN przejęła kontrolę, więc tryb Cały telefon został wyłączony.</string>
+    <string name="phone_wide_failed">Nie udało się uruchomić trybu Cały telefon: %1$s</string>
+    <string name="vpn_notif_channel">Tailnet na całym telefonie</string>
+    <string name="vpn_notif_title">Tailnet na całym telefonie włączony</string>
+    <string name="vpn_notif_text">Aplikacje na tym telefonie docierają do Twoich urządzeń w tailnecie</string>
+    <string name="turn_off">Wyłącz</string>
 </resources>

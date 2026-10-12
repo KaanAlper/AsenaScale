@@ -42,6 +42,20 @@
                 android:value="Keeps the embedded Tailscale node and SSH terminal session alive while in use" />
         </service>
 
+        <!-- Phone-wide mode (off by default): routes only tailnet ranges. -->
+        <service
+            android:name=".vpn.PhoneWideVpnService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="VPN that routes only Tailscale (tailnet) addresses into the embedded Tailscale node, so other apps can reach the user's own devices; on only while the user turns it on" />
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

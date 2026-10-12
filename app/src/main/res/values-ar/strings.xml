@@ -159,4 +159,18 @@
     <string name="up_to_date">محدَّث</string>
     <string name="update_checking">جارٍ التحقق…</string>
     <string name="update_failed">فشل التحقق: %1$s</string>
+    <string name="phone_wide">على مستوى الهاتف</string>
+    <string name="phone_wide_desc">يمكن للتطبيقات الأخرى أيضًا الوصول إلى أجهزة tailnet (شبكة VPN لعناوين tailnet فقط)</string>
+    <string name="phone_wide_active">مفعّل: تستطيع تطبيقات هذا الهاتف الوصول إلى عناوين IP في tailnet</string>
+    <string name="phone_wide_waiting">في انتظار اتصال Tailscale</string>
+    <string name="other_vpn_title">هناك شبكة VPN أخرى نشطة</string>
+    <string name="other_vpn_body">يسمح Android بشبكة VPN واحدة فقط في كل مرة. تفعيل \"على مستوى الهاتف\" سيقطع شبكة VPN الأخرى (مثل تطبيق Tailscale). تظل الطرفية الخاصة بـ AsenaScale تعمل في كل الأحوال.</string>
+    <string name="continue_anyway">متابعة</string>
+    <string name="phone_wide_denied">يحتاج وضع \"على مستوى الهاتف\" إلى إذن VPN.</string>
+    <string name="phone_wide_revoked">تولّت شبكة VPN أخرى الاتصال، لذا أُوقف وضع \"على مستوى الهاتف\".</string>
+    <string name="phone_wide_failed">تعذّر تشغيل وضع \"على مستوى الهاتف\": %1$s</string>
+    <string name="vpn_notif_channel">tailnet على مستوى الهاتف</string>
+    <string name="vpn_notif_title">tailnet على مستوى الهاتف مفعّل</string>
+    <string name="vpn_notif_text">تستطيع تطبيقات هذا الهاتف الوصول إلى أجهزتك في tailnet</string>
+    <string name="turn_off">إيقاف</string>
 </resources>

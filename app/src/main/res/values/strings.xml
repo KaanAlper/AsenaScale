@@ -160,4 +160,18 @@
     <string name="up_to_date">Up to date</string>
     <string name="update_checking">Checking…</string>
     <string name="update_failed">Update check failed: %1$s</string>
+    <string name="phone_wide">Phone-wide</string>
+    <string name="phone_wide_desc">Other apps can reach tailnet devices too (a VPN for tailnet addresses only)</string>
+    <string name="phone_wide_active">On: apps on this phone can reach tailnet IPs</string>
+    <string name="phone_wide_waiting">Waiting for Tailscale to connect</string>
+    <string name="other_vpn_title">Another VPN is active</string>
+    <string name="other_vpn_body">Android allows only one VPN at a time. Turning on Phone-wide will disconnect the other VPN (for example the Tailscale app). AsenaScale\'s own terminal keeps working either way.</string>
+    <string name="continue_anyway">Continue</string>
+    <string name="phone_wide_denied">Phone-wide needs the VPN permission.</string>
+    <string name="phone_wide_revoked">Another VPN took over, so Phone-wide was turned off.</string>
+    <string name="phone_wide_failed">Phone-wide couldn\'t start: %1$s</string>
+    <string name="vpn_notif_channel">Phone-wide tailnet</string>
+    <string name="vpn_notif_title">Phone-wide tailnet is on</string>
+    <string name="vpn_notif_text">Apps on this phone can reach your tailnet devices</string>
+    <string name="turn_off">Turn off</string>
 </resources>

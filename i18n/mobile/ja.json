@@ -156,5 +156,19 @@
   "check_updates": "アップデートを確認",
   "up_to_date": "最新です",
   "update_checking": "確認中…",
-  "update_failed": "確認に失敗しました: %1$s"
+  "update_failed": "確認に失敗しました: %1$s",
+  "phone_wide": "スマホ全体",
+  "phone_wide_desc": "他のアプリからも tailnet のデバイスに届きます（tailnet アドレス専用の VPN）",
+  "phone_wide_active": "オン：このスマホのアプリから tailnet の IP に届きます",
+  "phone_wide_waiting": "Tailscale の接続を待っています",
+  "other_vpn_title": "別の VPN が有効です",
+  "other_vpn_body": "Android で同時に使える VPN は 1 つだけです。「スマホ全体」をオンにすると、別の VPN（Tailscale アプリなど）は切断されます。AsenaScale 自身のターミナルはどちらの場合も使えます。",
+  "continue_anyway": "続ける",
+  "phone_wide_denied": "「スマホ全体」には VPN の許可が必要です。",
+  "phone_wide_revoked": "別の VPN に切り替わったため、「スマホ全体」をオフにしました。",
+  "phone_wide_failed": "「スマホ全体」を開始できませんでした：%1$s",
+  "vpn_notif_channel": "スマホ全体の tailnet",
+  "vpn_notif_title": "スマホ全体の tailnet がオンです",
+  "vpn_notif_text": "このスマホのアプリから tailnet のデバイスに届きます",
+  "turn_off": "オフにする"
 }

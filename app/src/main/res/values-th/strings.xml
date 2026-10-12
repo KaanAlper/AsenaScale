@@ -159,4 +159,18 @@
     <string name="up_to_date">เป็นเวอร์ชันล่าสุด</string>
     <string name="update_checking">กำลังตรวจสอบ…</string>
     <string name="update_failed">ตรวจสอบไม่สำเร็จ: %1$s</string>
+    <string name="phone_wide">ทั้งโทรศัพท์</string>
+    <string name="phone_wide_desc">แอปอื่นก็เข้าถึงอุปกรณ์ใน tailnet ได้ด้วย (VPN สำหรับที่อยู่ tailnet เท่านั้น)</string>
+    <string name="phone_wide_active">เปิดอยู่: แอปในโทรศัพท์นี้เข้าถึง IP ของ tailnet ได้</string>
+    <string name="phone_wide_waiting">กำลังรอ Tailscale เชื่อมต่อ</string>
+    <string name="other_vpn_title">มี VPN อื่นทำงานอยู่</string>
+    <string name="other_vpn_body">Android อนุญาตให้ใช้ VPN ได้ครั้งละหนึ่งตัวเท่านั้น การเปิด \"ทั้งโทรศัพท์\" จะตัดการเชื่อมต่อ VPN อื่น (เช่น แอป Tailscale) เทอร์มินัลของ AsenaScale เองยังใช้งานได้ตามปกติไม่ว่ากรณีใด</string>
+    <string name="continue_anyway">ดำเนินการต่อ</string>
+    <string name="phone_wide_denied">\"ทั้งโทรศัพท์\" ต้องใช้สิทธิ์ VPN</string>
+    <string name="phone_wide_revoked">มี VPN อื่นเข้ามาแทน จึงปิด \"ทั้งโทรศัพท์\" แล้ว</string>
+    <string name="phone_wide_failed">เริ่ม \"ทั้งโทรศัพท์\" ไม่ได้: %1$s</string>
+    <string name="vpn_notif_channel">tailnet ทั้งโทรศัพท์</string>
+    <string name="vpn_notif_title">tailnet ทั้งโทรศัพท์เปิดอยู่</string>
+    <string name="vpn_notif_text">แอปในโทรศัพท์นี้เข้าถึงอุปกรณ์ใน tailnet ของคุณได้</string>
+    <string name="turn_off">ปิด</string>
 </resources>

@@ -1,6 +1,12 @@
 package dev.asenascale.ui
 
+import android.app.Activity
 import android.content.Intent
+import android.net.VpnService
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import dev.asenascale.vpn.PhoneWide
+import dev.asenascale.vpn.PhoneWideNote
 import dev.asenascale.R
 import androidx.compose.ui.res.stringResource
 import android.net.Uri
@@ -302,6 +308,7 @@ private fun TailscaleCard(ts: TailnetState) {
                     ),
                 )
             }
+            if (ts.enabled) PhoneWideRow(ts)
             if (ts.enabled && ts.needsLogin) {
                 Spacer(Modifier.height(12.dp))
                 Button(
@@ -337,6 +344,88 @@ private fun TailscaleCard(ts: TailnetState) {
                 Text(ts.error, style = MonoSmall, color = Pal.red, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
         }
+    }
+}
+
+/**
+ * "Phone-wide" switch: lets every app on the phone reach tailnet IPs through
+ * a VPN that carries tailnet addresses only. Asks for Android's VPN
+ * permission when turned on, and warns first if another VPN is up.
+ */
+@Composable
+private fun PhoneWideRow(ts: TailnetState) {
+    val app = App.instance
+    val context = LocalContext.current
+    val pw by app.phoneWide.ui.collectAsState()
+    var askOtherVpn by remember { mutableStateOf(false) }
+    val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        if (r.resultCode == Activity.RESULT_OK) {
+            app.phoneWide.setEnabled(true)
+        } else {
+            app.phoneWide.note(PhoneWideNote.Denied)
+        }
+    }
+    val requestVpn = {
+        val intent = VpnService.prepare(context)
+        if (intent == null) app.phoneWide.setEnabled(true) else consent.launch(intent)
+    }
+
+    Spacer(Modifier.height(10.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.width(20.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.phone_wide), fontSize = 14.sp)
+            val sub = when {
+                pw.enabled && pw.active -> stringResource(R.string.phone_wide_active)
+                pw.enabled && !ts.running -> stringResource(R.string.phone_wide_waiting)
+                else -> stringResource(R.string.phone_wide_desc)
+            }
+            Text(sub, fontSize = 12.sp, color = Pal.subtext)
+        }
+        Switch(
+            checked = pw.enabled,
+            onCheckedChange = { on ->
+                when {
+                    !on -> app.phoneWide.setEnabled(false)
+                    PhoneWide.otherVpnActive(context) -> askOtherVpn = true
+                    else -> requestVpn()
+                }
+            },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Pal.crust,
+                checkedTrackColor = Pal.mauve,
+                uncheckedThumbColor = Pal.overlay0,
+                uncheckedTrackColor = Pal.surface0,
+                uncheckedBorderColor = Pal.surface1,
+            ),
+        )
+    }
+    val note = when (val n = pw.note) {
+        PhoneWideNote.None -> null
+        PhoneWideNote.Denied -> stringResource(R.string.phone_wide_denied)
+        PhoneWideNote.Revoked -> stringResource(R.string.phone_wide_revoked)
+        is PhoneWideNote.Failed -> stringResource(R.string.phone_wide_failed, n.message)
+    }
+    if (note != null) {
+        Spacer(Modifier.height(4.dp))
+        Text(note, style = MonoSmall, color = Pal.peach, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 20.dp))
+    }
+
+    if (askOtherVpn) {
+        AlertDialog(
+            onDismissRequest = { askOtherVpn = false },
+            title = { Text(stringResource(R.string.other_vpn_title)) },
+            text = { Text(stringResource(R.string.other_vpn_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    askOtherVpn = false
+                    requestVpn()
+                }) { Text(stringResource(R.string.continue_anyway)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { askOtherVpn = false }) { Text(stringResource(R.string.cancel), color = Pal.subtext) }
+            },
+        )
     }
 }
 

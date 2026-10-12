@@ -156,5 +156,19 @@
   "check_updates": "التحقق من التحديثات",
   "up_to_date": "محدَّث",
   "update_checking": "جارٍ التحقق…",
-  "update_failed": "فشل التحقق: %1$s"
+  "update_failed": "فشل التحقق: %1$s",
+  "phone_wide": "على مستوى الهاتف",
+  "phone_wide_desc": "يمكن للتطبيقات الأخرى أيضًا الوصول إلى أجهزة tailnet (شبكة VPN لعناوين tailnet فقط)",
+  "phone_wide_active": "مفعّل: تستطيع تطبيقات هذا الهاتف الوصول إلى عناوين IP في tailnet",
+  "phone_wide_waiting": "في انتظار اتصال Tailscale",
+  "other_vpn_title": "هناك شبكة VPN أخرى نشطة",
+  "other_vpn_body": "يسمح Android بشبكة VPN واحدة فقط في كل مرة. تفعيل \"على مستوى الهاتف\" سيقطع شبكة VPN الأخرى (مثل تطبيق Tailscale). تظل الطرفية الخاصة بـ AsenaScale تعمل في كل الأحوال.",
+  "continue_anyway": "متابعة",
+  "phone_wide_denied": "يحتاج وضع \"على مستوى الهاتف\" إلى إذن VPN.",
+  "phone_wide_revoked": "تولّت شبكة VPN أخرى الاتصال، لذا أُوقف وضع \"على مستوى الهاتف\".",
+  "phone_wide_failed": "تعذّر تشغيل وضع \"على مستوى الهاتف\": %1$s",
+  "vpn_notif_channel": "tailnet على مستوى الهاتف",
+  "vpn_notif_title": "tailnet على مستوى الهاتف مفعّل",
+  "vpn_notif_text": "تستطيع تطبيقات هذا الهاتف الوصول إلى أجهزتك في tailnet",
+  "turn_off": "إيقاف"
 }

@@ -8,6 +8,7 @@ import dev.asenascale.data.SessionIds
 import dev.asenascale.files.Transfers
 import dev.asenascale.ssh.Sessions
 import dev.asenascale.tailnet.Tailnet
+import dev.asenascale.vpn.PhoneWide
 
 class App : Application() {
     lateinit var tailnet: Tailnet
@@ -19,6 +20,8 @@ class App : Application() {
     lateinit var sessionIds: SessionIds
         private set
     lateinit var transfers: Transfers
+        private set
+    lateinit var phoneWide: PhoneWide
         private set
     /** Labels of PC sessions joined from the launcher, by tool id. */
     val joinedNames = HashMap<String, String>()
@@ -33,7 +36,9 @@ class App : Application() {
         sessionIds = SessionIds(this)
         sessions = Sessions(this)
         transfers = Transfers(this)
+        phoneWide = PhoneWide(this, tailnet)
         tailnet.startIfEnabled()
+        phoneWide.start()
     }
 
     fun copyToClipboard(text: String) {

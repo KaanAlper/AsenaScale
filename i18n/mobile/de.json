@@ -156,5 +156,19 @@
   "check_updates": "Nach Updates suchen",
   "up_to_date": "Aktuell",
   "update_checking": "Suche…",
-  "update_failed": "Update-Prüfung fehlgeschlagen: %1$s"
+  "update_failed": "Update-Prüfung fehlgeschlagen: %1$s",
+  "phone_wide": "Telefonweit",
+  "phone_wide_desc": "Auch andere Apps erreichen Tailnet-Geräte (ein VPN nur für Tailnet-Adressen)",
+  "phone_wide_active": "An: Apps auf diesem Telefon erreichen Tailnet-IPs",
+  "phone_wide_waiting": "Warte auf die Verbindung von Tailscale",
+  "other_vpn_title": "Ein anderes VPN ist aktiv",
+  "other_vpn_body": "Android erlaubt nur ein VPN gleichzeitig. Wenn du Telefonweit einschaltest, wird das andere VPN (zum Beispiel die Tailscale-App) getrennt. Das Terminal von AsenaScale funktioniert in jedem Fall weiter.",
+  "continue_anyway": "Weiter",
+  "phone_wide_denied": "Telefonweit braucht die VPN-Berechtigung.",
+  "phone_wide_revoked": "Ein anderes VPN hat übernommen, daher wurde Telefonweit ausgeschaltet.",
+  "phone_wide_failed": "Telefonweit konnte nicht starten: %1$s",
+  "vpn_notif_channel": "Telefonweites Tailnet",
+  "vpn_notif_title": "Telefonweites Tailnet ist an",
+  "vpn_notif_text": "Apps auf diesem Telefon erreichen deine Tailnet-Geräte",
+  "turn_off": "Ausschalten"
 }

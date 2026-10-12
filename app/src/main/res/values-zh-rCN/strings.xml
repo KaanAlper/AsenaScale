@@ -159,4 +159,18 @@
     <string name="up_to_date">已是最新</string>
     <string name="update_checking">正在检查…</string>
     <string name="update_failed">检查失败：%1$s</string>
+    <string name="phone_wide">全手机</string>
+    <string name="phone_wide_desc">其他应用也能访问 tailnet 设备（仅用于 tailnet 地址的 VPN）</string>
+    <string name="phone_wide_active">已开启：此手机上的应用可以访问 tailnet IP</string>
+    <string name="phone_wide_waiting">正在等待 Tailscale 连接</string>
+    <string name="other_vpn_title">另一个 VPN 正在运行</string>
+    <string name="other_vpn_body">Android 同一时间只允许一个 VPN。开启“全手机”会断开另一个 VPN（例如 Tailscale 应用）。无论哪种情况，AsenaScale 自己的终端都能继续使用。</string>
+    <string name="continue_anyway">继续</string>
+    <string name="phone_wide_denied">“全手机”需要 VPN 权限。</string>
+    <string name="phone_wide_revoked">另一个 VPN 接管了连接，因此“全手机”已关闭。</string>
+    <string name="phone_wide_failed">无法启动“全手机”：%1$s</string>
+    <string name="vpn_notif_channel">全手机 tailnet</string>
+    <string name="vpn_notif_title">全手机 tailnet 已开启</string>
+    <string name="vpn_notif_text">此手机上的应用可以访问你的 tailnet 设备</string>
+    <string name="turn_off">关闭</string>
 </resources>

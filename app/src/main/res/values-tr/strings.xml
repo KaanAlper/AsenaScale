@@ -159,4 +159,18 @@
     <string name="up_to_date">Güncel</string>
     <string name="update_checking">Denetleniyor…</string>
     <string name="update_failed">Güncelleme denetlenemedi: %1$s</string>
+    <string name="phone_wide">Telefon geneli</string>
+    <string name="phone_wide_desc">Diğer uygulamalar da tailnet cihazlarına ulaşır (yalnızca tailnet adresleri için VPN)</string>
+    <string name="phone_wide_active">Açık: bu telefondaki uygulamalar tailnet IP\'lerine ulaşabilir</string>
+    <string name="phone_wide_waiting">Tailscale\'in bağlanması bekleniyor</string>
+    <string name="other_vpn_title">Başka bir VPN etkin</string>
+    <string name="other_vpn_body">Android aynı anda tek bir VPN\'e izin verir. Telefon geneli açılınca diğer VPN (örneğin Tailscale uygulaması) kapanır. AsenaScale\'in kendi terminali her durumda çalışmaya devam eder.</string>
+    <string name="continue_anyway">Devam et</string>
+    <string name="phone_wide_denied">Telefon geneli için VPN izni gerekiyor.</string>
+    <string name="phone_wide_revoked">Başka bir VPN devreye girdi, Telefon geneli kapatıldı.</string>
+    <string name="phone_wide_failed">Telefon geneli başlatılamadı: %1$s</string>
+    <string name="vpn_notif_channel">Telefon geneli tailnet</string>
+    <string name="vpn_notif_title">Telefon geneli tailnet açık</string>
+    <string name="vpn_notif_text">Bu telefondaki uygulamalar tailnet cihazlarına ulaşabilir</string>
+    <string name="turn_off">Kapat</string>
 </resources>

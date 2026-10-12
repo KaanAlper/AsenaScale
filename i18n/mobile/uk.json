@@ -156,5 +156,19 @@
   "check_updates": "Перевірити оновлення",
   "up_to_date": "Актуально",
   "update_checking": "Перевірка…",
-  "update_failed": "Не вдалося перевірити: %1$s"
+  "update_failed": "Не вдалося перевірити: %1$s",
+  "phone_wide": "Для всього телефона",
+  "phone_wide_desc": "Інші застосунки теж бачать пристрої tailnet (VPN лише для адрес tailnet)",
+  "phone_wide_active": "Увімк.: застосунки на цьому телефоні бачать IP-адреси tailnet",
+  "phone_wide_waiting": "Очікування підключення Tailscale",
+  "other_vpn_title": "Активний інший VPN",
+  "other_vpn_body": "Android дозволяє лише один VPN одночасно. Якщо увімкнути режим «Для всього телефона», інший VPN (наприклад, застосунок Tailscale) від'єднається. Термінал AsenaScale працюватиме в будь-якому разі.",
+  "continue_anyway": "Продовжити",
+  "phone_wide_denied": "Для режиму «Для всього телефона» потрібен дозвіл VPN.",
+  "phone_wide_revoked": "Інший VPN перебрав керування, тому режим «Для всього телефона» вимкнено.",
+  "phone_wide_failed": "Не вдалося увімкнути режим «Для всього телефона»: %1$s",
+  "vpn_notif_channel": "Tailnet для всього телефона",
+  "vpn_notif_title": "Tailnet для всього телефона увімкнено",
+  "vpn_notif_text": "Застосунки на цьому телефоні бачать ваші пристрої tailnet",
+  "turn_off": "Вимкнути"
 }

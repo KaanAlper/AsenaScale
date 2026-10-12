@@ -159,4 +159,18 @@
     <string name="up_to_date">به‌روز</string>
     <string name="update_checking">در حال بررسی…</string>
     <string name="update_failed">بررسی ناموفق: %1$s</string>
+    <string name="phone_wide">سراسر گوشی</string>
+    <string name="phone_wide_desc">برنامه‌های دیگر هم به دستگاه‌های tailnet دسترسی دارند (یک VPN فقط برای نشانی‌های tailnet)</string>
+    <string name="phone_wide_active">روشن: برنامه‌های این گوشی به IPهای tailnet دسترسی دارند</string>
+    <string name="phone_wide_waiting">در انتظار اتصال Tailscale</string>
+    <string name="other_vpn_title">یک VPN دیگر فعال است</string>
+    <string name="other_vpn_body">اندروید فقط یک VPN را در یک زمان اجازه می‌دهد. با روشن کردن «سراسر گوشی»، VPN دیگر (مثلاً برنامهٔ Tailscale) قطع می‌شود. ترمینال خود AsenaScale در هر حال کار می‌کند.</string>
+    <string name="continue_anyway">ادامه</string>
+    <string name="phone_wide_denied">«سراسر گوشی» به مجوز VPN نیاز دارد.</string>
+    <string name="phone_wide_revoked">یک VPN دیگر کنترل را گرفت، بنابراین «سراسر گوشی» خاموش شد.</string>
+    <string name="phone_wide_failed">«سراسر گوشی» شروع نشد: %1$s</string>
+    <string name="vpn_notif_channel">tailnet سراسر گوشی</string>
+    <string name="vpn_notif_title">tailnet سراسر گوشی روشن است</string>
+    <string name="vpn_notif_text">برنامه‌های این گوشی به دستگاه‌های tailnet شما دسترسی دارند</string>
+    <string name="turn_off">خاموش کردن</string>
 </resources>

@@ -6,6 +6,9 @@ bağlanıyor, terminali telefonda native olarak çiziyor. Yazdığın her tuş a
 
 - **Tailscale gömülü** (Go `tsnet`): ayrı bir Tailscale uygulaması ya da VPN izni gerekmez.
   Giriş, aç/kapat, cihazlar ve çevrimiçi durumları.
+- **Telefon geneli (isteğe bağlı)**: açınca telefondaki diğer uygulamalar da tailnet IP'lerine
+  ulaşır (tarayıcı, ClonifyScan…). Yalnızca tailnet adreslerini taşıyan bir VPN kurar; normal
+  internet trafiği ondan geçmez. Kapalıyken (varsayılan) hiçbir şey değişmez, VPN izni istenmez.
 - **Hızlı terminal**: Termux'un emülatör çekirdeği + Canvas'a doğrudan çizim,
   Catppuccin Mocha renkleri, JetBrains Mono, kıstırarak yakınlaştırma, xterm-256color / truecolor.
 - **Klavye üstü tuş çubuğu**: `esc` `tab` `ctrl` `alt` `⇧tab` oklar (basılı tutunca tekrarlar)
@@ -62,6 +65,8 @@ asenascale codex|gemini|grok  aynısı, o araçlarla
 asenascale new [KOMUT]        aynısı, herhangi bir komutla (boş: kabuk)
 asenascale attach [ID]        çalışan oturuma katıl (telefonun başlattığına da); Ctrl+] ayrılır
 asenascale sessions | kill ID|all
+asenascale forward add PORT   PC'deki 127.0.0.1:PORT'u kendi tailnet cihazlarına aç (varsayılan: hiçbiri)
+asenascale forward list | remove PORT|all
 asenascale phones | revoke N|AD|all
 asenascale log [-f] [-n N]   günlük (-f: canlı izle; telefon bağlandı/ayrıldı dahil)
 asenascale update             son sürümü şimdi kur
@@ -74,6 +79,16 @@ penceresine girmesine izin vermediği için Claude'u PC'de `asenascale claude` i
 `claude` gibi, o klasörde çalışır). Telefonda PC'ye dokununca başlatıcıda *PC'de çalışanlar*
 altında görünür; dokun, aynı terminale katıl. İkisi aynı anda yazabilir, ikisi de aynı ekranı
 görür. Tersi: telefonda başlattığın oturuma PC'den `asenascale attach` ile gir.
+
+### Telefon geneli: telefondaki başka bir uygulamadan PC'deki sunucuya
+1. Telefonda Tailscale kartındaki **Telefon geneli** anahtarını aç, Android'in VPN onayına *Tamam* de.
+   Başka bir VPN (ör. Tailscale uygulaması) açıksa uygulama önce uyarır: Android aynı anda tek VPN'e izin verir.
+2. PC'de sunucunun portunu aç: `asenascale forward add 8765` (tepside *Yönlendirilen portlar* görünür).
+3. Telefondaki herhangi bir uygulama artık `http://<PC'nin tailnet IP'si>:8765` adresine ulaşır
+   (`asenascale ip`). Yalnızca aynı Tailscale hesabının cihazları geçer, her bağlantı günlüğe yazılır.
+
+Anahtar kapatılınca, Tailscale kapatılınca ya da çıkış yapılınca VPN kendiliğinden kapanır.
+MagicDNS adları sadece 100.100.100.100'a doğrudan sorulursa çözülür; uygulamalarda IP kullan.
 
 ### Güncellemeler
 İkisi de kendini günceller. **Telefon** açılışta (6 saatte bir) yeni sürüme bakar, telefona

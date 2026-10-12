@@ -156,5 +156,19 @@
   "check_updates": "Buscar actualizaciones",
   "up_to_date": "Al día",
   "update_checking": "Comprobando…",
-  "update_failed": "Error al comprobar: %1$s"
+  "update_failed": "Error al comprobar: %1$s",
+  "phone_wide": "Todo el teléfono",
+  "phone_wide_desc": "Las demás apps también llegan a los dispositivos del tailnet (una VPN solo para direcciones del tailnet)",
+  "phone_wide_active": "Activado: las apps de este teléfono llegan a las IP del tailnet",
+  "phone_wide_waiting": "Esperando a que Tailscale se conecte",
+  "other_vpn_title": "Hay otra VPN activa",
+  "other_vpn_body": "Android solo permite una VPN a la vez. Al activar Todo el teléfono se desconectará la otra VPN (por ejemplo, la app de Tailscale). El terminal de AsenaScale sigue funcionando en cualquier caso.",
+  "continue_anyway": "Continuar",
+  "phone_wide_denied": "Todo el teléfono necesita el permiso de VPN.",
+  "phone_wide_revoked": "Otra VPN tomó el control, así que Todo el teléfono se desactivó.",
+  "phone_wide_failed": "No se pudo iniciar Todo el teléfono: %1$s",
+  "vpn_notif_channel": "Tailnet en todo el teléfono",
+  "vpn_notif_title": "Tailnet en todo el teléfono activado",
+  "vpn_notif_text": "Las apps de este teléfono llegan a tus dispositivos del tailnet",
+  "turn_off": "Desactivar"
 }

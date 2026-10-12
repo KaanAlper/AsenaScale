@@ -159,4 +159,18 @@
     <string name="up_to_date">अप टू डेट</string>
     <string name="update_checking">जाँच हो रही है…</string>
     <string name="update_failed">जाँच विफल: %1$s</string>
+    <string name="phone_wide">पूरे फ़ोन में</string>
+    <string name="phone_wide_desc">दूसरे ऐप भी tailnet डिवाइस तक पहुँच सकते हैं (सिर्फ़ tailnet पतों के लिए VPN)</string>
+    <string name="phone_wide_active">चालू: इस फ़ोन के ऐप tailnet IP तक पहुँच सकते हैं</string>
+    <string name="phone_wide_waiting">Tailscale के कनेक्ट होने का इंतज़ार</string>
+    <string name="other_vpn_title">कोई दूसरा VPN चालू है</string>
+    <string name="other_vpn_body">Android एक समय में सिर्फ़ एक VPN चलने देता है। \"पूरे फ़ोन में\" चालू करने पर दूसरा VPN (जैसे Tailscale ऐप) डिस्कनेक्ट हो जाएगा। AsenaScale का अपना टर्मिनल हर हाल में काम करता रहेगा।</string>
+    <string name="continue_anyway">जारी रखें</string>
+    <string name="phone_wide_denied">\"पूरे फ़ोन में\" के लिए VPN अनुमति चाहिए।</string>
+    <string name="phone_wide_revoked">किसी दूसरे VPN ने जगह ले ली, इसलिए \"पूरे फ़ोन में\" बंद कर दिया गया।</string>
+    <string name="phone_wide_failed">\"पूरे फ़ोन में\" शुरू नहीं हो सका: %1$s</string>
+    <string name="vpn_notif_channel">पूरे फ़ोन में tailnet</string>
+    <string name="vpn_notif_title">पूरे फ़ोन में tailnet चालू है</string>
+    <string name="vpn_notif_text">इस फ़ोन के ऐप आपके tailnet डिवाइस तक पहुँच सकते हैं</string>
+    <string name="turn_off">बंद करें</string>
 </resources>

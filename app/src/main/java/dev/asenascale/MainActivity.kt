@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         App.instance.tailnet.foreground = true
         App.instance.tailnet.refreshSoon()
+        App.instance.phoneWide.retry()
     }
 
     override fun onStop() {

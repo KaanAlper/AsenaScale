@@ -159,4 +159,18 @@
     <string name="up_to_date">Terbaru</string>
     <string name="update_checking">Memeriksa…</string>
     <string name="update_failed">Pemeriksaan gagal: %1$s</string>
+    <string name="phone_wide">Seluruh ponsel</string>
+    <string name="phone_wide_desc">Aplikasi lain juga bisa menjangkau perangkat tailnet (VPN khusus alamat tailnet)</string>
+    <string name="phone_wide_active">Aktif: aplikasi di ponsel ini bisa menjangkau IP tailnet</string>
+    <string name="phone_wide_waiting">Menunggu Tailscale terhubung</string>
+    <string name="other_vpn_title">Ada VPN lain yang aktif</string>
+    <string name="other_vpn_body">Android hanya mengizinkan satu VPN dalam satu waktu. Mengaktifkan Seluruh ponsel akan memutus VPN lain (misalnya aplikasi Tailscale). Terminal AsenaScale sendiri tetap berfungsi dalam kedua kasus.</string>
+    <string name="continue_anyway">Lanjutkan</string>
+    <string name="phone_wide_denied">Seluruh ponsel memerlukan izin VPN.</string>
+    <string name="phone_wide_revoked">VPN lain mengambil alih, jadi Seluruh ponsel dimatikan.</string>
+    <string name="phone_wide_failed">Seluruh ponsel tidak dapat dimulai: %1$s</string>
+    <string name="vpn_notif_channel">Tailnet seluruh ponsel</string>
+    <string name="vpn_notif_title">Tailnet seluruh ponsel aktif</string>
+    <string name="vpn_notif_text">Aplikasi di ponsel ini bisa menjangkau perangkat tailnet Anda</string>
+    <string name="turn_off">Matikan</string>
 </resources>

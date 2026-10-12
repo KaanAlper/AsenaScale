@@ -156,5 +156,19 @@
   "check_updates": "अपडेट जाँचें",
   "up_to_date": "अप टू डेट",
   "update_checking": "जाँच हो रही है…",
-  "update_failed": "जाँच विफल: %1$s"
+  "update_failed": "जाँच विफल: %1$s",
+  "phone_wide": "पूरे फ़ोन में",
+  "phone_wide_desc": "दूसरे ऐप भी tailnet डिवाइस तक पहुँच सकते हैं (सिर्फ़ tailnet पतों के लिए VPN)",
+  "phone_wide_active": "चालू: इस फ़ोन के ऐप tailnet IP तक पहुँच सकते हैं",
+  "phone_wide_waiting": "Tailscale के कनेक्ट होने का इंतज़ार",
+  "other_vpn_title": "कोई दूसरा VPN चालू है",
+  "other_vpn_body": "Android एक समय में सिर्फ़ एक VPN चलने देता है। \"पूरे फ़ोन में\" चालू करने पर दूसरा VPN (जैसे Tailscale ऐप) डिस्कनेक्ट हो जाएगा। AsenaScale का अपना टर्मिनल हर हाल में काम करता रहेगा।",
+  "continue_anyway": "जारी रखें",
+  "phone_wide_denied": "\"पूरे फ़ोन में\" के लिए VPN अनुमति चाहिए।",
+  "phone_wide_revoked": "किसी दूसरे VPN ने जगह ले ली, इसलिए \"पूरे फ़ोन में\" बंद कर दिया गया।",
+  "phone_wide_failed": "\"पूरे फ़ोन में\" शुरू नहीं हो सका: %1$s",
+  "vpn_notif_channel": "पूरे फ़ोन में tailnet",
+  "vpn_notif_title": "पूरे फ़ोन में tailnet चालू है",
+  "vpn_notif_text": "इस फ़ोन के ऐप आपके tailnet डिवाइस तक पहुँच सकते हैं",
+  "turn_off": "बंद करें"
 }

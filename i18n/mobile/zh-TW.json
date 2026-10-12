@@ -156,5 +156,19 @@
   "check_updates": "檢查更新",
   "up_to_date": "已是最新",
   "update_checking": "檢查中…",
-  "update_failed": "檢查失敗：%1$s"
+  "update_failed": "檢查失敗：%1$s",
+  "phone_wide": "全手機",
+  "phone_wide_desc": "其他 App 也能連到 tailnet 裝置（僅供 tailnet 位址使用的 VPN）",
+  "phone_wide_active": "已開啟：這支手機上的 App 可以連到 tailnet IP",
+  "phone_wide_waiting": "正在等待 Tailscale 連線",
+  "other_vpn_title": "另一個 VPN 正在執行",
+  "other_vpn_body": "Android 同一時間只允許一個 VPN。開啟「全手機」會中斷另一個 VPN（例如 Tailscale App）。無論如何，AsenaScale 自己的終端機都能繼續使用。",
+  "continue_anyway": "繼續",
+  "phone_wide_denied": "「全手機」需要 VPN 權限。",
+  "phone_wide_revoked": "另一個 VPN 接手了連線，因此「全手機」已關閉。",
+  "phone_wide_failed": "無法啟動「全手機」：%1$s",
+  "vpn_notif_channel": "全手機 tailnet",
+  "vpn_notif_title": "全手機 tailnet 已開啟",
+  "vpn_notif_text": "這支手機上的 App 可以連到你的 tailnet 裝置",
+  "turn_off": "關閉"
 }

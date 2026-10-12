@@ -159,4 +159,18 @@
     <string name="up_to_date">최신 버전</string>
     <string name="update_checking">확인 중…</string>
     <string name="update_failed">확인 실패: %1$s</string>
+    <string name="phone_wide">휴대폰 전체</string>
+    <string name="phone_wide_desc">다른 앱도 tailnet 기기에 접속할 수 있습니다(tailnet 주소 전용 VPN)</string>
+    <string name="phone_wide_active">켜짐: 이 휴대폰의 앱이 tailnet IP에 접속할 수 있습니다</string>
+    <string name="phone_wide_waiting">Tailscale 연결을 기다리는 중</string>
+    <string name="other_vpn_title">다른 VPN이 켜져 있습니다</string>
+    <string name="other_vpn_body">Android에서는 한 번에 하나의 VPN만 쓸 수 있습니다. 휴대폰 전체를 켜면 다른 VPN(예: Tailscale 앱)의 연결이 끊깁니다. AsenaScale 자체 터미널은 어느 경우에도 계속 작동합니다.</string>
+    <string name="continue_anyway">계속</string>
+    <string name="phone_wide_denied">휴대폰 전체를 쓰려면 VPN 권한이 필요합니다.</string>
+    <string name="phone_wide_revoked">다른 VPN이 연결을 가져가서 휴대폰 전체를 껐습니다.</string>
+    <string name="phone_wide_failed">휴대폰 전체를 시작하지 못했습니다: %1$s</string>
+    <string name="vpn_notif_channel">휴대폰 전체 tailnet</string>
+    <string name="vpn_notif_title">휴대폰 전체 tailnet 켜짐</string>
+    <string name="vpn_notif_text">이 휴대폰의 앱이 내 tailnet 기기에 접속할 수 있습니다</string>
+    <string name="turn_off">끄기</string>
 </resources>

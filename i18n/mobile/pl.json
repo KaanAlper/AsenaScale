@@ -156,5 +156,19 @@
   "check_updates": "Sprawdź aktualizacje",
   "up_to_date": "Aktualna",
   "update_checking": "Sprawdzanie…",
-  "update_failed": "Sprawdzanie nie powiodło się: %1$s"
+  "update_failed": "Sprawdzanie nie powiodło się: %1$s",
+  "phone_wide": "Cały telefon",
+  "phone_wide_desc": "Inne aplikacje też docierają do urządzeń w tailnecie (VPN tylko dla adresów tailnetu)",
+  "phone_wide_active": "Włączone: aplikacje na tym telefonie docierają do adresów IP tailnetu",
+  "phone_wide_waiting": "Czekam na połączenie Tailscale",
+  "other_vpn_title": "Aktywna jest inna sieć VPN",
+  "other_vpn_body": "Android pozwala na tylko jedną sieć VPN naraz. Włączenie trybu Cały telefon rozłączy drugą sieć VPN (na przykład aplikację Tailscale). Terminal AsenaScale działa dalej w każdym przypadku.",
+  "continue_anyway": "Dalej",
+  "phone_wide_denied": "Tryb Cały telefon wymaga uprawnienia VPN.",
+  "phone_wide_revoked": "Inna sieć VPN przejęła kontrolę, więc tryb Cały telefon został wyłączony.",
+  "phone_wide_failed": "Nie udało się uruchomić trybu Cały telefon: %1$s",
+  "vpn_notif_channel": "Tailnet na całym telefonie",
+  "vpn_notif_title": "Tailnet na całym telefonie włączony",
+  "vpn_notif_text": "Aplikacje na tym telefonie docierają do Twoich urządzeń w tailnecie",
+  "turn_off": "Wyłącz"
 }
