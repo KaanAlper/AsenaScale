@@ -4,6 +4,8 @@
 // TCP forwards to machines on the tailnet (used for SSH).
 //
 // No VpnService is needed: all tailnet traffic lives inside this process.
+// Phone-wide mode (vpn.go) is the opt-in exception: other apps' tailnet
+// traffic comes in through a TUN device and is dialed through this node.
 package tsbridge
 
 import (
@@ -49,12 +51,25 @@ var (
 	forwards = map[int]net.Listener{}
 
 	platform atomic.Pointer[Platform]
+	// userLog receives log lines on the desktop (the host app's log file).
+	userLog atomic.Pointer[func(string)]
 )
+
+// SetLogger sends the bridge's log lines to f instead of stderr (desktop).
+func SetLogger(f func(string)) {
+	if f == nil {
+		userLog.Store(nil)
+		return
+	}
+	userLog.Store(&f)
+}
 
 func logf(format string, args ...any) {
 	line := fmt.Sprintf(format, args...)
 	if p := platform.Load(); p != nil {
 		(*p).Log(line)
+	} else if f := userLog.Load(); f != nil {
+		(*f)(line)
 	} else {
 		log.Print(line)
 	}
@@ -319,6 +334,7 @@ func Stop() {
 	for _, ln := range fwd {
 		ln.Close()
 	}
+	closeForwards()
 	if s != nil {
 		s.Close()
 	}

@@ -30,6 +30,20 @@ func AsServe(tailnetPort, localPort C.int) *C.char {
 	return cerr(tsbridge.Serve(int(tailnetPort), int(localPort)))
 }
 
+// AsSetForwards opens exactly these tailnet ports ("8765,3000"; "" = none),
+// each piped to the same port on 127.0.0.1.
+//
+//export AsSetForwards
+func AsSetForwards(ports *C.char) *C.char {
+	return cerr(tsbridge.SetForwards(C.GoString(ports)))
+}
+
+// AsSetLogger routes the bridge's log lines to f, a C function taking a
+// NUL-terminated string that is only valid during the call.
+//
+//export AsSetLogger
+func AsSetLogger(f unsafe.Pointer) { setLogger(f) }
+
 //export AsStatus
 func AsStatus() *C.char { return cstr(tsbridge.Status()) }
 

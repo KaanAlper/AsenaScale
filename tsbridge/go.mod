@@ -4,6 +4,7 @@ go 1.26.6
 
 require (
 	golang.org/x/mobile v0.0.0-20260908204917-8b95e45f8d3e
+	gvisor.dev/gvisor v0.0.0-20260224225140-573d5e7127a8
 	tailscale.com v1.102.4
 )
 
@@ -52,5 +53,4 @@ require (
 	golang.org/x/tools v0.50.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
-	gvisor.dev/gvisor v0.0.0-20260224225140-573d5e7127a8 // indirect
 )
