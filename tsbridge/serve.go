@@ -66,10 +66,29 @@ func forwardIn(remote net.Conn, localPort int) {
 		delete(peers, srcPort)
 		peersMu.Unlock()
 	}()
-	done := make(chan struct{}, 2)
-	go func() { io.Copy(local, remote); done <- struct{}{} }()
-	go func() { io.Copy(remote, local); done <- struct{}{} }()
-	<-done
+	relay(local, remote)
+}
+
+// relay copies both ways until both sides are done. A clean EOF on one side
+// is passed on as a half-close (CloseWrite), so a client that sends its
+// request and then shuts its write side still gets the whole reply; an error
+// tears the connection down.
+func relay(a, b net.Conn) {
+	var wg sync.WaitGroup
+	cp := func(dst, src net.Conn) {
+		defer wg.Done()
+		_, err := io.Copy(dst, src)
+		if cw, ok := dst.(interface{ CloseWrite() error }); ok && err == nil {
+			cw.CloseWrite()
+			return
+		}
+		dst.Close()
+		src.Close()
+	}
+	wg.Add(2)
+	go cp(a, b)
+	go cp(b, a)
+	wg.Wait()
 }
 
 type peerInfo struct {

@@ -295,10 +295,7 @@ func pipe(s *tsnet.Server, local net.Conn, target string) {
 	if tc, ok := local.(*net.TCPConn); ok {
 		tc.SetNoDelay(true)
 	}
-	done := make(chan struct{}, 2)
-	go func() { io.Copy(remote, local); done <- struct{}{} }()
-	go func() { io.Copy(local, remote); done <- struct{}{} }()
-	<-done
+	relay(local, remote)
 }
 
 // CloseForward stops a forward created by Forward.
