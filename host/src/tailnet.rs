@@ -150,6 +150,13 @@ impl PeerStatus {
     }
 }
 
+/// The peer called `who` (its short name, any case) or holding IP `who`.
+pub fn find_peer(st: &Status, who: &str) -> Option<PeerStatus> {
+    st.peers.as_ref()?.iter().find(|p| {
+        p.short_name().eq_ignore_ascii_case(who) || p.ips.as_ref().is_some_and(|v| v.iter().any(|ip| ip == who))
+    }).cloned()
+}
+
 #[derive(Deserialize, Default, Debug, Clone)]
 pub struct Status {
     #[serde(default)]
@@ -229,4 +236,35 @@ pub fn hostname() -> String {
         .collect();
     let clean = clean.trim_matches('-');
     if clean.is_empty() { "asenascale-pc".into() } else { format!("asenascale-{clean}") }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn status() -> Status {
+        serde_json::from_str(
+            r#"{"state":"Running","self":null,"peers":[
+                {"name":"asenascale-desktop-ut7ksaf-1","dnsName":"asenascale-desktop-ut7ksaf-1.tail73e529.ts.net.","os":"windows","ips":["100.81.202.50","fd7a:115c:a1e0::9434:ca33"],"online":true},
+                {"name":"kaanalper","dnsName":"kaanalper.tail73e529.ts.net.","os":"linux","ips":["100.124.74.14"],"online":false}
+            ]}"#,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn finds_a_peer_by_short_name_case_insensitive() {
+        let p = find_peer(&status(), "ASENASCALE-DESKTOP-UT7KSAF-1").unwrap();
+        assert_eq!(p.ipv4(), "100.81.202.50");
+    }
+
+    #[test]
+    fn finds_a_peer_by_ip() {
+        assert_eq!(find_peer(&status(), "100.124.74.14").unwrap().short_name(), "kaanalper");
+    }
+
+    #[test]
+    fn unknown_peer_is_none() {
+        assert!(find_peer(&status(), "nope").is_none());
+    }
 }

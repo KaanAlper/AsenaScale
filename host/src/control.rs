@@ -284,9 +284,7 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
                 anyhow::bail!("usage: asenascale ping DEVICE");
             }
             let st = tailnet::status();
-            let peer = st.peers.unwrap_or_default().into_iter().find(|p| {
-                p.short_name().eq_ignore_ascii_case(who) || p.ips.as_ref().is_some_and(|v| v.iter().any(|ip| ip == who))
-            });
+            let peer = tailnet::find_peer(&st, who);
             let ip = peer.as_ref().map(|p| p.ipv4()).unwrap_or_else(|| who.to_string());
             let mut out = String::new();
             for _ in 0..4 {
