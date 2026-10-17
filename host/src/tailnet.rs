@@ -15,6 +15,8 @@ extern "C" {
     fn AsLogout() -> *mut c_char;
     fn AsPing(ip: *const c_char) -> c_int;
     fn AsSetForwards(ports: *const c_char) -> *mut c_char;
+    fn AsForward(target: *const c_char, port: *mut c_int) -> *mut c_char;
+    fn AsCloseForward(port: c_int);
     fn AsSetLogger(f: extern "C" fn(*const c_char));
     fn AsStop();
     fn AsFree(p: *mut c_char);
@@ -60,6 +62,19 @@ pub fn logout() -> Result<()> {
 pub fn set_forwards(csv: &str) -> Result<()> {
     let c = CString::new(csv)?;
     check(unsafe { AsSetForwards(c.as_ptr()) })
+}
+
+/// A 127.0.0.1 port that pipes to `target` ("IP:PORT") over the tailnet.
+/// Close it with `close_forward` when done.
+pub fn forward(target: &str) -> Result<u16> {
+    let c = CString::new(target)?;
+    let mut port: c_int = 0;
+    check(unsafe { AsForward(c.as_ptr(), &mut port) })?;
+    u16::try_from(port).map_err(|_| anyhow!("bad forward port {port}"))
+}
+
+pub fn close_forward(port: u16) {
+    unsafe { AsCloseForward(c_int::from(port)) }
 }
 
 extern "C" fn go_log(line: *const c_char) {

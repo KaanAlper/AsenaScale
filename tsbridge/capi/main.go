@@ -38,6 +38,25 @@ func AsSetForwards(ports *C.char) *C.char {
 	return cerr(tsbridge.SetForwards(C.GoString(ports)))
 }
 
+// AsForward listens on a random 127.0.0.1 port and pipes each connection to
+// target ("100.x.y.z:2222") over the tailnet. It writes the port to *port and
+// returns nil, or returns the error text.
+//
+//export AsForward
+func AsForward(target *C.char, port *C.int) *C.char {
+	p, err := tsbridge.Forward(C.GoString(target))
+	if err != nil {
+		return cerr(err)
+	}
+	*port = C.int(p)
+	return nil
+}
+
+// AsCloseForward stops a forward made by AsForward.
+//
+//export AsCloseForward
+func AsCloseForward(port C.int) { tsbridge.CloseForward(int(port)) }
+
 // AsSetLogger routes the bridge's log lines to f, a C function taking a
 // NUL-terminated string that is only valid during the call.
 //
