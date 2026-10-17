@@ -346,7 +346,9 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
             Ok(format!("removed {n}; it will be asked for permission again\n"))
         }
         "forward" | "forwards" => forward_cmd(ctx, args),
-        // Local port piped to DEVICE's AsenaScale SSH server (for `asenascale exec|shot`).
+        // Single-use local port piped to DEVICE's AsenaScale SSH server (for
+        // `asenascale exec|shot`): it takes one connection, closes itself after
+        // 30 s without one, and `undial` cancels it if unused.
         "dial" => {
             let who = arg(1);
             if who.is_empty() {

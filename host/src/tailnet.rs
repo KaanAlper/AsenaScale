@@ -64,8 +64,9 @@ pub fn set_forwards(csv: &str) -> Result<()> {
     check(unsafe { AsSetForwards(c.as_ptr()) })
 }
 
-/// A 127.0.0.1 port that pipes to `target` ("IP:PORT") over the tailnet.
-/// Close it with `close_forward` when done.
+/// A 127.0.0.1 port that pipes one connection to `target` ("IP:PORT") over
+/// the tailnet. It takes that one connection and closes; it also closes
+/// itself after 30 s without one. `close_forward` cancels an unused one.
 pub fn forward(target: &str) -> Result<u16> {
     let c = CString::new(target)?;
     let mut port: c_int = 0;
@@ -73,6 +74,8 @@ pub fn forward(target: &str) -> Result<u16> {
     u16::try_from(port).map_err(|_| anyhow!("bad forward port {port}"))
 }
 
+/// Cancels a `forward` port that has not taken its connection yet; a no-op
+/// once it has (the connection keeps running) or after it timed out.
 pub fn close_forward(port: u16) {
     unsafe { AsCloseForward(c_int::from(port)) }
 }

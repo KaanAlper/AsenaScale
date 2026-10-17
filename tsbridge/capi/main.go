@@ -6,6 +6,7 @@ package main
 import "C"
 
 import (
+	"time"
 	"unsafe"
 
 	"github.com/kaanalper/asenascale/tsbridge"
@@ -38,13 +39,14 @@ func AsSetForwards(ports *C.char) *C.char {
 	return cerr(tsbridge.SetForwards(C.GoString(ports)))
 }
 
-// AsForward listens on a random 127.0.0.1 port and pipes each connection to
-// target ("100.x.y.z:2222") over the tailnet. It writes the port to *port and
+// AsForward listens on a random 127.0.0.1 port for one connection and pipes
+// it to target ("100.x.y.z:2222") over the tailnet; the port closes after
+// that connection or after 30 s without one. It writes the port to *port and
 // returns nil, or returns the error text.
 //
 //export AsForward
 func AsForward(target *C.char, port *C.int) *C.char {
-	p, err := tsbridge.Forward(C.GoString(target))
+	p, err := tsbridge.ForwardOnce(C.GoString(target), 30*time.Second)
 	if err != nil {
 		return cerr(err)
 	}
@@ -52,7 +54,7 @@ func AsForward(target *C.char, port *C.int) *C.char {
 	return nil
 }
 
-// AsCloseForward stops a forward made by AsForward.
+// AsCloseForward cancels a forward made by AsForward that is still unused.
 //
 //export AsCloseForward
 func AsCloseForward(port C.int) { tsbridge.CloseForward(int(port)) }
