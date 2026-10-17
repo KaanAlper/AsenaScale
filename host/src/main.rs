@@ -12,6 +12,7 @@ mod control;
 mod firewall;
 mod files;
 mod forward;
+mod peer;
 mod i18n;
 mod screen;
 mod server;
