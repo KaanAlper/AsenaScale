@@ -346,6 +346,28 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
             Ok(format!("removed {n}; it will be asked for permission again\n"))
         }
         "forward" | "forwards" => forward_cmd(ctx, args),
+        // Local port piped to DEVICE's AsenaScale SSH server (for `asenascale exec|shot`).
+        "dial" => {
+            let who = arg(1);
+            if who.is_empty() {
+                anyhow::bail!("usage: dial DEVICE");
+            }
+            let st = tailnet::status();
+            if !st.running() {
+                anyhow::bail!("Tailscale isn't connected (asenascale status)");
+            }
+            let peer = tailnet::find_peer(&st, who).ok_or_else(|| anyhow::anyhow!("no device {who:?} (asenascale devices)"))?;
+            if !peer.online {
+                anyhow::bail!("{} is offline", peer.short_name());
+            }
+            let port = tailnet::forward(&format!("{}:{}", peer.ipv4(), crate::PORT))?;
+            Ok(format!("{port}\n"))
+        }
+        "undial" => {
+            let port: u16 = arg(1).parse().map_err(|_| anyhow::anyhow!("usage: undial PORT"))?;
+            tailnet::close_forward(port);
+            Ok(String::new())
+        }
         "quit" => {
             (ctx.quit)();
             Ok("AsenaScale stopped\n".into())
