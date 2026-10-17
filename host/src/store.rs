@@ -34,6 +34,31 @@ pub fn host_key() -> Result<PrivateKey> {
     Ok(key)
 }
 
+/// This PC's own identity when it connects to another AsenaScale PC
+/// (`asenascale exec|shot`). The other PC asks once before trusting it.
+#[allow(dead_code)] // used by cli (next task)
+pub fn client_key() -> Result<PrivateKey> {
+    client_key_in(&dir())
+}
+
+fn client_key_in(dir: &std::path::Path) -> Result<PrivateKey> {
+    let path = dir.join("client_ed25519_key");
+    if let Ok(pem) = fs::read_to_string(&path) {
+        if let Ok(k) = PrivateKey::from_openssh(&pem) {
+            return Ok(k);
+        }
+    }
+    let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).context("generating client key")?;
+    fs::create_dir_all(dir)?;
+    fs::write(&path, key.to_openssh(LineEnding::LF)?.as_bytes())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
+    }
+    Ok(key)
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Device {
     /// OpenSSH public key line of the phone app.
@@ -135,5 +160,20 @@ impl Devices {
             self.save();
         }
         removed
+    }
+}
+
+#[cfg(test)]
+mod client_key_tests {
+    use super::*;
+
+    #[test]
+    fn client_key_is_ed25519_and_stable() {
+        let dir = std::env::temp_dir().join(format!("asenascale-ck-{}", std::process::id()));
+        let a = client_key_in(&dir).unwrap();
+        let b = client_key_in(&dir).unwrap();
+        assert_eq!(a.algorithm(), Algorithm::Ed25519);
+        assert_eq!(a.public_key(), b.public_key());
+        let _ = fs::remove_dir_all(&dir);
     }
 }
