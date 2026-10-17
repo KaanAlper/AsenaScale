@@ -36,7 +36,6 @@ pub fn host_key() -> Result<PrivateKey> {
 
 /// This PC's own identity when it connects to another AsenaScale PC
 /// (`asenascale exec|shot`). The other PC asks once before trusting it.
-#[allow(dead_code)] // used by cli (next task)
 pub fn client_key() -> Result<PrivateKey> {
     client_key_in(&dir())
 }

@@ -21,6 +21,11 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   disconnect          take it off the tailnet (phones can't reach it until connect)
   login | logout      Tailscale account on this PC
   ping DEVICE         Tailscale round trip to a device (name or IP)
+  exec DEVICE -- CMD  run CMD on another PC with AsenaScale (PowerShell on
+                      Windows); prints its output, exits with its code
+  windows DEVICE      that PC's screens and windows (IDs for shot)
+  shot DEVICE [screen|active|output N|window ID] -o FILE.png
+                      save a screenshot of that PC (default: all screens)
   claude [ARGS]       start Claude Code here, in this folder, as a shared
                       session: the phone can join it live (and vice versa)
   codex | gemini | grok [ARGS]   the same for those CLIs
@@ -138,6 +143,33 @@ pub fn run(args: &[String]) -> i32 {
                 }
             }
         }
+        "exec" => {
+            let Some(dev) = args.get(1) else {
+                eprintln!("usage: asenascale exec DEVICE -- CMD");
+                return 2;
+            };
+            let rest = &args[2..];
+            let rest = if rest.first().map(String::as_str) == Some("--") { &rest[1..] } else { rest };
+            if rest.is_empty() {
+                eprintln!("usage: asenascale exec DEVICE -- CMD");
+                return 2;
+            }
+            remote(dev, &rest.join(" "), Sink::Stdout)
+        }
+        "windows" => match args.get(1) {
+            Some(dev) => remote(dev, "mc list", Sink::Stdout),
+            None => {
+                eprintln!("usage: asenascale windows DEVICE");
+                2
+            }
+        },
+        "shot" => match shot_args(&args[1..]) {
+            Ok((dev, cmd, file)) => remote(&dev, &cmd, Sink::File(file)),
+            Err(usage) => {
+                eprintln!("{usage}");
+                2
+            }
+        },
         "up" => run(&["connect".into()]),
         "down" => run(&["disconnect".into()]),
         "list" | "ls" => run(&["devices".into()]),
@@ -614,3 +646,114 @@ mod term {
 
 
 
+
+const SHOT_USAGE: &str = "usage: asenascale shot DEVICE [screen|active|output N|window ID] -o FILE.png";
+
+/// (device, remote command, output file) for `shot`.
+fn shot_args(args: &[String]) -> Result<(String, String, std::path::PathBuf), &'static str> {
+    let dev = args.first().ok_or(SHOT_USAGE)?.clone();
+    let mut kind = "screen".to_string();
+    let mut id = String::new();
+    let mut file = None;
+    let mut i = 1;
+    while let Some(a) = args.get(i) {
+        match a.as_str() {
+            "-o" | "--out" => {
+                file = Some(std::path::PathBuf::from(args.get(i + 1).ok_or(SHOT_USAGE)?));
+                i += 1;
+            }
+            "screen" | "active" => kind = a.clone(),
+            "output" | "window" => {
+                let v = args.get(i + 1).filter(|v| v.parse::<u32>().is_ok()).ok_or(SHOT_USAGE)?;
+                kind = a.clone();
+                id = v.clone();
+                i += 1;
+            }
+            _ => return Err(SHOT_USAGE),
+        }
+        i += 1;
+    }
+    let file = file.ok_or(SHOT_USAGE)?;
+    let cmd = if id.is_empty() { format!("mc shot {kind}") } else { format!("mc shot {kind} {id}") };
+    Ok((dev, cmd, file))
+}
+
+enum Sink {
+    Stdout,
+    File(std::path::PathBuf),
+}
+
+/// Dials DEVICE through the tray, runs `cmd` there, delivers the output.
+fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
+    let port = match ask(&["dial".into(), dev.into()]) {
+        Ok((0, text)) => match text.trim().parse::<u16>() {
+            Ok(p) => p,
+            Err(_) => {
+                eprintln!("unexpected answer from AsenaScale: {text}");
+                return 1;
+            }
+        },
+        Ok((_, text)) => {
+            eprint!("{text}");
+            return 1;
+        }
+        Err(e) => {
+            eprintln!("{e}");
+            return 1;
+        }
+    };
+    let result = crate::store::client_key().and_then(|key| {
+        let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+        rt.block_on(crate::peer::exec(([127, 0, 0, 1], port).into(), key, cmd))
+    });
+    let _ = ask(&["undial".into(), port.to_string()]);
+    match result {
+        Ok(out) => {
+            let _ = std::io::stderr().write_all(&out.stderr);
+            match sink {
+                Sink::Stdout => {
+                    let _ = std::io::stdout().write_all(&out.stdout);
+                }
+                Sink::File(path) if out.code == 0 => {
+                    if let Err(e) = std::fs::write(&path, &out.stdout) {
+                        eprintln!("can't write {}: {e}", path.display());
+                        return 1;
+                    }
+                    println!("{} ({} bytes)", path.display(), out.stdout.len());
+                }
+                Sink::File(_) => {}
+            }
+            i32::try_from(out.code).unwrap_or(1)
+        }
+        Err(e) => {
+            eprintln!("{e:#}");
+            1
+        }
+    }
+}
+
+#[cfg(test)]
+mod shot_args_tests {
+    use super::shot_args;
+
+    fn s(v: &[&str]) -> Vec<String> {
+        v.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn default_is_all_screens() {
+        let (dev, cmd, file) = shot_args(&s(&["win", "-o", "a.png"])).unwrap();
+        assert_eq!((dev.as_str(), cmd.as_str(), file.to_str().unwrap()), ("win", "mc shot screen", "a.png"));
+    }
+
+    #[test]
+    fn window_takes_an_id() {
+        assert_eq!(shot_args(&s(&["win", "window", "4242", "-o", "a.png"])).unwrap().1, "mc shot window 4242");
+    }
+
+    #[test]
+    fn output_needs_a_number_and_file_is_required() {
+        assert!(shot_args(&s(&["win", "output", "-o", "a.png"])).is_err());
+        assert!(shot_args(&s(&["win"])).is_err());
+    }
+}
