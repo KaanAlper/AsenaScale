@@ -22,7 +22,9 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   login | logout      Tailscale account on this PC
   ping DEVICE         Tailscale round trip to a device (name or IP)
   exec DEVICE -- CMD  run CMD on another PC with AsenaScale (PowerShell on
-                      Windows); prints its output, exits with its code
+                      Windows); prints its output, exits with its code.
+                      CMD is passed as one string and re-parsed by the
+                      other PC's shell; quote it
   windows DEVICE      that PC's screens and windows (IDs for shot)
   shot DEVICE [screen|active|output N|window ID] -o FILE.png
                       save a screenshot of that PC (default: all screens)
@@ -750,6 +752,29 @@ fn forget(args: &[String]) -> i32 {
     }
 }
 
+/// The remote exit code as ours. Windows NTSTATUS codes (0xC0000005 ...)
+/// come through as negative i32, as Windows itself reports them.
+fn exit_code(code: u32) -> i32 {
+    code as i32
+}
+
+/// Saves a screenshot: written to FILE.part next to it, then renamed, so a
+/// failure never leaves a truncated FILE. Refuses anything not a PNG.
+fn save_png(path: &std::path::Path, data: &[u8]) -> anyhow::Result<()> {
+    use anyhow::Context;
+    if !data.starts_with(b"\x89PNG\r\n\x1a\n") {
+        anyhow::bail!("the other PC sent no image");
+    }
+    let mut part = path.as_os_str().to_owned();
+    part.push(".part");
+    let part = std::path::PathBuf::from(part);
+    let saved = std::fs::write(&part, data).and_then(|()| std::fs::rename(&part, path));
+    if saved.is_err() {
+        let _ = std::fs::remove_file(&part);
+    }
+    saved.with_context(|| format!("can't write {}", path.display()))
+}
+
 /// Dials DEVICE through the tray, runs `cmd` there, delivers the output.
 fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
     let (port, ip) = match ask(&["dial".into(), dev.into()]) {
@@ -785,14 +810,14 @@ fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
         Ok(code) => {
             if let Sink::File(path) = sink {
                 if code == 0 {
-                    if let Err(e) = std::fs::write(&path, &image) {
-                        eprintln!("can't write {}: {e}", path.display());
+                    if let Err(e) = save_png(&path, &image) {
+                        eprintln!("{e:#}");
                         return 1;
                     }
                     println!("{} ({} bytes)", path.display(), image.len());
                 }
             }
-            i32::try_from(code).unwrap_or(1)
+            exit_code(code)
         }
         Err(e) => {
             eprintln!("{e:#}");
@@ -861,5 +886,58 @@ mod dial_answer_tests {
     fn garbage_is_reported_as_such() {
         assert!(parse_dial("hello world\n").unwrap_err().contains("unexpected answer"));
         assert!(parse_dial("40123 nope\n").unwrap_err().contains("unexpected answer"));
+    }
+}
+
+#[cfg(test)]
+mod save_png_tests {
+    use super::{exit_code, save_png};
+    use crate::store::TempDir;
+
+    const PNG: &[u8] = b"\x89PNG\r\n\x1a\nrest";
+
+    fn files(dir: &std::path::Path) -> Vec<String> {
+        let mut v: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn writes_the_image_and_leaves_no_part_file() {
+        let dir = TempDir::new("png-ok");
+        std::fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("a.png");
+        save_png(&path, PNG).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), PNG);
+        assert_eq!(files(&dir.0), ["a.png"]);
+    }
+
+    #[test]
+    fn refuses_what_is_not_a_png() {
+        let dir = TempDir::new("png-bad");
+        std::fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("a.png");
+        for data in [&b""[..], b"usage: mc shot"] {
+            let err = save_png(&path, data).unwrap_err();
+            assert_eq!(err.to_string(), "the other PC sent no image");
+        }
+        assert!(files(&dir.0).is_empty());
+    }
+
+    #[test]
+    fn a_failed_write_removes_the_part_file() {
+        let dir = TempDir::new("png-fail");
+        // The target is a non-empty directory: the rename fails.
+        let path = dir.0.join("a.png");
+        std::fs::create_dir_all(path.join("x")).unwrap();
+        assert!(save_png(&path, PNG).is_err());
+        assert_eq!(files(&dir.0), ["a.png"]);
+    }
+
+    #[test]
+    fn exit_codes_keep_their_bits() {
+        assert_eq!(exit_code(3), 3);
+        // An NTSTATUS such as STATUS_ACCESS_VIOLATION.
+        assert_eq!(exit_code(0xC000_0005), -1_073_741_819);
     }
 }
