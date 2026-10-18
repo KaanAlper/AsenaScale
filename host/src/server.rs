@@ -46,6 +46,18 @@ impl State {
             connected: Mutex::new(Vec::new()),
         })
     }
+
+    /// A state for tests: these keys are approved, nothing else.
+    #[cfg(test)]
+    pub fn for_test(devices: Devices) -> Arc<State> {
+        Arc::new(State {
+            devices: Mutex::new(devices),
+            sessions: Arc::new(Sessions::default()),
+            prompt: tokio::sync::Mutex::new(()),
+            on_change: Arc::new(|| {}),
+            connected: Mutex::new(Vec::new()),
+        })
+    }
 }
 
 #[derive(Clone)]
@@ -612,13 +624,7 @@ mod phone {
             let gen = java(&jar, &source).arg("genkey").arg(&key).status().unwrap();
             assert!(gen.success(), "java could not make a key");
             let public = PublicKey::from_openssh(std::fs::read_to_string(key.with_extension("pub")).unwrap().trim()).unwrap();
-            let state = Arc::new(State {
-                devices: Mutex::new(Devices::only(&[public])),
-                sessions: Arc::new(Sessions::default()),
-                prompt: tokio::sync::Mutex::new(()),
-                on_change: Arc::new(|| {}),
-                connected: Mutex::new(Vec::new()),
-            });
+            let state = State::for_test(Devices::only(&[public]));
             let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
             let listener = rt.block_on(tokio::net::TcpListener::bind(("127.0.0.1", 0))).unwrap();
             let port = listener.local_addr().unwrap().port();

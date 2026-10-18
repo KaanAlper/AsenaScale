@@ -309,6 +309,57 @@ func CloseForward(port int) {
 	}
 }
 
+// ForwardOnce is Forward for a single connection: the listener takes one
+// connection, pipes it to target over the tailnet and closes; it also closes
+// after idle without a connection. Only the PC's own processes reach
+// 127.0.0.1, and only for that one connection, so the port is not a standing
+// door to the peer. Returns the local port. CloseForward cancels an unused one.
+func ForwardOnce(target string, idle time.Duration) (int, error) {
+	s := current()
+	if s == nil {
+		return 0, errors.New("tailscale not started")
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+	port := ln.Addr().(*net.TCPAddr).Port
+	mu.Lock()
+	// Stop may have run since current(): it already emptied forwards, so a
+	// listener parked now would stay open for a node that is gone.
+	if srv != s {
+		mu.Unlock()
+		ln.Close()
+		return 0, errors.New("tailscale not started")
+	}
+	forwards[port] = ln
+	mu.Unlock()
+
+	go acceptOnce(ln, idle, func(c net.Conn) { pipe(s, c, target) }, func() {
+		mu.Lock()
+		if forwards[port] == ln {
+			delete(forwards, port)
+		}
+		mu.Unlock()
+	})
+	return port, nil
+}
+
+// acceptOnce waits up to idle for one connection on ln, closes ln, then hands
+// the connection (if any) to handle. done runs after ln is closed. Closing ln
+// from elsewhere (CloseForward, Stop) ends the wait the same way.
+func acceptOnce(ln net.Listener, idle time.Duration, handle func(net.Conn), done func()) {
+	timer := time.AfterFunc(idle, func() { ln.Close() })
+	c, err := ln.Accept()
+	timer.Stop()
+	ln.Close()
+	done()
+	if err != nil {
+		return
+	}
+	handle(c)
+}
+
 func mustJSON(v any) string {
 	b, err := json.Marshal(v)
 	if err != nil {

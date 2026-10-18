@@ -21,6 +21,13 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   disconnect          take it off the tailnet (phones can't reach it until connect)
   login | logout      Tailscale account on this PC
   ping DEVICE         Tailscale round trip to a device (name or IP)
+  exec DEVICE -- CMD  run CMD on another PC with AsenaScale (PowerShell on
+                      Windows); prints its output, exits with its code.
+                      CMD is passed as one string and re-parsed by the
+                      other PC's shell; quote it
+  windows DEVICE      that PC's screens and windows (IDs for shot)
+  shot DEVICE [screen|active|output N|window ID] -o FILE.png
+                      save a screenshot of that PC (default: all screens)
   claude [ARGS]       start Claude Code here, in this folder, as a shared
                       session: the phone can join it live (and vice versa)
   codex | gemini | grok [ARGS]   the same for those CLIs
@@ -35,6 +42,8 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   forward remove PORT|all
   phones              phones allowed on this PC
   revoke N|NAME|all   forget an allowed phone (it will be asked again)
+  forget IP|all       forget another PC's saved identity (after AsenaScale
+                      was reinstalled there)
   log [-f] [-n N]     the app's log (-f: keep following)
   start               start the tray app in the background
   quit                stop the tray app
@@ -138,6 +147,34 @@ pub fn run(args: &[String]) -> i32 {
                 }
             }
         }
+        "exec" => {
+            let Some(dev) = args.get(1) else {
+                eprintln!("usage: asenascale exec DEVICE -- CMD");
+                return 2;
+            };
+            let rest = &args[2..];
+            let rest = if rest.first().map(String::as_str) == Some("--") { &rest[1..] } else { rest };
+            if rest.is_empty() {
+                eprintln!("usage: asenascale exec DEVICE -- CMD");
+                return 2;
+            }
+            remote(dev, &rest.join(" "), Sink::Stdout)
+        }
+        "windows" => match args.get(1) {
+            Some(dev) => remote(dev, "mc list", Sink::Stdout),
+            None => {
+                eprintln!("usage: asenascale windows DEVICE");
+                2
+            }
+        },
+        "shot" => match shot_args(&args[1..]) {
+            Ok((dev, cmd, file)) => remote(&dev, &cmd, Sink::File(file)),
+            Err(usage) => {
+                eprintln!("{usage}");
+                2
+            }
+        },
+        "forget" => forget(&args[1..]),
         "up" => run(&["connect".into()]),
         "down" => run(&["disconnect".into()]),
         "list" | "ls" => run(&["devices".into()]),
@@ -614,3 +651,293 @@ mod term {
 
 
 
+
+const SHOT_USAGE: &str = "usage: asenascale shot DEVICE [screen|active|output N|window ID] -o FILE.png";
+
+/// (device, remote command, output file) for `shot`.
+fn shot_args(args: &[String]) -> Result<(String, String, std::path::PathBuf), &'static str> {
+    let dev = args.first().ok_or(SHOT_USAGE)?.clone();
+    let mut kind = "screen".to_string();
+    let mut id = String::new();
+    let mut file = None;
+    let mut i = 1;
+    while let Some(a) = args.get(i) {
+        match a.as_str() {
+            "-o" | "--out" => {
+                file = Some(std::path::PathBuf::from(args.get(i + 1).ok_or(SHOT_USAGE)?));
+                i += 1;
+            }
+            "screen" | "active" => kind = a.clone(),
+            "output" | "window" => {
+                let v = args.get(i + 1).filter(|v| v.parse::<u32>().is_ok()).ok_or(SHOT_USAGE)?;
+                kind = a.clone();
+                id = v.clone();
+                i += 1;
+            }
+            _ => return Err(SHOT_USAGE),
+        }
+        i += 1;
+    }
+    let file = file.ok_or(SHOT_USAGE)?;
+    let cmd = if id.is_empty() { format!("mc shot {kind}") } else { format!("mc shot {kind} {id}") };
+    Ok((dev, cmd, file))
+}
+
+enum Sink {
+    Stdout,
+    File(std::path::PathBuf),
+}
+
+/// The most `shot` holds in memory before giving up on a screenshot.
+const MAX_SHOT_BYTES: usize = 256 * 1024 * 1024;
+
+/// Appends `data` to `buf` unless that would make it longer than `max`.
+fn push_capped(buf: &mut Vec<u8>, data: &[u8], max: usize) -> anyhow::Result<()> {
+    if buf.len() + data.len() > max {
+        anyhow::bail!("screenshot larger than 256 MB");
+    }
+    buf.extend_from_slice(data);
+    Ok(())
+}
+
+/// Writes and flushes, so output shows up as the other PC sends it.
+fn write_now(mut w: impl Write, data: &[u8]) -> anyhow::Result<()> {
+    w.write_all(data)?;
+    w.flush()?;
+    Ok(())
+}
+
+/// The tray's answer to `dial DEVICE`: "PORT IP" (the local port to connect
+/// to, and the device's tailnet IP, which names it in known_peers.json).
+fn parse_dial(text: &str) -> Result<(u16, std::net::IpAddr), String> {
+    let mut words = text.split_whitespace();
+    let port = words.next().and_then(|w| w.parse::<u16>().ok());
+    let ip = words.next().map(|w| w.parse::<std::net::IpAddr>());
+    match (port, ip, words.next()) {
+        (Some(port), Some(Ok(ip)), None) => Ok((port, ip)),
+        (Some(_), None, None) => Err("the running AsenaScale is older than this command; restart it (asenascale quit, then asenascale start)".into()),
+        _ => Err(format!("unexpected answer from AsenaScale: {}", text.trim())),
+    }
+}
+
+/// `asenascale forget IP|all`: works without the tray app.
+fn forget(args: &[String]) -> i32 {
+    let which = match args.first().map(String::as_str) {
+        Some("all") => "all".to_string(),
+        Some(w) => match w.parse::<std::net::IpAddr>() {
+            Ok(ip) => ip.to_string(),
+            Err(_) => {
+                eprintln!("forget takes the other PC's IP; use the IP from `asenascale devices`");
+                return 2;
+            }
+        },
+        None => {
+            eprintln!("usage: asenascale forget IP|all");
+            return 2;
+        }
+    };
+    match crate::known::Known::open().forget(&which) {
+        Ok(0) => {
+            eprintln!("nothing saved for {which}");
+            1
+        }
+        Ok(n) => {
+            println!("forgot {n}; the next connection learns it again");
+            0
+        }
+        Err(e) => {
+            eprintln!("{e:#}");
+            1
+        }
+    }
+}
+
+/// The remote exit code as ours. Windows NTSTATUS codes (0xC0000005 ...)
+/// come through as negative i32, as Windows itself reports them.
+fn exit_code(code: u32) -> i32 {
+    code as i32
+}
+
+/// Saves a screenshot: written to FILE.part next to it, then renamed, so a
+/// failure never leaves a truncated FILE. Refuses anything not a PNG.
+fn save_png(path: &std::path::Path, data: &[u8]) -> anyhow::Result<()> {
+    use anyhow::Context;
+    if !data.starts_with(b"\x89PNG\r\n\x1a\n") {
+        anyhow::bail!("the other PC sent no image");
+    }
+    let mut part = path.as_os_str().to_owned();
+    part.push(".part");
+    let part = std::path::PathBuf::from(part);
+    let saved = std::fs::write(&part, data).and_then(|()| std::fs::rename(&part, path));
+    if saved.is_err() {
+        let _ = std::fs::remove_file(&part);
+    }
+    saved.with_context(|| format!("can't write {}", path.display()))
+}
+
+/// Dials DEVICE through the tray, runs `cmd` there, delivers the output.
+fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
+    let (port, ip) = match ask(&["dial".into(), dev.into()]) {
+        Ok((0, text)) => match parse_dial(&text) {
+            Ok(answer) => answer,
+            Err(msg) => {
+                eprintln!("{msg}");
+                return 1;
+            }
+        },
+        Ok((_, text)) => {
+            eprint!("{text}");
+            return 1;
+        }
+        Err(e) => {
+            eprintln!("{e}");
+            return 1;
+        }
+    };
+    let to_file = matches!(sink, Sink::File(_));
+    let mut image = Vec::new();
+    let result = crate::store::client_key().and_then(|key| {
+        let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+        let (who, known) = (ip.to_string(), crate::known::Known::open());
+        rt.block_on(crate::peer::exec(([127, 0, 0, 1], port).into(), &who, &known, key, cmd, |stream, data| match stream {
+            crate::peer::Stream::Out if to_file => push_capped(&mut image, data, MAX_SHOT_BYTES),
+            crate::peer::Stream::Out => write_now(std::io::stdout().lock(), data),
+            crate::peer::Stream::Err => write_now(std::io::stderr().lock(), data),
+        }))
+    });
+    let _ = ask(&["undial".into(), port.to_string()]);
+    match result {
+        Ok(code) => {
+            if let Sink::File(path) = sink {
+                if code == 0 {
+                    if let Err(e) = save_png(&path, &image) {
+                        eprintln!("{e:#}");
+                        return 1;
+                    }
+                    println!("{} ({} bytes)", path.display(), image.len());
+                }
+            }
+            exit_code(code)
+        }
+        Err(e) => {
+            eprintln!("{e:#}");
+            1
+        }
+    }
+}
+
+#[cfg(test)]
+mod shot_args_tests {
+    use super::shot_args;
+
+    fn s(v: &[&str]) -> Vec<String> {
+        v.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn default_is_all_screens() {
+        let (dev, cmd, file) = shot_args(&s(&["win", "-o", "a.png"])).unwrap();
+        assert_eq!((dev.as_str(), cmd.as_str(), file.to_str().unwrap()), ("win", "mc shot screen", "a.png"));
+    }
+
+    #[test]
+    fn window_takes_an_id() {
+        assert_eq!(shot_args(&s(&["win", "window", "4242", "-o", "a.png"])).unwrap().1, "mc shot window 4242");
+    }
+
+    #[test]
+    fn output_needs_a_number_and_file_is_required() {
+        assert!(shot_args(&s(&["win", "output", "-o", "a.png"])).is_err());
+        assert!(shot_args(&s(&["win"])).is_err());
+    }
+}
+
+#[cfg(test)]
+mod shot_buffer_tests {
+    use super::push_capped;
+
+    #[test]
+    fn grows_up_to_the_cap_and_refuses_past_it() {
+        let mut buf = Vec::new();
+        push_capped(&mut buf, b"abc", 4).unwrap();
+        push_capped(&mut buf, b"d", 4).unwrap();
+        let err = push_capped(&mut buf, b"e", 4).unwrap_err();
+        assert_eq!(err.to_string(), "screenshot larger than 256 MB");
+        assert_eq!(buf, b"abcd");
+    }
+}
+
+#[cfg(test)]
+mod dial_answer_tests {
+    use super::parse_dial;
+
+    #[test]
+    fn port_and_ip() {
+        assert_eq!(parse_dial("40123 100.64.0.9\n").unwrap(), (40123, "100.64.0.9".parse().unwrap()));
+    }
+
+    #[test]
+    fn a_bare_port_means_an_older_tray_app() {
+        let err = parse_dial("40123\n").unwrap_err();
+        assert!(err.contains("older"), "{err}");
+    }
+
+    #[test]
+    fn garbage_is_reported_as_such() {
+        assert!(parse_dial("hello world\n").unwrap_err().contains("unexpected answer"));
+        assert!(parse_dial("40123 nope\n").unwrap_err().contains("unexpected answer"));
+    }
+}
+
+#[cfg(test)]
+mod save_png_tests {
+    use super::{exit_code, save_png};
+    use crate::store::TempDir;
+
+    const PNG: &[u8] = b"\x89PNG\r\n\x1a\nrest";
+
+    fn files(dir: &std::path::Path) -> Vec<String> {
+        let mut v: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn writes_the_image_and_leaves_no_part_file() {
+        let dir = TempDir::new("png-ok");
+        std::fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("a.png");
+        save_png(&path, PNG).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), PNG);
+        assert_eq!(files(&dir.0), ["a.png"]);
+    }
+
+    #[test]
+    fn refuses_what_is_not_a_png() {
+        let dir = TempDir::new("png-bad");
+        std::fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("a.png");
+        for data in [&b""[..], b"usage: mc shot"] {
+            let err = save_png(&path, data).unwrap_err();
+            assert_eq!(err.to_string(), "the other PC sent no image");
+        }
+        assert!(files(&dir.0).is_empty());
+    }
+
+    #[test]
+    fn a_failed_write_removes_the_part_file() {
+        let dir = TempDir::new("png-fail");
+        // The target is a non-empty directory: the rename fails.
+        let path = dir.0.join("a.png");
+        std::fs::create_dir_all(path.join("x")).unwrap();
+        assert!(save_png(&path, PNG).is_err());
+        assert_eq!(files(&dir.0), ["a.png"]);
+    }
+
+    #[test]
+    fn exit_codes_keep_their_bits() {
+        assert_eq!(exit_code(3), 3);
+        // An NTSTATUS such as STATUS_ACCESS_VIOLATION.
+        assert_eq!(exit_code(0xC000_0005), -1_073_741_819);
+    }
+}

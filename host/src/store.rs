@@ -34,6 +34,90 @@ pub fn host_key() -> Result<PrivateKey> {
     Ok(key)
 }
 
+/// This PC's own identity when it connects to another AsenaScale PC
+/// (`asenascale exec|shot`). The other PC asks once before trusting it.
+pub fn client_key() -> Result<PrivateKey> {
+    client_key_in(&dir())
+}
+
+/// Reads the key in `dir`, or makes one if there is none. An existing file is
+/// never replaced: a new key would make every other PC ask to approve this
+/// one again, so a broken file is an error for the user to resolve.
+fn client_key_in(dir: &std::path::Path) -> Result<PrivateKey> {
+    use std::io::{ErrorKind, Write};
+
+    let path = dir.join("client_ed25519_key");
+    match read_settled_key(&path) {
+        Err(e) if e.kind() == ErrorKind::NotFound => {}
+        other => return other.map_err(|e| key_error(&path, e)),
+    }
+    let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).context("generating client key")?;
+    let pem = key.to_openssh(LineEnding::LF)?;
+    create_private_dir(dir).with_context(|| format!("creating {}", dir.display()))?;
+    let mut opts = fs::OpenOptions::new();
+    opts.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    let mut file = match opts.open(&path) {
+        Ok(f) => f,
+        // Another process made it first: use theirs.
+        Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+            return read_settled_key(&path).map_err(|e| key_error(&path, e));
+        }
+        Err(e) => return Err(e).with_context(|| format!("creating {}", path.display())),
+    };
+    file.write_all(pem.as_bytes()).with_context(|| format!("writing {}", path.display()))?;
+    Ok(key)
+}
+
+/// `read_client_key`, but a file that is not a key yet is re-read for a
+/// while: another process may have just created it and still be writing.
+fn read_settled_key(path: &std::path::Path) -> std::io::Result<PrivateKey> {
+    const RETRIES: u32 = 10;
+    let mut retries = 0;
+    loop {
+        match read_client_key(path) {
+            Err(e) if e.kind() == std::io::ErrorKind::InvalidData && retries < RETRIES => {
+                retries += 1;
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            other => return other,
+        }
+    }
+}
+
+/// The key at `path`; a file that is not a key reads as `InvalidData`.
+fn read_client_key(path: &std::path::Path) -> std::io::Result<PrivateKey> {
+    let pem = fs::read_to_string(path)?;
+    PrivateKey::from_openssh(&pem).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+}
+
+fn key_error(path: &std::path::Path, e: std::io::Error) -> anyhow::Error {
+    if e.kind() == std::io::ErrorKind::InvalidData {
+        anyhow::anyhow!(
+            "{} is not a valid key; delete it to make a new one (the other PC will ask to approve this PC again)",
+            path.display()
+        )
+    } else {
+        anyhow::anyhow!("reading {}: {e}", path.display())
+    }
+}
+
+/// `create_dir_all`, with new directories private to the user on unix.
+pub fn create_private_dir(dir: &std::path::Path) -> std::io::Result<()> {
+    let mut b = fs::DirBuilder::new();
+    b.recursive(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        b.mode(0o700);
+    }
+    b.create(dir)
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Device {
     /// OpenSSH public key line of the phone app.
@@ -135,5 +219,82 @@ impl Devices {
             self.save();
         }
         removed
+    }
+}
+
+/// Tests: a fresh temp dir per test (unique `tag`), removed on drop (also
+/// when an assert fails).
+#[cfg(test)]
+pub struct TempDir(pub PathBuf);
+
+#[cfg(test)]
+impl TempDir {
+    pub fn new(tag: &str) -> Self {
+        let d = std::env::temp_dir().join(format!("asenascale-ck-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        TempDir(d)
+    }
+}
+
+#[cfg(test)]
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
+    }
+}
+
+#[cfg(test)]
+mod client_key_tests {
+    use super::*;
+
+    #[test]
+    fn client_key_is_ed25519_and_stable() {
+        let dir = TempDir::new("stable");
+        let a = client_key_in(&dir.0).unwrap();
+        let b = client_key_in(&dir.0).unwrap();
+        assert_eq!(a.algorithm(), Algorithm::Ed25519);
+        assert_eq!(a.public_key(), b.public_key());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn key_file_is_private() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = TempDir::new("mode");
+        client_key_in(&dir.0).unwrap();
+        let mode = fs::metadata(dir.0.join("client_ed25519_key")).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o600);
+    }
+
+    /// Another process made the file but has not written the key yet.
+    #[test]
+    fn a_key_being_written_by_another_process_is_waited_for() {
+        let dir = TempDir::new("race");
+        fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("client_ed25519_key");
+        fs::write(&path, "").unwrap();
+        let theirs = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
+        let pem = theirs.to_openssh(LineEnding::LF).unwrap().to_string();
+        let writer = std::thread::spawn({
+            let path = path.clone();
+            move || {
+                std::thread::sleep(std::time::Duration::from_millis(150));
+                fs::write(&path, pem).unwrap();
+            }
+        });
+        let got = client_key_in(&dir.0).unwrap();
+        writer.join().unwrap();
+        assert_eq!(got.public_key(), theirs.public_key());
+    }
+
+    #[test]
+    fn corrupt_key_file_is_an_error_not_replaced() {
+        let dir = TempDir::new("corrupt");
+        fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("client_ed25519_key");
+        fs::write(&path, "garbage").unwrap();
+        let err = client_key_in(&dir.0).unwrap_err();
+        assert!(err.to_string().contains("client_ed25519_key"), "{err}");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "garbage");
     }
 }

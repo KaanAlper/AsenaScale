@@ -60,6 +60,12 @@ asenascale ip [-4|-6]        bu PC'nin Tailscale IP'si
 asenascale connect           tailnet'e bağlan (gerekirse giriş linki verir)
 asenascale disconnect        tailnet'ten çık (telefon connect'e kadar ulaşamaz)
 asenascale ping CİHAZ        Tailscale üzerinden gecikme
+asenascale exec CİHAZ -- KOMUT   başka bir AsenaScale PC'sinde komut çalıştır (Windows'ta PowerShell);
+                                 KOMUT tek dize olarak gider, karşı tarafın kabuğu yeniden ayrıştırır: tırnakla
+asenascale windows CİHAZ         o PC'nin ekranları ve pencereleri (shot için ID'ler)
+asenascale shot CİHAZ [screen|active|output N|window ID] -o DOSYA.png
+                                 o PC'nin ekran görüntüsü (varsayılan: tüm ekranlar)
+asenascale forget IP|all         karşı PC'nin kayıtlı kimliğini unut (orada AsenaScale'i yeniden kurduysan)
 asenascale claude             bu klasörde Claude'u ortak oturumda aç: telefon canlı katılır
 asenascale codex|gemini|grok  aynısı, o araçlarla
 asenascale new [KOMUT]        aynısı, herhangi bir komutla (boş: kabuk)
@@ -73,6 +79,13 @@ asenascale update             son sürümü şimdi kur
 asenascale start | quit | login | logout | version
 ```
 `status`, `devices` ve `sessions` için `--json` eklenebilir.
+
+**PC'den PC'ye:** `exec`/`windows`/`shot` ilk kullanımda diğer PC'de izin penceresi açar
+(telefon gibi); onaylanan PC `asenascale phones` listesinde görünür, `revoke` ile silinir.
+Diğer PC'de bir şey kurmak gerekmez, aynı AsenaScale yeter. Karşı PC'nin kimliği ilk bağlantıda
+kaydedilir (`known_peers.json`); sonradan değişirse bağlantı reddedilir. Her `exec` kendi tek
+kullanımlık tünelini açar (30 sn içinde kullanılmazsa kapanır). Karşıda başlatılan pencereli
+programlar (ör. `Start-Process acad.exe`) kullanıcının masaüstünde açılır.
 
 **PC'de açık Claude'a telefondan bağlanmak:** Windows başka bir programın sıradan bir terminal
 penceresine girmesine izin vermediği için Claude'u PC'de `asenascale claude` ile aç (normal

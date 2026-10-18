@@ -6,6 +6,7 @@ package main
 import "C"
 
 import (
+	"time"
 	"unsafe"
 
 	"github.com/kaanalper/asenascale/tsbridge"
@@ -37,6 +38,26 @@ func AsServe(tailnetPort, localPort C.int) *C.char {
 func AsSetForwards(ports *C.char) *C.char {
 	return cerr(tsbridge.SetForwards(C.GoString(ports)))
 }
+
+// AsForward listens on a random 127.0.0.1 port for one connection and pipes
+// it to target ("100.x.y.z:2222") over the tailnet; the port closes after
+// that connection or after 30 s without one. It writes the port to *port and
+// returns nil, or returns the error text.
+//
+//export AsForward
+func AsForward(target *C.char, port *C.int) *C.char {
+	p, err := tsbridge.ForwardOnce(C.GoString(target), 30*time.Second)
+	if err != nil {
+		return cerr(err)
+	}
+	*port = C.int(p)
+	return nil
+}
+
+// AsCloseForward cancels a forward made by AsForward that is still unused.
+//
+//export AsCloseForward
+func AsCloseForward(port C.int) { tsbridge.CloseForward(int(port)) }
 
 // AsSetLogger routes the bridge's log lines to f, a C function taking a
 // NUL-terminated string that is only valid during the call.
