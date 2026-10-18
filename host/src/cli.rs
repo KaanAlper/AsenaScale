@@ -683,6 +683,25 @@ enum Sink {
     File(std::path::PathBuf),
 }
 
+/// The most `shot` holds in memory before giving up on a screenshot.
+const MAX_SHOT_BYTES: usize = 256 * 1024 * 1024;
+
+/// Appends `data` to `buf` unless that would make it longer than `max`.
+fn push_capped(buf: &mut Vec<u8>, data: &[u8], max: usize) -> anyhow::Result<()> {
+    if buf.len() + data.len() > max {
+        anyhow::bail!("screenshot larger than 256 MB");
+    }
+    buf.extend_from_slice(data);
+    Ok(())
+}
+
+/// Writes and flushes, so output shows up as the other PC sends it.
+fn write_now(mut w: impl Write, data: &[u8]) -> anyhow::Result<()> {
+    w.write_all(data)?;
+    w.flush()?;
+    Ok(())
+}
+
 /// Dials DEVICE through the tray, runs `cmd` there, delivers the output.
 fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
     let port = match ask(&["dial".into(), dev.into()]) {
@@ -702,28 +721,29 @@ fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
             return 1;
         }
     };
+    let to_file = matches!(sink, Sink::File(_));
+    let mut image = Vec::new();
     let result = crate::store::client_key().and_then(|key| {
         let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
-        rt.block_on(crate::peer::exec(([127, 0, 0, 1], port).into(), key, cmd))
+        rt.block_on(crate::peer::exec(([127, 0, 0, 1], port).into(), key, cmd, |stream, data| match stream {
+            crate::peer::Stream::Out if to_file => push_capped(&mut image, data, MAX_SHOT_BYTES),
+            crate::peer::Stream::Out => write_now(std::io::stdout().lock(), data),
+            crate::peer::Stream::Err => write_now(std::io::stderr().lock(), data),
+        }))
     });
     let _ = ask(&["undial".into(), port.to_string()]);
     match result {
-        Ok(out) => {
-            let _ = std::io::stderr().write_all(&out.stderr);
-            match sink {
-                Sink::Stdout => {
-                    let _ = std::io::stdout().write_all(&out.stdout);
-                }
-                Sink::File(path) if out.code == 0 => {
-                    if let Err(e) = std::fs::write(&path, &out.stdout) {
+        Ok(code) => {
+            if let Sink::File(path) = sink {
+                if code == 0 {
+                    if let Err(e) = std::fs::write(&path, &image) {
                         eprintln!("can't write {}: {e}", path.display());
                         return 1;
                     }
-                    println!("{} ({} bytes)", path.display(), out.stdout.len());
+                    println!("{} ({} bytes)", path.display(), image.len());
                 }
-                Sink::File(_) => {}
             }
-            i32::try_from(out.code).unwrap_or(1)
+            i32::try_from(code).unwrap_or(1)
         }
         Err(e) => {
             eprintln!("{e:#}");
@@ -755,5 +775,20 @@ mod shot_args_tests {
     fn output_needs_a_number_and_file_is_required() {
         assert!(shot_args(&s(&["win", "output", "-o", "a.png"])).is_err());
         assert!(shot_args(&s(&["win"])).is_err());
+    }
+}
+
+#[cfg(test)]
+mod shot_buffer_tests {
+    use super::push_capped;
+
+    #[test]
+    fn grows_up_to_the_cap_and_refuses_past_it() {
+        let mut buf = Vec::new();
+        push_capped(&mut buf, b"abc", 4).unwrap();
+        push_capped(&mut buf, b"d", 4).unwrap();
+        let err = push_capped(&mut buf, b"e", 4).unwrap_err();
+        assert_eq!(err.to_string(), "screenshot larger than 256 MB");
+        assert_eq!(buf, b"abcd");
     }
 }

@@ -10,12 +10,11 @@ use russh::client;
 use russh::keys::{PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
 use russh::ChannelMsg;
 
-/// What one remote command produced.
-#[derive(Debug, Default)]
-pub struct Output {
-    pub stdout: Vec<u8>,
-    pub stderr: Vec<u8>,
-    pub code: u32,
+/// Which of the remote command's streams a chunk of output came from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Stream {
+    Out,
+    Err,
 }
 
 struct Trust;
@@ -30,9 +29,15 @@ impl client::Handler for Trust {
     }
 }
 
-/// Runs `cmd` on the AsenaScale server at `addr` and collects its output.
+/// Runs `cmd` on the AsenaScale server at `addr`, handing its output to `on`
+/// as it arrives, and returns its exit code. An error from `on` stops it.
 /// The first time, the other PC shows an approval dialog; this waits for it.
-pub async fn exec(addr: SocketAddr, key: PrivateKey, cmd: &str) -> Result<Output> {
+pub async fn exec(
+    addr: SocketAddr,
+    key: PrivateKey,
+    cmd: &str,
+    mut on: impl FnMut(Stream, &[u8]) -> Result<()>,
+) -> Result<u32> {
     let config = Arc::new(client::Config {
         // Long enough for the person at the other PC to answer the approval
         // dialog (no traffic flows meanwhile); the server's keepalives keep a
@@ -53,19 +58,25 @@ pub async fn exec(addr: SocketAddr, key: PrivateKey, cmd: &str) -> Result<Output
     ch.exec(true, cmd).await?;
     // No stdin is forwarded: say so, or a command that reads it waits forever.
     ch.eof().await?;
-    let mut out = Output::default();
     let mut code = None;
-    while let Some(msg) = ch.wait().await {
-        match msg {
-            ChannelMsg::Data { ref data } => out.stdout.extend_from_slice(data),
-            ChannelMsg::ExtendedData { ref data, .. } => out.stderr.extend_from_slice(data),
-            ChannelMsg::ExitStatus { exit_status } => code = Some(exit_status),
-            _ => {}
+    let result = loop {
+        let Some(msg) = ch.wait().await else { break Ok(()) };
+        let sent = match msg {
+            ChannelMsg::Data { ref data } => on(Stream::Out, data),
+            ChannelMsg::ExtendedData { ref data, .. } => on(Stream::Err, data),
+            ChannelMsg::ExitStatus { exit_status } => {
+                code = Some(exit_status);
+                Ok(())
+            }
+            _ => Ok(()),
+        };
+        if sent.is_err() {
+            break sent;
         }
-    }
+    };
     let _ = ssh.disconnect(russh::Disconnect::ByApplication, "", "en").await;
-    out.code = code.ok_or_else(|| anyhow!("the other PC closed the connection without an exit code"))?;
-    Ok(out)
+    result?;
+    code.ok_or_else(|| anyhow!("the other PC closed the connection without an exit code"))
 }
 
 fn whoami() -> String {
@@ -79,6 +90,7 @@ mod tests {
 
     use russh::keys::{Algorithm, PrivateKey};
 
+    use super::Stream;
     use crate::server::{Server, State};
     use crate::store::Devices;
 
@@ -104,19 +116,52 @@ mod tests {
         (port, rt)
     }
 
+    /// What `exec` streamed, collected.
+    #[derive(Debug)]
+    struct Got {
+        out: Vec<u8>,
+        err: Vec<u8>,
+        code: u32,
+    }
+
+    async fn collect(addr: std::net::SocketAddr, key: PrivateKey, cmd: &str) -> anyhow::Result<Got> {
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        let code = super::exec(addr, key, cmd, |s, d| {
+            match s {
+                Stream::Out => out.extend_from_slice(d),
+                Stream::Err => err.extend_from_slice(d),
+            }
+            Ok(())
+        })
+        .await?;
+        Ok(Got { out, err, code })
+    }
+
     #[test]
     fn runs_a_builtin_and_a_shell_command() {
         let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
         let (port, rt) = server_for(&key);
         let addr = ([127, 0, 0, 1], port).into();
 
-        let out = rt.block_on(super::exec(addr, key.clone(), "mc version")).unwrap();
-        assert!(String::from_utf8_lossy(&out.stdout).starts_with("SSH-2.0-AsenaScale_"), "{out:?}");
-        assert_eq!(out.code, 0);
+        let got = rt.block_on(collect(addr, key.clone(), "mc version")).unwrap();
+        assert!(String::from_utf8_lossy(&got.out).starts_with("SSH-2.0-AsenaScale_"), "{got:?}");
+        assert_eq!(got.code, 0);
 
-        let out = rt.block_on(super::exec(addr, key, "echo hi; exit 3")).unwrap();
-        assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "hi");
-        assert_eq!(out.code, 3);
+        let got = rt.block_on(collect(addr, key, "echo hi; echo oops >&2; exit 3")).unwrap();
+        assert_eq!(String::from_utf8_lossy(&got.out).trim(), "hi");
+        assert_eq!(String::from_utf8_lossy(&got.err).trim(), "oops");
+        assert_eq!(got.code, 3);
+    }
+
+    #[test]
+    fn a_failing_sink_stops_the_command() {
+        let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
+        let (port, rt) = server_for(&key);
+        let addr = ([127, 0, 0, 1], port).into();
+        let err = rt
+            .block_on(super::exec(addr, key, "echo hi", |_, _| anyhow::bail!("disk full")))
+            .unwrap_err();
+        assert!(format!("{err:#}").contains("disk full"), "{err:#}");
     }
 
     #[test]
@@ -124,12 +169,12 @@ mod tests {
         let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
         let (port, rt) = server_for(&key);
         let addr = ([127, 0, 0, 1], port).into();
-        let out = rt
-            .block_on(async { tokio::time::timeout(Duration::from_secs(10), super::exec(addr, key, "cat")).await })
+        let got = rt
+            .block_on(async { tokio::time::timeout(Duration::from_secs(10), collect(addr, key, "cat")).await })
             .expect("`cat` should end once stdin is closed")
             .unwrap();
-        assert!(out.stdout.is_empty(), "{out:?}");
-        assert_eq!(out.code, 0);
+        assert!(got.out.is_empty(), "{got:?}");
+        assert_eq!(got.code, 0);
     }
 
     /// An unknown key opens the approval dialog (server.rs `auth_publickey`);
@@ -140,7 +185,7 @@ mod tests {
         let trusted = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
         let stranger = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
         let (port, rt) = server_for(&trusted);
-        let err = rt.block_on(super::exec(([127, 0, 0, 1], port).into(), stranger, "mc version")).unwrap_err();
+        let err = rt.block_on(collect(([127, 0, 0, 1], port).into(), stranger, "mc version")).unwrap_err();
         assert!(format!("{err:#}").contains("not allowed"), "{err:#}");
     }
 }
