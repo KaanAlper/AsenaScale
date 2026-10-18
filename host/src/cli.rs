@@ -40,6 +40,8 @@ Usage: asenascale [COMMAND]        (no command: start the tray app)
   forward remove PORT|all
   phones              phones allowed on this PC
   revoke N|NAME|all   forget an allowed phone (it will be asked again)
+  forget IP|all       forget another PC's saved identity (after AsenaScale
+                      was reinstalled there)
   log [-f] [-n N]     the app's log (-f: keep following)
   start               start the tray app in the background
   quit                stop the tray app
@@ -170,6 +172,7 @@ pub fn run(args: &[String]) -> i32 {
                 2
             }
         },
+        "forget" => forget(&args[1..]),
         "up" => run(&["connect".into()]),
         "down" => run(&["disconnect".into()]),
         "list" | "ls" => run(&["devices".into()]),
@@ -702,13 +705,58 @@ fn write_now(mut w: impl Write, data: &[u8]) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// The tray's answer to `dial DEVICE`: "PORT IP" (the local port to connect
+/// to, and the device's tailnet IP, which names it in known_peers.json).
+fn parse_dial(text: &str) -> Result<(u16, std::net::IpAddr), String> {
+    let mut words = text.split_whitespace();
+    let port = words.next().and_then(|w| w.parse::<u16>().ok());
+    let ip = words.next().map(|w| w.parse::<std::net::IpAddr>());
+    match (port, ip, words.next()) {
+        (Some(port), Some(Ok(ip)), None) => Ok((port, ip)),
+        (Some(_), None, None) => Err("the running AsenaScale is older than this command; restart it (asenascale quit, then asenascale start)".into()),
+        _ => Err(format!("unexpected answer from AsenaScale: {}", text.trim())),
+    }
+}
+
+/// `asenascale forget IP|all`: works without the tray app.
+fn forget(args: &[String]) -> i32 {
+    let which = match args.first().map(String::as_str) {
+        Some("all") => "all".to_string(),
+        Some(w) => match w.parse::<std::net::IpAddr>() {
+            Ok(ip) => ip.to_string(),
+            Err(_) => {
+                eprintln!("forget takes the other PC's IP; use the IP from `asenascale devices`");
+                return 2;
+            }
+        },
+        None => {
+            eprintln!("usage: asenascale forget IP|all");
+            return 2;
+        }
+    };
+    match crate::known::Known::open().forget(&which) {
+        Ok(0) => {
+            eprintln!("nothing saved for {which}");
+            1
+        }
+        Ok(n) => {
+            println!("forgot {n}; the next connection learns it again");
+            0
+        }
+        Err(e) => {
+            eprintln!("{e:#}");
+            1
+        }
+    }
+}
+
 /// Dials DEVICE through the tray, runs `cmd` there, delivers the output.
 fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
-    let port = match ask(&["dial".into(), dev.into()]) {
-        Ok((0, text)) => match text.trim().parse::<u16>() {
-            Ok(p) => p,
-            Err(_) => {
-                eprintln!("unexpected answer from AsenaScale: {text}");
+    let (port, ip) = match ask(&["dial".into(), dev.into()]) {
+        Ok((0, text)) => match parse_dial(&text) {
+            Ok(answer) => answer,
+            Err(msg) => {
+                eprintln!("{msg}");
                 return 1;
             }
         },
@@ -725,7 +773,8 @@ fn remote(dev: &str, cmd: &str, sink: Sink) -> i32 {
     let mut image = Vec::new();
     let result = crate::store::client_key().and_then(|key| {
         let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
-        rt.block_on(crate::peer::exec(([127, 0, 0, 1], port).into(), key, cmd, |stream, data| match stream {
+        let (who, known) = (ip.to_string(), crate::known::Known::open());
+        rt.block_on(crate::peer::exec(([127, 0, 0, 1], port).into(), &who, &known, key, cmd, |stream, data| match stream {
             crate::peer::Stream::Out if to_file => push_capped(&mut image, data, MAX_SHOT_BYTES),
             crate::peer::Stream::Out => write_now(std::io::stdout().lock(), data),
             crate::peer::Stream::Err => write_now(std::io::stderr().lock(), data),
@@ -790,5 +839,27 @@ mod shot_buffer_tests {
         let err = push_capped(&mut buf, b"e", 4).unwrap_err();
         assert_eq!(err.to_string(), "screenshot larger than 256 MB");
         assert_eq!(buf, b"abcd");
+    }
+}
+
+#[cfg(test)]
+mod dial_answer_tests {
+    use super::parse_dial;
+
+    #[test]
+    fn port_and_ip() {
+        assert_eq!(parse_dial("40123 100.64.0.9\n").unwrap(), (40123, "100.64.0.9".parse().unwrap()));
+    }
+
+    #[test]
+    fn a_bare_port_means_an_older_tray_app() {
+        let err = parse_dial("40123\n").unwrap_err();
+        assert!(err.contains("older"), "{err}");
+    }
+
+    #[test]
+    fn garbage_is_reported_as_such() {
+        assert!(parse_dial("hello world\n").unwrap_err().contains("unexpected answer"));
+        assert!(parse_dial("40123 nope\n").unwrap_err().contains("unexpected answer"));
     }
 }

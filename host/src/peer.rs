@@ -2,13 +2,15 @@
 //! AsenaScale server (through a tray-made tailnet forward) and run one command.
 
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
 use russh::client;
-use russh::keys::{PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
+use russh::keys::{PrivateKey, PrivateKeyWithHashAlg, PublicKey, PublicKeyOrCertificate};
 use russh::ChannelMsg;
+
+use crate::known::{Known, Seen};
 
 /// Which of the remote command's streams a chunk of output came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,23 +19,46 @@ pub enum Stream {
     Err,
 }
 
-struct Trust;
+/// Accepts the other PC's host key if it is the one this PC saw there before
+/// (or the first one); anything else is left in `problem` for `exec`.
+struct Pin {
+    who: String,
+    known: Known,
+    problem: Arc<Mutex<Option<anyhow::Error>>>,
+}
 
-impl client::Handler for Trust {
+impl client::Handler for Pin {
     type Error = russh::Error;
 
-    // The tailnet already proved who the peer is (WireGuard keys, our own
-    // account); the SSH host key adds nothing we could check here.
-    async fn check_server_key(&mut self, _key: &PublicKeyOrCertificate) -> Result<bool, Self::Error> {
-        Ok(true)
+    // The tailnet already proved which device answers (WireGuard keys); the
+    // pinned host key also catches a different AsenaScale behind its IP.
+    async fn check_server_key(&mut self, key: &PublicKeyOrCertificate) -> Result<bool, Self::Error> {
+        let key = match key {
+            PublicKeyOrCertificate::PublicKey { key, .. } => key.clone(),
+            PublicKeyOrCertificate::Certificate(cert) => PublicKey::new(cert.public_key().clone(), ""),
+        };
+        let problem = match self.known.check(&self.who, &key) {
+            Ok(Seen::New | Seen::Same) => return Ok(true),
+            Ok(Seen::Changed) => anyhow!(
+                "the other PC's identity changed ({who}); if you reinstalled AsenaScale there, run `asenascale forget {who}`",
+                who = self.who
+            ),
+            Err(e) => e,
+        };
+        *self.problem.lock().unwrap() = Some(problem);
+        Ok(false)
     }
 }
 
-/// Runs `cmd` on the AsenaScale server at `addr`, handing its output to `on`
-/// as it arrives, and returns its exit code. An error from `on` stops it.
-/// The first time, the other PC shows an approval dialog; this waits for it.
+/// Runs `cmd` on the AsenaScale server at `addr` (the PC known as `who`, its
+/// tailnet IP), handing its output to `on` as it arrives, and returns its exit
+/// code. An error from `on` stops it. The other PC's host key must match the
+/// one `known` has for `who`; the first one seen is remembered. The first
+/// time, the other PC shows an approval dialog; this waits for it.
 pub async fn exec(
     addr: SocketAddr,
+    who: &str,
+    known: &Known,
     key: PrivateKey,
     cmd: &str,
     mut on: impl FnMut(Stream, &[u8]) -> Result<()>,
@@ -45,7 +70,12 @@ pub async fn exec(
         inactivity_timeout: Some(Duration::from_secs(120)),
         ..Default::default()
     });
-    let mut ssh = client::connect(config, addr, Trust).await.context("connecting")?;
+    let problem = Arc::new(Mutex::new(None));
+    let pin = Pin { who: who.to_string(), known: known.clone(), problem: problem.clone() };
+    let mut ssh = match client::connect(config, addr, pin).await {
+        Ok(ssh) => ssh,
+        Err(e) => return Err(problem.lock().unwrap().take().unwrap_or_else(|| anyhow!(e).context("connecting"))),
+    };
     let hash = ssh.best_supported_rsa_hash().await?.flatten();
     let auth = ssh
         .authenticate_publickey(whoami(), PrivateKeyWithHashAlg::new(Arc::new(key), hash))
@@ -91,6 +121,8 @@ mod tests {
     use russh::keys::{Algorithm, PrivateKey};
 
     use super::Stream;
+    use crate::known::Known;
+    use crate::store::TempDir;
     use crate::server::{Server, State};
     use crate::store::Devices;
 
@@ -116,6 +148,9 @@ mod tests {
         (port, rt)
     }
 
+    /// The identity the tests' server has (the tailnet IP in real use).
+    const PEER: &str = "100.64.0.9";
+
     /// What `exec` streamed, collected.
     #[derive(Debug)]
     struct Got {
@@ -124,9 +159,15 @@ mod tests {
         code: u32,
     }
 
+    /// Runs `cmd` with a fresh, throwaway list of known PCs.
     async fn collect(addr: std::net::SocketAddr, key: PrivateKey, cmd: &str) -> anyhow::Result<Got> {
+        let dir = TempDir::new(&format!("peer-{}", addr.port()));
+        collect_pinned(addr, &Known::in_dir(&dir.0), key, cmd).await
+    }
+
+    async fn collect_pinned(addr: std::net::SocketAddr, known: &Known, key: PrivateKey, cmd: &str) -> anyhow::Result<Got> {
         let (mut out, mut err) = (Vec::new(), Vec::new());
-        let code = super::exec(addr, key, cmd, |s, d| {
+        let code = super::exec(addr, PEER, known, key, cmd, |s, d| {
             match s {
                 Stream::Out => out.extend_from_slice(d),
                 Stream::Err => err.extend_from_slice(d),
@@ -159,7 +200,10 @@ mod tests {
         let (port, rt) = server_for(&key);
         let addr = ([127, 0, 0, 1], port).into();
         let err = rt
-            .block_on(super::exec(addr, key, "echo hi", |_, _| anyhow::bail!("disk full")))
+            .block_on(async {
+                let dir = TempDir::new("peer-sink");
+                super::exec(addr, PEER, &Known::in_dir(&dir.0), key, "echo hi", |_, _| anyhow::bail!("disk full")).await
+            })
             .unwrap_err();
         assert!(format!("{err:#}").contains("disk full"), "{err:#}");
     }
@@ -175,6 +219,28 @@ mod tests {
             .unwrap();
         assert!(got.out.is_empty(), "{got:?}");
         assert_eq!(got.code, 0);
+    }
+
+    #[test]
+    fn a_changed_host_key_is_refused() {
+        let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
+        let dir = TempDir::new("peer-pin");
+        let known = Known::in_dir(&dir.0);
+        // Two servers, each with its own random host key, seen as one PC.
+        let (port_a, rt_a) = server_for(&key);
+        let (port_b, rt_b) = server_for(&key);
+
+        let got = rt_a.block_on(collect_pinned(([127, 0, 0, 1], port_a).into(), &known, key.clone(), "mc version"));
+        assert_eq!(got.unwrap().code, 0);
+        let got = rt_a.block_on(collect_pinned(([127, 0, 0, 1], port_a).into(), &known, key.clone(), "mc version"));
+        assert_eq!(got.unwrap().code, 0, "same key again is fine");
+
+        let err = rt_b
+            .block_on(collect_pinned(([127, 0, 0, 1], port_b).into(), &known, key, "mc version"))
+            .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("identity changed (100.64.0.9)"), "{msg}");
+        assert!(msg.contains("asenascale forget 100.64.0.9"), "{msg}");
     }
 
     /// An unknown key opens the approval dialog (server.rs `auth_publickey`);

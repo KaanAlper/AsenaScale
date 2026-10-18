@@ -91,7 +91,7 @@ fn key_error(path: &std::path::Path, e: std::io::Error) -> anyhow::Error {
 }
 
 /// `create_dir_all`, with new directories private to the user on unix.
-fn create_private_dir(dir: &std::path::Path) -> std::io::Result<()> {
+pub fn create_private_dir(dir: &std::path::Path) -> std::io::Result<()> {
     let mut b = fs::DirBuilder::new();
     b.recursive(true);
     #[cfg(unix)]
@@ -206,26 +206,30 @@ impl Devices {
     }
 }
 
+/// Tests: a fresh temp dir per test (unique `tag`), removed on drop (also
+/// when an assert fails).
+#[cfg(test)]
+pub struct TempDir(pub PathBuf);
+
+#[cfg(test)]
+impl TempDir {
+    pub fn new(tag: &str) -> Self {
+        let d = std::env::temp_dir().join(format!("asenascale-ck-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        TempDir(d)
+    }
+}
+
+#[cfg(test)]
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
+    }
+}
+
 #[cfg(test)]
 mod client_key_tests {
     use super::*;
-
-    /// A fresh temp dir per test, removed on drop (also when an assert fails).
-    struct TempDir(std::path::PathBuf);
-
-    impl TempDir {
-        fn new(tag: &str) -> Self {
-            let d = std::env::temp_dir().join(format!("asenascale-ck-{tag}-{}", std::process::id()));
-            let _ = fs::remove_dir_all(&d);
-            TempDir(d)
-        }
-    }
-
-    impl Drop for TempDir {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
-        }
-    }
 
     #[test]
     fn client_key_is_ed25519_and_stable() {

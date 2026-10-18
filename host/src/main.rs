@@ -14,6 +14,7 @@ mod files;
 mod forward;
 mod peer;
 mod i18n;
+mod known;
 mod screen;
 mod server;
 mod session;

@@ -348,7 +348,8 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
         "forward" | "forwards" => forward_cmd(ctx, args),
         // Single-use local port piped to DEVICE's AsenaScale SSH server (for
         // `asenascale exec|shot`): it takes one connection, closes itself after
-        // 30 s without one, and `undial` cancels it if unused.
+        // 30 s without one, and `undial` cancels it if unused. Answers
+        // "PORT IP".
         "dial" => {
             let who = arg(1);
             if who.is_empty() {
@@ -362,8 +363,13 @@ fn command(ctx: &Ctx, args: &[String]) -> Result<String> {
             if !peer.online {
                 anyhow::bail!("{} is offline", peer.short_name());
             }
-            let port = tailnet::forward(&format!("{}:{}", peer.ipv4(), crate::PORT))?;
-            Ok(format!("{port}\n"))
+            let ip = peer.ipv4();
+            if ip.is_empty() {
+                anyhow::bail!("{} has no tailnet IPv4 address", peer.short_name());
+            }
+            let port = tailnet::forward(&format!("{ip}:{}", crate::PORT))?;
+            // The IP names the device in known_peers.json (see known.rs).
+            Ok(format!("{port} {ip}\n"))
         }
         "undial" => {
             let port: u16 = arg(1).parse().map_err(|_| anyhow::anyhow!("usage: undial PORT"))?;
