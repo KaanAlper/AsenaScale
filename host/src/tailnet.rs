@@ -153,11 +153,15 @@ impl PeerStatus {
     }
 }
 
-/// The peer called `who` (its short name, any case) or holding IP `who`.
+/// The peer holding IP `who`, else the one called `who` (its short name, any
+/// case). When several share that name, an online one wins, then the first.
 pub fn find_peer(st: &Status, who: &str) -> Option<PeerStatus> {
-    st.peers.as_ref()?.iter().find(|p| {
-        p.short_name().eq_ignore_ascii_case(who) || p.ips.as_ref().is_some_and(|v| v.iter().any(|ip| ip == who))
-    }).cloned()
+    let peers = st.peers.as_ref()?;
+    if let Some(p) = peers.iter().find(|p| p.ips.as_ref().is_some_and(|v| v.iter().any(|ip| ip == who))) {
+        return Some(p.clone());
+    }
+    let named = || peers.iter().filter(|p| p.short_name().eq_ignore_ascii_case(who));
+    named().find(|p| p.online).or_else(|| named().next()).cloned()
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -264,6 +268,19 @@ mod tests {
     #[test]
     fn finds_a_peer_by_ip() {
         assert_eq!(find_peer(&status(), "100.124.74.14").unwrap().short_name(), "kaanalper");
+    }
+
+    #[test]
+    fn prefers_the_online_peer_when_names_collide() {
+        // Same short name: e.g. a device shared in from another tailnet.
+        let st: Status = serde_json::from_str(
+            r#"{"state":"Running","self":null,"peers":[
+                {"name":"desk","dnsName":"desk.other-tailnet.ts.net.","os":"windows","ips":["100.64.0.1"],"online":false},
+                {"name":"desk","dnsName":"desk.tail73e529.ts.net.","os":"windows","ips":["100.64.0.2"],"online":true}
+            ]}"#,
+        )
+        .unwrap();
+        assert_eq!(find_peer(&st, "desk").unwrap().ipv4(), "100.64.0.2");
     }
 
     #[test]
