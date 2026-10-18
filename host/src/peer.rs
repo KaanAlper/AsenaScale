@@ -5,12 +5,15 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use russh::client;
 use russh::keys::{PrivateKey, PrivateKeyWithHashAlg, PublicKey, PublicKeyOrCertificate};
-use russh::ChannelMsg;
+use russh::{ChannelMsg, Sig};
 
 use crate::known::{Known, Seen};
+
+/// Connecting and the SSH handshake (not the approval wait) must finish in this.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Which of the remote command's streams a chunk of output came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -72,17 +75,23 @@ pub async fn exec(
     });
     let problem = Arc::new(Mutex::new(None));
     let pin = Pin { who: who.to_string(), known: known.clone(), problem: problem.clone() };
-    let mut ssh = match client::connect(config, addr, pin).await {
-        Ok(ssh) => ssh,
-        Err(e) => return Err(problem.lock().unwrap().take().unwrap_or_else(|| anyhow!(e).context("connecting"))),
+    let unreachable = || anyhow!("can't reach {who} (is AsenaScale running there?)");
+    let mut ssh = match tokio::time::timeout(CONNECT_TIMEOUT, client::connect(config, addr, pin)).await {
+        Ok(Ok(ssh)) => ssh,
+        Ok(Err(e)) => return Err(problem.lock().unwrap().take().unwrap_or_else(|| anyhow!(e).context(unreachable()))),
+        Err(_) => return Err(unreachable()),
     };
-    let hash = ssh.best_supported_rsa_hash().await?.flatten();
-    let auth = ssh
-        .authenticate_publickey(whoami(), PrivateKeyWithHashAlg::new(Arc::new(key), hash))
-        .await
-        .context("signing in")?;
-    if !auth.success() {
-        bail!("this PC is not allowed there (approve it on the other PC, or `asenascale revoke` and retry)");
+    // The key is Ed25519: no RSA hash to pick.
+    let auth = ssh.authenticate_publickey(whoami(), PrivateKeyWithHashAlg::new(Arc::new(key), None)).await;
+    match auth {
+        Ok(auth) if auth.success() => {}
+        // Refused, and the connection is still up: a real "no".
+        Ok(_) if !ssh.is_closed() => {
+            bail!("this PC is not allowed there (approve it on the other PC, or `asenascale revoke` and retry)")
+        }
+        // The connection ended while waiting: most likely the inactivity
+        // timeout while nobody answered the approval dialog.
+        _ => bail!("no answer from the other PC (is an approval dialog waiting there?)"),
     }
     let mut ch = ssh.channel_open_session().await?;
     ch.exec(true, cmd).await?;
@@ -98,6 +107,11 @@ pub async fn exec(
                 code = Some(exit_status);
                 Ok(())
             }
+            ChannelMsg::ExitSignal { ref signal_name, .. } => {
+                code = Some(signal_code(signal_name));
+                Ok(())
+            }
+            ChannelMsg::Failure => Err(anyhow!("the other PC refused the command")),
             _ => Ok(()),
         };
         if sent.is_err() {
@@ -107,6 +121,19 @@ pub async fn exec(
     let _ = ssh.disconnect(russh::Disconnect::ByApplication, "", "en").await;
     result?;
     code.ok_or_else(|| anyhow!("the other PC closed the connection without an exit code"))
+}
+
+/// A shell's exit code for a command killed by `sig`: 128 + its number.
+fn signal_code(sig: &Sig) -> u32 {
+    let n = match sig {
+        Sig::HUP => 1,
+        Sig::INT => 2,
+        Sig::KILL => 9,
+        Sig::SEGV => 11,
+        Sig::TERM => 15,
+        _ => 1,
+    };
+    128 + n
 }
 
 fn whoami() -> String {
@@ -241,6 +268,40 @@ mod tests {
         let msg = format!("{err:#}");
         assert!(msg.contains("identity changed (100.64.0.9)"), "{msg}");
         assert!(msg.contains("asenascale forget 100.64.0.9"), "{msg}");
+    }
+
+    #[test]
+    fn nothing_answering_is_reported_as_unreachable() {
+        let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let err = rt
+            .block_on(async {
+                // Takes the connection and hangs up, as the tray's forward
+                // does when the other PC has no AsenaScale listening.
+                let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+                let addr = listener.local_addr().unwrap();
+                tokio::spawn(async move {
+                    while let Ok((sock, _)) = listener.accept().await {
+                        drop(sock);
+                    }
+                });
+                let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
+                tokio::time::timeout(Duration::from_secs(10), collect(addr, key, "mc version")).await
+            })
+            .expect("should fail fast")
+            .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.starts_with("can't reach 100.64.0.9 (is AsenaScale running there?)"), "{msg}");
+    }
+
+    #[test]
+    fn signals_map_to_shell_style_codes() {
+        use russh::Sig;
+        assert_eq!(super::signal_code(&Sig::KILL), 137);
+        assert_eq!(super::signal_code(&Sig::TERM), 143);
+        assert_eq!(super::signal_code(&Sig::INT), 130);
+        assert_eq!(super::signal_code(&Sig::HUP), 129);
+        assert_eq!(super::signal_code(&Sig::SEGV), 139);
+        assert_eq!(super::signal_code(&Sig::Custom("WINCH".into())), 129);
     }
 
     /// An unknown key opens the approval dialog (server.rs `auth_publickey`);
