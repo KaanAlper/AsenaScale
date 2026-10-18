@@ -47,7 +47,7 @@ fn client_key_in(dir: &std::path::Path) -> Result<PrivateKey> {
     use std::io::{ErrorKind, Write};
 
     let path = dir.join("client_ed25519_key");
-    match read_client_key(&path) {
+    match read_settled_key(&path) {
         Err(e) if e.kind() == ErrorKind::NotFound => {}
         other => return other.map_err(|e| key_error(&path, e)),
     }
@@ -65,12 +65,28 @@ fn client_key_in(dir: &std::path::Path) -> Result<PrivateKey> {
         Ok(f) => f,
         // Another process made it first: use theirs.
         Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-            return read_client_key(&path).map_err(|e| key_error(&path, e));
+            return read_settled_key(&path).map_err(|e| key_error(&path, e));
         }
         Err(e) => return Err(e).with_context(|| format!("creating {}", path.display())),
     };
     file.write_all(pem.as_bytes()).with_context(|| format!("writing {}", path.display()))?;
     Ok(key)
+}
+
+/// `read_client_key`, but a file that is not a key yet is re-read for a
+/// while: another process may have just created it and still be writing.
+fn read_settled_key(path: &std::path::Path) -> std::io::Result<PrivateKey> {
+    const RETRIES: u32 = 10;
+    let mut retries = 0;
+    loop {
+        match read_client_key(path) {
+            Err(e) if e.kind() == std::io::ErrorKind::InvalidData && retries < RETRIES => {
+                retries += 1;
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            other => return other,
+        }
+    }
 }
 
 /// The key at `path`; a file that is not a key reads as `InvalidData`.
@@ -248,6 +264,27 @@ mod client_key_tests {
         client_key_in(&dir.0).unwrap();
         let mode = fs::metadata(dir.0.join("client_ed25519_key")).unwrap().permissions().mode();
         assert_eq!(mode & 0o777, 0o600);
+    }
+
+    /// Another process made the file but has not written the key yet.
+    #[test]
+    fn a_key_being_written_by_another_process_is_waited_for() {
+        let dir = TempDir::new("race");
+        fs::create_dir_all(&dir.0).unwrap();
+        let path = dir.0.join("client_ed25519_key");
+        fs::write(&path, "").unwrap();
+        let theirs = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
+        let pem = theirs.to_openssh(LineEnding::LF).unwrap().to_string();
+        let writer = std::thread::spawn({
+            let path = path.clone();
+            move || {
+                std::thread::sleep(std::time::Duration::from_millis(150));
+                fs::write(&path, pem).unwrap();
+            }
+        });
+        let got = client_key_in(&dir.0).unwrap();
+        writer.join().unwrap();
+        assert_eq!(got.public_key(), theirs.public_key());
     }
 
     #[test]
