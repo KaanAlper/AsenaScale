@@ -51,6 +51,8 @@ pub async fn exec(addr: SocketAddr, key: PrivateKey, cmd: &str) -> Result<Output
     }
     let mut ch = ssh.channel_open_session().await?;
     ch.exec(true, cmd).await?;
+    // No stdin is forwarded: say so, or a command that reads it waits forever.
+    ch.eof().await?;
     let mut out = Output::default();
     let mut code = None;
     while let Some(msg) = ch.wait().await {
@@ -115,6 +117,19 @@ mod tests {
         let out = rt.block_on(super::exec(addr, key, "echo hi; exit 3")).unwrap();
         assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "hi");
         assert_eq!(out.code, 3);
+    }
+
+    #[test]
+    fn a_command_reading_stdin_gets_eof() {
+        let key = PrivateKey::random(&mut rand::rng(), Algorithm::Ed25519).unwrap();
+        let (port, rt) = server_for(&key);
+        let addr = ([127, 0, 0, 1], port).into();
+        let out = rt
+            .block_on(async { tokio::time::timeout(Duration::from_secs(10), super::exec(addr, key, "cat")).await })
+            .expect("`cat` should end once stdin is closed")
+            .unwrap();
+        assert!(out.stdout.is_empty(), "{out:?}");
+        assert_eq!(out.code, 0);
     }
 
     /// An unknown key opens the approval dialog (server.rs `auth_publickey`);
